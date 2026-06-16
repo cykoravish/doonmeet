@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Menu } from "lucide-react";
 import MobileMenu from "./MobileMenu";
 
 const navLinks = [
@@ -38,7 +37,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden items-center gap-8 md:flex">
+        <div className="hidden items-center gap-5 min-[750px]:flex lg:gap-8">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -51,7 +50,7 @@ export default function Navbar() {
         </div>
 
         {/* Desktop Auth */}
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-8 min-[750px]:flex">
           <Link
             href="/login"
             className="text-sm font-medium text-foreground/80 transition-colors duration-200 hover:text-foreground"
@@ -61,14 +60,14 @@ export default function Navbar() {
 
           <Link
             href="/signup"
-            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] hover:opacity-90"
+            className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] hover:opacity-90 lg:rounded-xl lg:px-4"
           >
             Sign Up
           </Link>
         </div>
 
         {/* Mobile Menu Button */}
-        <div className="md:hidden">
+        <div className="min-[750px]:hidden">
           <MobileMenu />
         </div>
       </nav>
