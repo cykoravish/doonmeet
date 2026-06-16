@@ -7,8 +7,8 @@ const navLinks = [
     href: "/",
   },
   {
-    label: "Map",
-    href: "/map",
+    label: "Locations",
+    href: "/locations",
   },
   {
     label: "Chat",
@@ -37,7 +37,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden items-center gap-5 min-[750px]:flex lg:gap-8">
+        <div className="hidden items-center gap-5 min-[820px]:flex lg:gap-8">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -50,10 +50,10 @@ export default function Navbar() {
         </div>
 
         {/* Desktop Auth */}
-        <div className="hidden items-center gap-8 min-[750px]:flex">
+        <div className="hidden items-center gap-8 min-[820px]:flex">
           <Link
             href="/login"
-            className="text-sm font-medium text-foreground/80 transition-colors duration-200 hover:text-foreground"
+            className="rounded-lg border border-border/80 bg-card/30 px-3 py-2 text-sm font-semibold text-foreground/85 transition-all duration-200 hover:border-primary/50 hover:bg-card/70 hover:text-foreground"
           >
             Login
           </Link>
@@ -67,7 +67,7 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Menu Button */}
-        <div className="min-[750px]:hidden">
+        <div className="min-[820px]:hidden">
           <MobileMenu />
         </div>
       </nav>

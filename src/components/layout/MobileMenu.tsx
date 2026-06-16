@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 const navLinks = [
   { label: "Home", href: "/" },
-  { label: "Map", href: "/map" },
+  { label: "Locations", href: "/locations" },
   { label: "Chat", href: "/chat" },
   { label: "Events", href: "/events" },
   { label: "Communities", href: "/communities" },
@@ -107,7 +107,7 @@ export default function MobileMenu() {
                 <Link
                   href="/login"
                   onClick={closeMenu}
-                  className="block rounded-xl border border-border px-4 py-3 text-center font-medium"
+                  className="block rounded-xl border border-border/80 bg-card/30 px-4 py-3 text-center font-semibold text-foreground/90 transition-colors hover:border-primary/50 hover:bg-card/70 hover:text-foreground"
                 >
                   Login
                 </Link>
@@ -115,7 +115,7 @@ export default function MobileMenu() {
                 <Link
                   href="/signup"
                   onClick={closeMenu}
-                  className="block rounded-xl bg-primary px-4 py-3 text-center font-semibold text-white"
+                  className="block rounded-xl bg-primary px-4 py-3 text-center font-semibold text-white transition-all hover:bg-primary-hover"
                 >
                   Sign Up
                 </Link>
