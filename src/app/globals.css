@@ -1,50 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  /* DoonMeet Evening Theme */
+  /* Doon Nature */
 
-  --background: #111827;
-  --foreground: #f9fafb;
+  --background: 248 255 248;
+  --surface: 255 255 255;
 
-  --card: #1f2937;
-  --card-foreground: #f9fafb;
+  --primary: 45 106 79;
+  --primary-light: 64 145 108;
 
-  --primary: #fb923c;
-  --primary-hover: #f97316;
+  --text: 27 67 50;
+  --muted: 82 121 111;
 
-  --muted: #9ca3af;
-  --border: #374151;
+  --border: 221 234 226;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+[data-theme="night"] {
+  /* Doon Night */
 
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
+  --background: 15 23 32;
+  --surface: 24 36 48;
 
-  --color-primary: var(--primary);
-  --color-primary-hover: var(--primary-hover);
+  --primary: 110 231 183;
+  --primary-light: 94 234 212;
 
-  --color-muted: var(--muted);
-  --color-border: var(--border);
+  --text: 229 238 245;
+  --muted: 148 163 184;
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html {
-  overflow-x: clip;
-  scroll-behavior: smooth;
+  --border: 42 58 73;
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans);
-  overflow-x: clip;
+  background-color: rgb(var(--background));
+  color: rgb(var(--text));
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
