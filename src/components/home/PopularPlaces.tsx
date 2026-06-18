@@ -4,7 +4,7 @@ import Link from "next/link";
 const places = [
   {
     name: "Clock Tower",
-    href: "/locations/clock-tower",
+    href: "/places/clock-tower",
     description: "The iconic landmark in the heart of Dehradun.",
     image: "/images/hero-clock-tower.webp",
     rating: "4.8",
@@ -12,7 +12,7 @@ const places = [
   },
   {
     name: "Rajpur Road",
-    href: "/locations/rajpur-road",
+    href: "/places/rajpur-road",
     description: "Popular cafes, restaurants and hangout spots.",
     image: "/images/places/rajpur-road.webp",
     rating: "4.7",
@@ -20,7 +20,7 @@ const places = [
   },
   {
     name: "FRI",
-    href: "/locations/fri",
+    href: "/places/fri",
     description: "A historic campus loved by students and photographers.",
     image: "/images/places/fri.webp",
     rating: "4.9",
@@ -28,7 +28,7 @@ const places = [
   },
   {
     name: "Robber's Cave",
-    href: "/locations/robbers-cave",
+    href: "/places/robbers-cave",
     description: "One of Dehradun's most visited natural attractions.",
     image: "/images/places/robbers-cave.webp",
     rating: "4.8",
