@@ -21,8 +21,8 @@
   --background: 15 23 32;
   --surface: 24 36 48;
 
-  --primary: 110 231 183;
-  --primary-light: 94 234 212;
+  --primary: 34 139 94;
+  --primary-light: 74 222 128;
 
   --text: 229 238 245;
   --muted: 148 163 184;
@@ -33,5 +33,7 @@
 body {
   background-color: rgb(var(--background));
   color: rgb(var(--text));
-  transition: background-color 0.25s ease, color 0.25s ease;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
 }
