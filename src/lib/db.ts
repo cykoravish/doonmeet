@@ -8,7 +8,6 @@ if (!MONGODB_URI) {
 
 // Cached connection to avoid multiple connections in Next.js dev (hot reload)
 declare global {
-  // eslint-disable-next-line no-var
   var _mongooseCache: {
     conn: typeof mongoose | null;
     promise: Promise<typeof mongoose> | null;
