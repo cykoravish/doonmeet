@@ -24,6 +24,7 @@
     "nodemailer": "^9.0.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "slugify": "^1.6.9",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "zod": "^4.4.3"

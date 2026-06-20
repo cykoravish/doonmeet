@@ -1,12 +1,12 @@
+import { Suspense } from "react";
 import AuthBrandPanel from "@/components/auth/AuthBrandPanel";
-import SignupForm from "@/components/auth/SignupForm";
+import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
 
 export const metadata = {
-  title: "Sign Up | DoonMeet",
-  description: "Create your DoonMeet account and connect with people across Dehradun.",
+  title: "Reset Password | DoonMeet",
 };
 
-export default function SignupPage() {
+export default function ResetPasswordPage() {
   return (
     <div className="grid min-h-[calc(100vh-64px)] lg:grid-cols-[1fr_480px]">
       <AuthBrandPanel />
@@ -15,7 +15,9 @@ export default function SignupPage() {
         style={{ backgroundColor: "rgb(var(--background))" }}
       >
         <div className="w-full max-w-sm">
-          <SignupForm />
+          <Suspense fallback={null}>
+            <ResetPasswordForm />
+          </Suspense>
         </div>
       </div>
     </div>

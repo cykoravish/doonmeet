@@ -5,6 +5,7 @@ export interface IEvent extends Document {
   title: string;
   description: string;
   banner: string | null;
+  slug?: string;
   bannerPublicId: string | null;
   location: {
     name: string;
@@ -34,6 +35,7 @@ const EventSchema = new Schema<IEvent>(
       maxlength: [2000, "Description cannot exceed 2000 characters"],
     },
     banner: { type: String, default: null },
+    slug: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     bannerPublicId: { type: String, default: null },
     location: {
       name: { type: String, maxlength: 100, default: "" },

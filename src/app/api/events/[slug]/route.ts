@@ -23,17 +23,17 @@ export const GET = withGuestAllowed(
     const limited = generalLimiter(req, String(req.user?._id ?? "guest"));
     if (limited) return limited;
 
-    const { eventId } = await params;
+    const { slug } = await params;
 
-    if (!/^[a-f\d]{24}$/i.test(eventId)) {
-      return NextResponse.json({ success: false, message: "Invalid event ID" }, { status: 400 });
+    if (!slug || !/^[a-z0-9-]+$/.test(slug)) {
+      return NextResponse.json({ success: false, message: "Invalid event slug" }, { status: 400 });
     }
 
     try {
       await connectDB();
 
       const event = await Event.findOne({
-        _id: eventId,
+        slug,
         status: "published",
       })
         .populate("creator", "name avatar")
@@ -61,10 +61,10 @@ export const PATCH = requireVerified(
     const limited = eventLimiter(req, String(req.user._id));
     if (limited) return limited;
 
-    const { eventId } = await params;
+    const { slug } = await params;
 
-    if (!/^[a-f\d]{24}$/i.test(eventId)) {
-      return NextResponse.json({ success: false, message: "Invalid event ID" }, { status: 400 });
+    if (!slug || !/^[a-z0-9-]+$/.test(slug)) {
+      return NextResponse.json({ success: false, message: "Invalid event slug" }, { status: 400 });
     }
 
     const result = await validateBody(req, updateEventSchema);
@@ -73,7 +73,7 @@ export const PATCH = requireVerified(
     try {
       await connectDB();
 
-      const event = await Event.findById(eventId).select("creator bannerPublicId");
+      const event = await Event.findOne({ slug }).select("creator bannerPublicId slug");
 
       if (!event) {
         return NextResponse.json({ success: false, message: "Event not found." }, { status: 404 });
@@ -87,8 +87,8 @@ export const PATCH = requireVerified(
         );
       }
 
-      const updated = await Event.findByIdAndUpdate(
-        eventId,
+      const updated = await Event.findOneAndUpdate(
+        { slug },
         { $set: result.data as Partial<IEvent> },
         { new: true, runValidators: true, select: "-bannerPublicId -__v" }
       ).populate("creator", "name avatar");
@@ -111,16 +111,16 @@ export const PATCH = requireVerified(
 // Soft delete — sets status to "cancelled", deletes banner from Cloudinary
 export const DELETE = requireVerified(
   async (req: AuthenticatedRequest, { params }: { params: Promise<Record<string, string>> }) => {
-    const { eventId } = await params;
+    const { slug } = await params;
 
-    if (!/^[a-f\d]{24}$/i.test(eventId)) {
-      return NextResponse.json({ success: false, message: "Invalid event ID" }, { status: 400 });
+    if (!slug || !/^[a-z0-9-]+$/.test(slug)) {
+      return NextResponse.json({ success: false, message: "Invalid event slug" }, { status: 400 });
     }
 
     try {
       await connectDB();
 
-      const event = await Event.findById(eventId).select("creator bannerPublicId status");
+     const event = await Event.findOne({ slug }).select("creator bannerPublicId status slug");
 
       if (!event) {
         return NextResponse.json({ success: false, message: "Event not found." }, { status: 404 });

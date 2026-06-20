@@ -17,10 +17,10 @@ export const GET = withGuestAllowed(
     const limited = generalLimiter(req, String(req.user?._id ?? "guest"));
     if (limited) return limited;
 
-    const { eventId } = await params;
+    const { slug } = await params;
 
-    if (!/^[a-f\d]{24}$/i.test(eventId)) {
-      return NextResponse.json({ success: false, message: "Invalid event ID" }, { status: 400 });
+    if (!slug || !/^[a-z0-9-]+$/.test(slug)) {
+      return NextResponse.json({ success: false, message: "Invalid event slug" }, { status: 400 });
     }
 
     const queryResult = validateQuery(req, getCommentsSchema);
@@ -30,9 +30,13 @@ export const GET = withGuestAllowed(
     try {
       await connectDB();
 
+      const eventDoc = await Event.findOne({ slug, status: "published" }).select("_id").lean();
+      if (!eventDoc) {
+        return NextResponse.json({ success: false, message: "Event not found." }, { status: 404 });
+      }
       const query: Record<string, unknown> = {
-        event: eventId,
-        parentId: null, // top-level comments only for MVP
+        event: eventDoc._id,
+        parentId: null,
       };
 
       if (cursor) {
@@ -78,10 +82,10 @@ export const POST = requireVerified(
     const limited = generalLimiter(req, String(req.user._id));
     if (limited) return limited;
 
-    const { eventId } = await params;
+    const { slug } = await params;
 
-    if (!/^[a-f\d]{24}$/i.test(eventId)) {
-      return NextResponse.json({ success: false, message: "Invalid event ID" }, { status: 400 });
+    if (!slug || !/^[a-z0-9-]+$/.test(slug)) {
+      return NextResponse.json({ success: false, message: "Invalid event slug" }, { status: 400 });
     }
 
     const result = await validateBody(req, createCommentSchema);
@@ -93,9 +97,9 @@ export const POST = requireVerified(
 
       // Check event exists and is published
       const event = await Event.findOne({
-        _id: eventId,
+        slug,
         status: "published",
-      }).select("creator commentCount");
+      }).select("creator commentCount slug");
 
       if (!event) {
         return NextResponse.json({ success: false, message: "Event not found." }, { status: 404 });
@@ -104,12 +108,12 @@ export const POST = requireVerified(
       // Create comment + increment commentCount atomically
       const [comment] = await Promise.all([
         EventComment.create({
-          event: eventId,
+          event: event._id,
           author: req.user._id,
           content: data.content,
           parentId: data.parentId ?? null,
         }),
-        Event.updateOne({ _id: eventId }, { $inc: { commentCount: 1 } }),
+        Event.updateOne({ _id: event._id }, { $inc: { commentCount: 1 } }),
       ]);
 
       await comment.populate("author", "name avatar");

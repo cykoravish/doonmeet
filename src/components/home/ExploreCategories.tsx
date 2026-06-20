@@ -1,74 +1,115 @@
+import Link from "next/link";
+import { Coffee, Trees, UtensilsCrossed, Camera, Landmark, Footprints } from "lucide-react";
+
 const categories = [
   {
-    emoji: "☕",
     title: "Cafes",
-    description: "Discover cozy cafes and coffee spots across Dehradun.",
+    description: "Cozy cafes and coffee spots across Dehradun.",
+    icon: Coffee,
+    href: "/locations?category=cafes",
+    color: "rgb(194 140 74)",       // accent/warm
+    bg: "rgb(194 140 74 / 0.1)",
   },
   {
-    emoji: "🌲",
     title: "Nature",
-    description: "Explore forests, rivers, hills and peaceful escapes.",
+    description: "Forests, rivers, hills and peaceful escapes.",
+    icon: Trees,
+    href: "/locations?category=nature",
+    color: "rgb(var(--primary))",
+    bg: "rgb(var(--primary) / 0.1)",
   },
   {
-    emoji: "🍴",
     title: "Food",
-    description: "Find restaurants, street food and local favourites.",
+    description: "Restaurants, street food and local favourites.",
+    icon: UtensilsCrossed,
+    href: "/locations?category=food",
+    color: "rgb(220 80 60)",
+    bg: "rgb(220 80 60 / 0.1)",
   },
   {
-    emoji: "📸",
     title: "Photography",
-    description: "Discover the most photogenic places in the city.",
+    description: "The most photogenic spots in the city.",
+    icon: Camera,
+    href: "/locations?category=photography",
+    color: "rgb(100 120 220)",
+    bg: "rgb(100 120 220 / 0.1)",
   },
   {
-    emoji: "🏞️",
     title: "Attractions",
-    description: "Explore landmarks and popular tourist destinations.",
+    description: "Landmarks and popular tourist destinations.",
+    icon: Landmark,
+    href: "/locations?category=attractions",
+    color: "rgb(var(--primary-light))",
+    bg: "rgb(var(--primary-light) / 0.1)",
   },
   {
-    emoji: "🚶",
     title: "Walking Spots",
-    description: "Perfect places for walks, conversations and relaxation.",
+    description: "Perfect places for walks and relaxation.",
+    icon: Footprints,
+    href: "/locations?category=walking",
+    color: "rgb(160 100 200)",
+    bg: "rgb(160 100 200 / 0.1)",
   },
 ];
 
 export default function ExploreCategories() {
   return (
     <section className="mx-auto max-w-7xl px-6 py-20">
-      <div className="mb-12 text-center">
-        <h2 className="mb-3 text-3xl font-bold">Explore Dehradun by Interest</h2>
 
+      {/* Header */}
+      <div className="mb-12 text-center">
         <p
-          style={{
-            color: "rgb(var(--muted))",
-          }}
+          className="mb-2 text-sm font-semibold uppercase tracking-widest"
+          style={{ color: "rgb(var(--primary))" }}
         >
-          Find places based on what you love doing.
+          Interests
+        </p>
+        <h2 className="text-3xl font-black md:text-4xl">
+          Explore by what you love
+        </h2>
+        <p
+          className="mx-auto mt-3 max-w-md text-sm"
+          style={{ color: "rgb(var(--muted))" }}
+        >
+          Find places and connect with people who share your interests.
         </p>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {categories.map((category) => (
-          <div
-            key={category.title}
-            className="rounded-2xl border p-6 transition-all hover:-translate-y-1 hover:shadow-xl"
-            style={{
-              backgroundColor: "rgb(var(--surface))",
-              borderColor: "rgb(var(--border))",
-            }}
-          >
-            <div className="mb-4 text-4xl">{category.emoji}</div>
-
-            <h3 className="mb-2 text-xl font-semibold">{category.title}</h3>
-
-            <p
+      {/* Grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {categories.map((cat) => {
+          const Icon = cat.icon;
+          return (
+            <Link
+              key={cat.title}
+              href={cat.href}
+              className="group flex items-center gap-4 rounded-2xl border p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
               style={{
-                color: "rgb(var(--muted))",
+                borderColor: "rgb(var(--border))",
+                backgroundColor: "rgb(var(--surface))",
               }}
             >
-              {category.description}
-            </p>
-          </div>
-        ))}
+              {/* Icon */}
+              <div
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110"
+                style={{ backgroundColor: cat.bg }}
+              >
+                <Icon size={22} style={{ color: cat.color }} />
+              </div>
+
+              {/* Text */}
+              <div>
+                <h3 className="font-bold">{cat.title}</h3>
+                <p
+                  className="mt-0.5 text-xs leading-relaxed"
+                  style={{ color: "rgb(var(--muted))" }}
+                >
+                  {cat.description}
+                </p>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

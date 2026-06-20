@@ -1,12 +1,12 @@
+import { Suspense } from "react";
 import AuthBrandPanel from "@/components/auth/AuthBrandPanel";
-import SignupForm from "@/components/auth/SignupForm";
+import VerifyEmailHandler from "@/components/auth/VerifyEmailHandler";
 
 export const metadata = {
-  title: "Sign Up | DoonMeet",
-  description: "Create your DoonMeet account and connect with people across Dehradun.",
+  title: "Verify Email | DoonMeet",
 };
 
-export default function SignupPage() {
+export default function VerifyEmailPage() {
   return (
     <div className="grid min-h-[calc(100vh-64px)] lg:grid-cols-[1fr_480px]">
       <AuthBrandPanel />
@@ -15,7 +15,9 @@ export default function SignupPage() {
         style={{ backgroundColor: "rgb(var(--background))" }}
       >
         <div className="w-full max-w-sm">
-          <SignupForm />
+          <Suspense fallback={null}>
+            <VerifyEmailHandler />
+          </Suspense>
         </div>
       </div>
     </div>

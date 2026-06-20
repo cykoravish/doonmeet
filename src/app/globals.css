@@ -1,33 +1,33 @@
 @import "tailwindcss";
 
 :root {
-  /* Doon Nature */
-
-  --background: 248 255 248;
+  --background: 245 248 245;
   --surface: 255 255 255;
 
-  --primary: 45 106 79;
-  --primary-light: 64 145 108;
+  --primary: 34 120 80;
+  --primary-light: 52 168 110;
 
-  --text: 27 67 50;
-  --muted: 82 121 111;
+  --accent: 194 140 74;
 
-  --border: 221 234 226;
+  --text: 20 40 30;
+  --muted: 100 130 115;
+
+  --border: 215 232 220;
 }
 
 [data-theme="night"] {
-  /* Doon Night */
+  --background: 10 14 12;
+  --surface: 16 22 18;
 
-  --background: 15 23 32;
-  --surface: 24 36 48;
+  --primary: 40 160 100;
+  --primary-light: 72 210 140;
 
-  --primary: 34 139 94;
-  --primary-light: 74 222 128;
+  --accent: 194 140 74;
 
-  --text: 229 238 245;
-  --muted: 148 163 184;
+  --text: 230 240 234;
+  --muted: 140 165 150;
 
-  --border: 42 58 73;
+  --border: 32 48 38;
 }
 
 body {

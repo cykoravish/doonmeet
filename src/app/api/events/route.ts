@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { connectDB } from "@/lib/db";
 import { Event } from "@/models/Event";
+import slugify from "slugify";
 import {
   withAuth,
   withGuestAllowed,
@@ -154,12 +155,15 @@ export const POST = requireVerified(async (req: AuthenticatedRequest) => {
       bannerUrl = uploadResult.secure_url;
       bannerPublicId = uploadResult.public_id;
     }
-
+    // Auto-generate slug from title
+    const baseSlug = slugify(result.data.title, { lower: true, strict: true });
+    const uniqueSlug = `${baseSlug}-${Date.now()}`;
     const event = await Event.create({
       ...(result.data as object),
       creator: req.user._id,
       banner: bannerUrl,
       bannerPublicId,
+      slug: uniqueSlug,
     });
 
     await event.populate("creator", "name avatar");
