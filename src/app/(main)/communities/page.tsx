@@ -37,9 +37,7 @@ export default function CommunitiesPage() {
   return (
     <div className="mx-auto max-w-7xl px-6 py-16">
       <div className="mb-12">
-        <h1 className="mb-4 text-4xl font-bold md:text-5xl">
-          Communities
-        </h1>
+        <h1 className="mb-4 text-4xl font-bold md:text-5xl">Communities</h1>
 
         <p
           className="max-w-2xl"
@@ -47,8 +45,8 @@ export default function CommunitiesPage() {
             color: "rgb(var(--muted))",
           }}
         >
-          Discover communities, connect with like-minded people and participate
-          in discussions across Dehradun.
+          Discover communities, connect with like-minded people and participate in discussions
+          across Dehradun.
         </p>
       </div>
 
@@ -63,9 +61,7 @@ export default function CommunitiesPage() {
               borderColor: "rgb(var(--border))",
             }}
           >
-            <h2 className="mb-2 text-xl font-semibold">
-              {community.name}
-            </h2>
+            <h2 className="mb-2 text-xl font-semibold">{community.name}</h2>
 
             <p
               className="mb-4 text-sm"

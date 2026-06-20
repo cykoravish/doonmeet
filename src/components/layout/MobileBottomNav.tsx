@@ -2,13 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  House,
-  MapPinned,
-  MessageCircle,
-  Users,
-  CalendarDays,
-} from "lucide-react";
+import { House, MapPinned, MessageCircle, Users, CalendarDays } from "lucide-react";
 
 const navItems = [
   {
@@ -60,9 +54,7 @@ export default function MobileBottomNav() {
               href={item.href}
               className="flex flex-col items-center py-2 text-xs"
               style={{
-                color: active
-                  ? "rgb(var(--primary))"
-                  : "rgb(var(--muted))",
+                color: active ? "rgb(var(--primary))" : "rgb(var(--muted))",
               }}
             >
               <Icon size={20} />

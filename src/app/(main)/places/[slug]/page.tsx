@@ -54,13 +54,7 @@ export default async function LocationPage({ params }: { params: Promise<{ slug:
     <div>
       {/* Hero */}
       <section className="relative h-[50vh] min-h-[400px] overflow-hidden">
-        <Image
-          src={place.image}
-         alt={place.title}
-          fill
-          priority
-          className="object-cover"
-        />
+        <Image src={place.image} alt={place.title} fill priority className="object-cover" />
 
         <div className="absolute inset-0 bg-black/60" />
 

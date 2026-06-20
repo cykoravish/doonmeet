@@ -25,9 +25,7 @@ export default function DesktopNavLinks() {
             href={link.href}
             className="transition-colors"
             style={{
-              color: active
-                ? "rgb(var(--primary))"
-                : "rgb(var(--text))",
+              color: active ? "rgb(var(--primary))" : "rgb(var(--text))",
               fontWeight: active ? 600 : 400,
             }}
           >

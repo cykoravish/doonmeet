@@ -2,9 +2,7 @@ export default function LocationsPage() {
   return (
     <div className="mx-auto max-w-7xl px-6 py-16">
       <div className="mb-12">
-        <h1 className="mb-4 text-4xl font-bold md:text-5xl">
-          Locations
-        </h1>
+        <h1 className="mb-4 text-4xl font-bold md:text-5xl">Locations</h1>
 
         <p
           style={{
@@ -26,9 +24,7 @@ export default function LocationsPage() {
       </div>
 
       <section className="mb-16">
-        <h2 className="mb-6 text-2xl font-bold">
-          People Nearby
-        </h2>
+        <h2 className="mb-6 text-2xl font-bold">People Nearby</h2>
 
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border p-5">
@@ -49,26 +45,16 @@ export default function LocationsPage() {
       </section>
 
       <section>
-        <h2 className="mb-6 text-2xl font-bold">
-          Popular Meetup Spots
-        </h2>
+        <h2 className="mb-6 text-2xl font-bold">Popular Meetup Spots</h2>
 
         <div className="grid gap-4 md:grid-cols-4">
-          <div className="rounded-2xl border p-5">
-            Clock Tower
-          </div>
+          <div className="rounded-2xl border p-5">Clock Tower</div>
 
-          <div className="rounded-2xl border p-5">
-            FRI
-          </div>
+          <div className="rounded-2xl border p-5">FRI</div>
 
-          <div className="rounded-2xl border p-5">
-            Rajpur Road
-          </div>
+          <div className="rounded-2xl border p-5">Rajpur Road</div>
 
-          <div className="rounded-2xl border p-5">
-            Robber&apos;s Cave
-          </div>
+          <div className="rounded-2xl border p-5">Robber&apos;s Cave</div>
         </div>
       </section>
     </div>

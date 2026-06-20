@@ -54,7 +54,7 @@ export default function MobileDrawer() {
                 }}
               >
                 Sign Up
-              </button> 
+              </button>
             </div>
           </div>
         </>

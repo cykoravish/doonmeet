@@ -2,9 +2,7 @@ export default function ChatPage() {
   return (
     <div className="mx-auto max-w-7xl px-6 py-16">
       <div className="mb-12">
-        <h1 className="mb-4 text-4xl font-bold md:text-5xl">
-          Community Chat
-        </h1>
+        <h1 className="mb-4 text-4xl font-bold md:text-5xl">Community Chat</h1>
 
         <p
           className="max-w-2xl"
@@ -12,8 +10,7 @@ export default function ChatPage() {
             color: "rgb(var(--muted))",
           }}
         >
-          Join conversations, meet people and discuss what&apos;s happening in
-          Dehradun.
+          Join conversations, meet people and discuss what&apos;s happening in Dehradun.
         </p>
       </div>
 

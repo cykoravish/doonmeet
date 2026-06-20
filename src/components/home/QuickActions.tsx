@@ -31,9 +31,7 @@ export default function QuickActions() {
   return (
     <section className="mx-auto max-w-7xl px-6 py-16">
       <div className="mb-10 text-center">
-        <h2 className="mb-3 text-3xl font-bold">
-          What are you looking for today?
-        </h2>
+        <h2 className="mb-3 text-3xl font-bold">What are you looking for today?</h2>
 
         <p
           style={{
@@ -57,9 +55,7 @@ export default function QuickActions() {
           >
             <div className="mb-4 text-3xl">{action.icon}</div>
 
-            <h3 className="mb-2 text-lg font-semibold">
-              {action.title}
-            </h3>
+            <h3 className="mb-2 text-lg font-semibold">{action.title}</h3>
 
             <p
               className="text-sm"

@@ -35,9 +35,7 @@ export default function ExploreCategories() {
   return (
     <section className="mx-auto max-w-7xl px-6 py-20">
       <div className="mb-12 text-center">
-        <h2 className="mb-3 text-3xl font-bold">
-          Explore Dehradun by Interest
-        </h2>
+        <h2 className="mb-3 text-3xl font-bold">Explore Dehradun by Interest</h2>
 
         <p
           style={{
@@ -58,13 +56,9 @@ export default function ExploreCategories() {
               borderColor: "rgb(var(--border))",
             }}
           >
-            <div className="mb-4 text-4xl">
-              {category.emoji}
-            </div>
+            <div className="mb-4 text-4xl">{category.emoji}</div>
 
-            <h3 className="mb-2 text-xl font-semibold">
-              {category.title}
-            </h3>
+            <h3 className="mb-2 text-xl font-semibold">{category.title}</h3>
 
             <p
               style={{
