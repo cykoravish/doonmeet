@@ -7,7 +7,7 @@ import { jwtVerify } from "jose";
 const ACCESS_TOKEN_SECRET = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET);
 
 // Routes that require a logged in verified user (not guest)
-const PROTECTED_ROUTES = ["/profile", "/settings"];
+const PROTECTED_ROUTES = ["/profile", "/settings", "/events/create"];
 
 // Routes only for unauthenticated users
 const AUTH_ROUTES = ["/login", "/signup", "/verify-email", "/reset-password", "/forgot-password"];

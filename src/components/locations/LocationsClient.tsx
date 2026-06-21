@@ -188,7 +188,7 @@ export default function LocationsClient({
             className="overflow-hidden rounded-2xl border"
             style={{
               borderColor: "rgb(var(--border))",
-              height: "600px",
+              height: "clamp(360px, 55vw, 640px)",
             }}
           >
             <DehradunMap

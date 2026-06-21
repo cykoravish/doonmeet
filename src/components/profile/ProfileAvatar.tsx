@@ -34,7 +34,7 @@ export default function ProfileAvatar({
       const formData = new FormData();
       formData.append("avatar", file);
 
-      const res = await fetch("/api/users/me/avatar", {
+      const res = await fetch("/api/users/avatar", {
         method: "POST",
         body: formData,
       });

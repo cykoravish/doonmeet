@@ -6,6 +6,9 @@ import ProfileAvatar from "./ProfileAvatar";
 import EditProfileForm from "./EditProfileForm";
 import PrivacySettings from "./PrivacySettings";
 import { useRouter } from "next/navigation";
+import Alert from "@/components/ui/Alert";
+import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
 
 type Tab = "profile" | "privacy" | "security";
 
@@ -311,7 +314,3 @@ function ChangePasswordForm() {
     </form>
   );
 }
-
-import Alert from "@/components/ui/Alert";
-import Input from "@/components/ui/Input";
-import Button from "@/components/ui/Button";
