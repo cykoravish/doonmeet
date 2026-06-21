@@ -1,61 +1,44 @@
-export default function ChatPage() {
-  return (
-    <div className="mx-auto max-w-7xl px-6 py-16">
-      <div className="mb-12">
-        <h1 className="mb-4 text-4xl font-bold md:text-5xl">Community Chat</h1>
+import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { jwtVerify } from "jose";
+import ChatRoom from "@/components/chat/ChatRoom";
 
-        <p
-          className="max-w-2xl"
-          style={{
-            color: "rgb(var(--muted))",
-          }}
-        >
-          Join conversations, meet people and discuss what&apos;s happening in Dehradun.
-        </p>
-      </div>
+export const metadata: Metadata = {
+  title: "Chat | DoonMeet",
+  description: "Join the public chat and connect with people across Dehradun in real time.",
+};
 
-      <div
-        className="rounded-2xl border"
-        style={{
-          borderColor: "rgb(var(--border))",
-        }}
-      >
-        <div
-          className="border-b p-4"
-          style={{
-            borderColor: "rgb(var(--border))",
-          }}
-        >
-          💬 DoonMeet General Chat
-        </div>
+const ACCESS_TOKEN_SECRET = new TextEncoder().encode(
+  process.env.ACCESS_TOKEN_SECRET
+);
 
-        <div className="h-[500px] space-y-4 overflow-y-auto p-4">
-          <div>
-            <strong>Rohit:</strong> Anyone near Rajpur Road today?
-          </div>
+async function getCurrentUser() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("access_token")?.value;
+    if (!token) return null;
 
-          <div>
-            <strong>Priya:</strong> Looking for photography spots.
-          </div>
+    const { payload } = await jwtVerify(token, ACCESS_TOKEN_SECRET);
+    if (!payload.userId) return null;
 
-          <div>
-            <strong>Aman:</strong> Any tech meetups this weekend?
-          </div>
-        </div>
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL}/api/users/me`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      }
+    );
 
-        <div
-          className="border-t p-4"
-          style={{
-            borderColor: "rgb(var(--border))",
-          }}
-        >
-          <input
-            type="text"
-            placeholder="Type a message..."
-            className="w-full rounded-xl border p-3"
-          />
-        </div>
-      </div>
-    </div>
-  );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.user ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export default async function ChatPage() {
+  const currentUser = await getCurrentUser();
+
+  return <ChatRoom currentUser={currentUser} />;
 }
