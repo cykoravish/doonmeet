@@ -16,9 +16,11 @@ export default function GoogleButton({
   onError,
   loading = false,
 }: GoogleButtonProps) {
+  
   const login = useGoogleLogin({
     onSuccess: (res) => onSuccess(res.access_token),
     onError: () => onError?.(),
+    flow: "implicit",
   });
 
   return (

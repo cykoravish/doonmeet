@@ -9,14 +9,12 @@
 // 5. Issue our own JWT cookies — same as email login
 // ============================================================
 import { NextRequest, NextResponse } from "next/server";
-import { OAuth2Client } from "google-auth-library";
 import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
 import { Session } from "@/models/Session";
 import { authLimiter } from "@/middleware/rateLimit";
 import { generateAccessToken, generateRefreshToken, setAuthCookies } from "@/lib/tokens";
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export async function POST(req: NextRequest) {
   // Rate limit by IP
@@ -52,44 +50,48 @@ export async function POST(req: NextRequest) {
       picture?: string;
     };
 
-    try {
-      const ticket = await client.verifyIdToken({
-        idToken,
-        audience: process.env.GOOGLE_CLIENT_ID,
-      });
+  try {
+    const googleRes = await fetch(
+      "https://www.googleapis.com/oauth2/v3/userinfo",
+      { headers: { Authorization: `Bearer ${idToken}` } }
+    );
 
-      const payload = ticket.getPayload();
-
-      if (!payload?.email || !payload?.sub) {
-        return NextResponse.json(
-          { success: false, message: "Invalid Google token payload" },
-          { status: 400 }
-        );
-      }
-
-      if (!payload.email_verified) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: "Your Google email is not verified. Please verify it with Google first.",
-          },
-          { status: 400 }
-        );
-      }
-
-      googlePayload = {
-        sub: payload.sub,
-        email: payload.email.toLowerCase(),
-        email_verified: payload.email_verified,
-        name: payload.name ?? "DoonMeet User",
-        picture: payload.picture ?? undefined,
-      };
-    } catch {
+    if (!googleRes.ok) {
       return NextResponse.json(
         { success: false, message: "Invalid or expired Google token. Please try again." },
         { status: 401 }
       );
     }
+
+    const info = await googleRes.json();
+
+    if (!info.email || !info.sub) {
+      return NextResponse.json(
+        { success: false, message: "Invalid Google token payload" },
+        { status: 400 }
+      );
+    }
+
+    if (!info.email_verified) {
+      return NextResponse.json(
+        { success: false, message: "Your Google email is not verified." },
+        { status: 400 }
+      );
+    }
+
+    googlePayload = {
+      sub: info.sub,
+      email: info.email.toLowerCase(),
+      email_verified: info.email_verified,
+      name: info.name ?? "DoonMeet User",
+      picture: info.picture ?? undefined,
+    };
+  } catch {
+    return NextResponse.json(
+      { success: false, message: "Invalid or expired Google token. Please try again." },
+      { status: 401 }
+    );
+  }
 
     // -------------------------------------------------------
     // 2. Find or create user in DB
