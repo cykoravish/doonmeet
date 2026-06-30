@@ -59,10 +59,6 @@ export async function POST(req: NextRequest) {
       await User.deleteOne({ _id: existing._id });
     }
 
-    // Hash password before saving
-    const salt = await bcrypt.genSalt(12);
-    const passwordHash = await bcrypt.hash(password, salt);
-
     // Generate email verification token (expires 24h)
     const verificationToken = generateSecureToken();
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -70,7 +66,7 @@ export async function POST(req: NextRequest) {
     const user = await User.create({
       name,
       email,
-      passwordHash,
+      passwordHash:password,
       isVerified: false,
       // Store token temporarily on user doc — cleared after verification
       verificationToken,

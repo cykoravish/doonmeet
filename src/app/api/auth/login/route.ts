@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordMatch = await user.comparePassword(password);
+
     if (!passwordMatch) {
       return NextResponse.json({ success: false, message: invalidMsg }, { status: 401 });
     }
