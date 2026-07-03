@@ -30,12 +30,37 @@
   --border: 32 48 38;
 }
 
+@theme inline {
+  --color-background: rgb(var(--background));
+  --color-surface: rgb(var(--surface));
+
+  --color-primary: rgb(var(--primary));
+  --color-primary-light: rgb(var(--primary-light));
+
+  --color-accent: rgb(var(--accent));
+
+  --color-text: rgb(var(--text));
+  --color-muted: rgb(var(--muted));
+
+  --color-border: rgb(var(--border));
+}
+
 body {
   background-color: rgb(var(--background));
   color: rgb(var(--text));
   transition:
     background-color 0.25s ease,
     color 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 [data-theme="night"] .logo-light {

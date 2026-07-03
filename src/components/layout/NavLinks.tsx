@@ -2,38 +2,27 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const links = [
-  { href: "/", label: "Home" },
-  { href: "/locations", label: "Map" },
-  { href: "/chat", label: "Chat" },
-  { href: "/communities", label: "Communities" },
-  { href: "/events", label: "Events" },
-];
+import { NAV_ITEMS, isNavItemActive } from "@/config/nav-items";
 
 export default function NavLinks() {
   const pathname = usePathname();
 
   return (
     <nav className="flex items-center gap-1">
-      {links.map((link) => {
-        const active = pathname === link.href;
+      {NAV_ITEMS.map((item) => {
+        const active = isNavItemActive(pathname, item.href);
         return (
           <Link
-            key={link.href}
-            href={link.href}
-            className="relative rounded-lg px-3 py-2 text-sm transition-colors"
-            style={{
-              color: active ? "rgb(var(--primary))" : "rgb(var(--muted))",
-              fontWeight: active ? 600 : 400,
-            }}
+            key={item.href}
+            href={item.href}
+            aria-current={active ? "page" : undefined}
+            className={`relative rounded-lg px-3 py-2 text-sm transition-colors ${
+              active ? "font-semibold text-primary" : "font-normal text-muted"
+            }`}
           >
-            {link.label}
+            {item.label}
             {active && (
-              <span
-                className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full"
-                style={{ backgroundColor: "rgb(var(--primary))" }}
-              />
+              <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-primary" />
             )}
           </Link>
         );

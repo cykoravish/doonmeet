@@ -4,26 +4,15 @@ import NavLinks from "./NavLinks";
 import ThemeToggle from "../theme/theme-toggle";
 import MobileDrawer from "./MobileDrawer";
 import NotificationBell from "./NotificationBell";
-import { MapPin } from "lucide-react";
+import type { NavUser } from "@/types/user";
 
 interface NavbarProps {
-  user: {
-    _id: string;
-    name: string;
-    avatar: string | null;
-    isGuest: boolean;
-  } | null;
+  user: NavUser | null;
 }
 
 export default function Navbar({ user }: NavbarProps) {
   return (
-    <header
-      className="sticky top-0 z-50 border-b backdrop-blur-md"
-      style={{
-        backgroundColor: "rgb(var(--background) / 0.9)",
-        borderColor: "rgb(var(--border))",
-      }}
-    >
+    <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group shrink-0">
@@ -56,14 +45,11 @@ export default function Navbar({ user }: NavbarProps) {
 
           {user ? (
             <>
-              {/* Notification bell */}
               {!user.isGuest && <NotificationBell userId={user._id} />}
 
-              {/* Profile avatar */}
               <Link
                 href="/profile"
-                className="flex items-center gap-2 rounded-xl border px-2 py-1.5 transition-opacity hover:opacity-80"
-                style={{ borderColor: "rgb(var(--border))" }}
+                className="flex items-center gap-2 rounded-xl border border-border px-2 py-1.5 transition-opacity hover:opacity-80"
               >
                 {user.avatar ? (
                   <Image
@@ -74,10 +60,7 @@ export default function Navbar({ user }: NavbarProps) {
                     className="rounded-full object-cover"
                   />
                 ) : (
-                  <div
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white"
-                    style={{ backgroundColor: "rgb(var(--primary))" }}
-                  >
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
                     {user.name[0]?.toUpperCase()}
                   </div>
                 )}
@@ -90,15 +73,13 @@ export default function Navbar({ user }: NavbarProps) {
             <>
               <Link
                 href="/login"
-                className="rounded-xl px-4 py-2 text-sm font-medium transition-colors hover:opacity-80"
-                style={{ color: "rgb(var(--text))" }}
+                className="rounded-xl px-4 py-2 text-sm font-medium text-text transition-colors hover:opacity-80"
               >
                 Log in
               </Link>
               <Link
                 href="/signup"
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                style={{ backgroundColor: "rgb(var(--primary))" }}
+                className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
               >
                 Sign up free
               </Link>
