@@ -37,3 +37,11 @@ body {
     background-color 0.25s ease,
     color 0.25s ease;
 }
+
+[data-theme="night"] .logo-light {
+  display: none;
+}
+
+[data-theme="doon"] .logo-dark {
+  display: none;
+}

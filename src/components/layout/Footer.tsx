@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MapPin } from "lucide-react";
+import Image from "next/image";
 
 const links = {
   Explore: [
@@ -28,22 +29,28 @@ export default function Footer() {
         borderColor: "rgb(var(--border))",
       }}
     >
-      <div className="mx-auto max-w-7xl px-6 py-12">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr]">
-
+    <div className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-8">
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[minmax(280px,1.8fr)_repeat(3,minmax(140px,1fr))]">
           {/* Brand */}
           <div>
             <Link href="/" className="mb-4 flex items-center gap-2">
-              <div
-                className="flex h-8 w-8 items-center justify-center rounded-xl"
-                style={{ backgroundColor: "rgb(var(--primary))" }}
-              >
-                <MapPin size={16} color="white" />
-              </div>
-              <span
-                className="font-black"
-                style={{ color: "rgb(var(--primary))" }}
-              >
+              <Image
+                src="/doonmeet-light.png"
+                alt="DoonMeet"
+                width={52}
+                height={52}
+                className="logo-light h-13 w-13 object-contain transition-transform group-hover:scale-105"
+                priority
+              />
+              <Image
+                src="/doonmeet-dark.png"
+                alt="DoonMeet"
+                width={52}
+                height={52}
+                className="logo-dark h-13 w-13 object-contain transition-transform group-hover:scale-105"
+                priority
+              />
+              <span className="font-black" style={{ color: "rgb(var(--primary))" }}>
                 DoonMeet
               </span>
             </Link>
@@ -51,8 +58,8 @@ export default function Footer() {
               className="mb-4 max-w-xs text-sm leading-relaxed"
               style={{ color: "rgb(var(--muted))" }}
             >
-              Dehradun&apos;s own social platform. Connect with locals,
-              discover events and explore the Doon Valley together.
+              Dehradun&apos;s own social platform. Connect with locals, discover events and explore
+              the Doon Valley together.
             </p>
             <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
               © {new Date().getFullYear()} DoonMeet · doonmeet.in
@@ -63,8 +70,11 @@ export default function Footer() {
           {Object.entries(links).map(([section, items]) => (
             <div key={section}>
               <p
-                className="mb-3 text-xs font-bold uppercase tracking-widest"
-                style={{ color: "rgb(var(--muted))" }}
+                className="mb-4 inline-block border-b-2 pb-2 text-xs font-bold uppercase tracking-widest"
+                style={{
+                  color: "rgb(var(--muted))",
+                  borderColor: "rgb(var(--primary))",
+                }}
               >
                 {section}
               </p>

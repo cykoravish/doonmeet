@@ -57,20 +57,27 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
           >
             {/* Header */}
             <div
-              className="flex items-center justify-between border-b px-5 py-4"
+              className="flex items-center justify-between border-b px-5"
               style={{ borderColor: "rgb(var(--border))" }}
             >
-              <div className="flex items-center gap-2">
-                <div
-                  className="flex h-7 w-7 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: "rgb(var(--primary))" }}
-                >
-                  <MapPin size={14} color="white" />
-                </div>
-                <span className="font-black" style={{ color: "rgb(var(--primary))" }}>
-                  DoonMeet
-                </span>
-              </div>
+              <Link href="/" className="flex items-center gap-2 group shrink-0 h-16">
+                <Image
+                  src="/doonmeet-light.png"
+                  alt="DoonMeet"
+                  width={52}
+                  height={52}
+                  className="logo-light h-13 w-13 object-contain transition-transform group-hover:scale-105"
+                  priority
+                />
+                <Image
+                  src="/doonmeet-dark.png"
+                  alt="DoonMeet"
+                  width={52}
+                  height={52}
+                  className="logo-dark h-13 w-13 object-contain transition-transform group-hover:scale-105"
+                  priority
+                />
+              </Link>
               <button
                 onClick={() => setOpen(false)}
                 className="flex h-8 w-8 items-center justify-center rounded-xl"

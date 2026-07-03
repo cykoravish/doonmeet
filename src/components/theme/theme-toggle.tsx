@@ -2,7 +2,7 @@
 
 import { useTheme } from "@/providers/theme-provider";
 import { useEffect, useState } from "react";
-import { Moon, Trees } from "lucide-react";
+import { Moon, Mountain, Sun, SunDim, TreePalm, Trees } from "lucide-react";
 
 export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
@@ -22,8 +22,8 @@ export default function ThemeToggle() {
   }
 
   return (
-    <button onClick={toggleTheme} className="rounded-lg border p-2" aria-label="Toggle Theme">
-      {theme === "doon" ? <Moon size={18} /> : <Trees size={18} />}
+    <button onClick={toggleTheme} className="rounded-lg borde p-2" aria-label="Toggle Theme">
+      {theme === "doon" ? <Moon size={23} /> : <Sun size={23} />}
     </button>
   );
 }

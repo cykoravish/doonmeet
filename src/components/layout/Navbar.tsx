@@ -25,21 +25,24 @@ export default function Navbar({ user }: NavbarProps) {
       }}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-6">
-
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group shrink-0">
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-xl transition-transform group-hover:scale-105"
-            style={{ backgroundColor: "rgb(var(--primary))" }}
-          >
-            <MapPin size={16} color="white" />
-          </div>
-          <span
-            className="text-base font-black tracking-tight"
-            style={{ color: "rgb(var(--primary))" }}
-          >
-            DoonMeet
-          </span>
+          <Image
+            src="/doonmeet-light.png"
+            alt="DoonMeet"
+            width={52}
+            height={52}
+            className="logo-light h-13 w-13 object-contain transition-transform group-hover:scale-105"
+            priority
+          />
+          <Image
+            src="/doonmeet-dark.png"
+            alt="DoonMeet"
+            width={52}
+            height={52}
+            className="logo-dark h-13 w-13 object-contain transition-transform group-hover:scale-105"
+            priority
+          />
         </Link>
 
         {/* Desktop nav links */}
