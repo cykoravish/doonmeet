@@ -5,6 +5,7 @@ import ThemeToggle from "../theme/theme-toggle";
 import MobileDrawer from "./MobileDrawer";
 import NotificationBell from "./NotificationBell";
 import type { NavUser } from "@/types/user";
+import Logo from "./get-logo/Logo";
 
 interface NavbarProps {
   user: NavUser | null;
@@ -15,24 +16,7 @@ export default function Navbar({ user }: NavbarProps) {
     <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-6">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group shrink-0">
-          <Image
-            src="/doonmeet-light.png"
-            alt="DoonMeet"
-            width={52}
-            height={52}
-            className="logo-light h-13 w-13 object-contain transition-transform group-hover:scale-105"
-            priority
-          />
-          <Image
-            src="/doonmeet-dark.png"
-            alt="DoonMeet"
-            width={52}
-            height={52}
-            className="logo-dark h-13 w-13 object-contain transition-transform group-hover:scale-105"
-            priority
-          />
-        </Link>
+        <Logo />
 
         {/* Desktop nav links */}
         <div className="hidden md:flex flex-1 items-center">

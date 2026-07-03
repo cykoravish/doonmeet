@@ -4,38 +4,42 @@ import { ArrowLeft, Users, Calendar, Globe } from "lucide-react";
 import type { Metadata } from "next";
 
 const CATEGORY_ICONS: Record<string, string> = {
-  tech:        "💻",
-  nature:      "🌿",
-  food:        "🍜",
+  tech: "💻",
+  nature: "🌿",
+  food: "🍜",
   photography: "📸",
-  sports:      "⚽",
-  arts:        "🎨",
-  general:     "🏙️",
+  sports: "⚽",
+  arts: "🎨",
+  general: "🏙️",
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  tech:        "rgb(100 120 220)",
-  nature:      "rgb(34 120 80)",
-  food:        "rgb(220 80 60)",
+  tech: "rgb(100 120 220)",
+  nature: "rgb(34 120 80)",
+  food: "rgb(220 80 60)",
   photography: "rgb(160 100 200)",
-  sports:      "rgb(194 140 74)",
-  arts:        "rgb(220 120 60)",
-  general:     "rgb(40 160 100)",
+  sports: "rgb(194 140 74)",
+  arts: "rgb(220 120 60)",
+  general: "rgb(40 160 100)",
 };
 
 // Fallback community data — replace with DB fetch when seeded
-const FALLBACK_COMMUNITIES: Record<string, {
-  name: string;
-  slug: string;
-  description: string;
-  category: string;
-  memberCount: number;
-  createdBy: { name: string };
-}> = {
+const FALLBACK_COMMUNITIES: Record<
+  string,
+  {
+    name: string;
+    slug: string;
+    description: string;
+    category: string;
+    memberCount: number;
+    createdBy: { name: string };
+  }
+> = {
   "doon-tech-hub": {
     name: "Doon Tech Hub",
     slug: "doon-tech-hub",
-    description: "A thriving community for developers, designers, founders and tech enthusiasts in Dehradun. Whether you're building your first app or running a startup — you belong here. Share projects, discuss ideas, find collaborators and grow together in the Doon Valley's tech ecosystem.",
+    description:
+      "A thriving community for developers, designers, founders and tech enthusiasts in Dehradun. Whether you're building your first app or running a startup — you belong here. Share projects, discuss ideas, find collaborators and grow together in the Doon Valley's tech ecosystem.",
     category: "tech",
     memberCount: 245,
     createdBy: { name: "DoonMeet" },
@@ -43,7 +47,8 @@ const FALLBACK_COMMUNITIES: Record<string, {
   "doon-nature-lovers": {
     name: "Doon Nature Lovers",
     slug: "doon-nature-lovers",
-    description: "Dehradun is surrounded by breathtaking natural beauty — and this community is dedicated to exploring every bit of it. From forest trails to hidden rivers, from peaceful hilltop views to monsoon magic. Share your favourite spots, organise group walks and celebrate the Doon Valley's incredible nature.",
+    description:
+      "Dehradun is surrounded by breathtaking natural beauty — and this community is dedicated to exploring every bit of it. From forest trails to hidden rivers, from peaceful hilltop views to monsoon magic. Share your favourite spots, organise group walks and celebrate the Doon Valley's incredible nature.",
     category: "nature",
     memberCount: 320,
     createdBy: { name: "DoonMeet" },
@@ -51,7 +56,8 @@ const FALLBACK_COMMUNITIES: Record<string, {
   "doon-foodies": {
     name: "Doon Foodies",
     slug: "doon-foodies",
-    description: "From the best momos on Paltan Bazaar to hidden cafes on Rajpur Road — Dehradun's food scene is incredible. Join fellow food lovers to discover restaurants, share reviews, organise food walks and find the next great dish in the city.",
+    description:
+      "From the best momos on Paltan Bazaar to hidden cafes on Rajpur Road — Dehradun's food scene is incredible. Join fellow food lovers to discover restaurants, share reviews, organise food walks and find the next great dish in the city.",
     category: "food",
     memberCount: 180,
     createdBy: { name: "DoonMeet" },
@@ -59,7 +65,8 @@ const FALLBACK_COMMUNITIES: Record<string, {
   "doon-photographers": {
     name: "Doon Photographers",
     slug: "doon-photographers",
-    description: "Dehradun is one of India's most photogenic cities — with stunning mountains, colonial architecture, misty forests and vibrant street life. This community is for photographers of all levels to share their work, discover new locations and organise photography walks together.",
+    description:
+      "Dehradun is one of India's most photogenic cities — with stunning mountains, colonial architecture, misty forests and vibrant street life. This community is for photographers of all levels to share their work, discover new locations and organise photography walks together.",
     category: "photography",
     memberCount: 156,
     createdBy: { name: "DoonMeet" },
@@ -67,7 +74,8 @@ const FALLBACK_COMMUNITIES: Record<string, {
   "doon-sports-club": {
     name: "Doon Sports Club",
     slug: "doon-sports-club",
-    description: "Find your next sports partner in Dehradun. Whether you're into cricket, football, badminton, cycling or trekking — connect with active people, organise matches and discover the best sports facilities across the city.",
+    description:
+      "Find your next sports partner in Dehradun. Whether you're into cricket, football, badminton, cycling or trekking — connect with active people, organise matches and discover the best sports facilities across the city.",
     category: "sports",
     memberCount: 210,
     createdBy: { name: "DoonMeet" },
@@ -75,7 +83,8 @@ const FALLBACK_COMMUNITIES: Record<string, {
   "doon-arts-culture": {
     name: "Doon Arts & Culture",
     slug: "doon-arts-culture",
-    description: "Celebrate Dehradun's rich artistic and cultural heritage. From traditional music and dance to contemporary art and theatre — this community brings together creative souls to collaborate, exhibit and inspire each other.",
+    description:
+      "Celebrate Dehradun's rich artistic and cultural heritage. From traditional music and dance to contemporary art and theatre — this community brings together creative souls to collaborate, exhibit and inspire each other.",
     category: "arts",
     memberCount: 98,
     createdBy: { name: "DoonMeet" },
@@ -83,7 +92,8 @@ const FALLBACK_COMMUNITIES: Record<string, {
   "doon-general": {
     name: "Doon General",
     slug: "doon-general",
-    description: "The heart of DoonMeet — a space for everything and everyone in Dehradun. Local news, announcements, recommendations, questions and conversations. If it's about Dehradun, it belongs here.",
+    description:
+      "The heart of DoonMeet — a space for everything and everyone in Dehradun. Local news, announcements, recommendations, questions and conversations. If it's about Dehradun, it belongs here.",
     category: "general",
     memberCount: 540,
     createdBy: { name: "DoonMeet" },
@@ -92,10 +102,9 @@ const FALLBACK_COMMUNITIES: Record<string, {
 
 async function getCommunity(slug: string) {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/communities/${slug}`,
-      { next: { revalidate: 3600 } }
-    );
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/communities/${slug}`, {
+      next: { revalidate: 3600 },
+    });
     if (!res.ok) return FALLBACK_COMMUNITIES[slug] ?? null;
     const data = await res.json();
     return data.community ?? FALLBACK_COMMUNITIES[slug] ?? null;
@@ -146,7 +155,6 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
 
   return (
     <div className="min-h-screen">
-
       {/* Hero banner */}
       <div
         className="relative overflow-hidden py-16"
@@ -162,12 +170,10 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
         />
 
         <div className="relative mx-auto max-w-5xl px-6">
-
           {/* Back */}
           <Link
             href="/communities"
-            className="mb-8 flex w-fit items-center gap-1.5 text-sm hover:underline"
-            style={{ color: "rgb(var(--muted))" }}
+            className="mb-8 flex w-fit items-center gap-1.5 text-sm hover:underline text-muted"
           >
             <ArrowLeft size={14} />
             All Communities
@@ -176,9 +182,8 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
           <div className="flex items-start gap-5">
             {/* Icon */}
             <div
-              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 text-3xl shadow-md"
+              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 bg-surface text-3xl shadow-md"
               style={{
-                backgroundColor: "rgb(var(--surface))",
                 borderColor: `${color}30`,
               }}
             >
@@ -195,7 +200,9 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
               </span>
 
               <h1 className="mb-2 text-3xl font-black md:text-4xl">{community.name}</h1>
-              <p className="max-w-xl text-sm leading-relaxed" style={{ color: "rgb(var(--muted))" }}>
+              <p
+                className="max-w-xl text-sm leading-relaxed text-muted"
+              >
                 {community.description}
               </p>
 
@@ -224,10 +231,8 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
       {/* Body */}
       <div className="mx-auto max-w-5xl px-6 py-10">
         <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
-
           {/* Left — main */}
           <div className="space-y-8">
-
             {/* About card */}
             <div
               className="rounded-2xl border p-6"
@@ -292,7 +297,6 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
 
           {/* Right sidebar */}
           <div className="space-y-4">
-
             {/* Join CTA */}
             <div
               className="rounded-2xl p-5 text-center"
@@ -333,11 +337,7 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
               >
                 <div className="mb-4 flex items-center justify-between">
                   <h3 className="font-bold">Upcoming Events</h3>
-                  <Link
-                    href="/events"
-                    className="text-xs hover:underline"
-                    style={{ color }}
-                  >
+                  <Link href="/events" className="text-xs hover:underline" style={{ color }}>
                     View all
                   </Link>
                 </div>

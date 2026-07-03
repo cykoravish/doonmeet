@@ -6,7 +6,8 @@ import EmptyState from "@/components/shared/EmptyState";
 
 export const metadata: Metadata = {
   title: "Communities in Dehradun | DoonMeet",
-  description: "Join local communities in Dehradun. Connect with tech enthusiasts, photographers, foodies, trekkers and more.",
+  description:
+    "Join local communities in Dehradun. Connect with tech enthusiasts, photographers, foodies, trekkers and more.",
 };
 
 async function getCommunities(category?: string) {
@@ -26,13 +27,76 @@ async function getCommunities(category?: string) {
 }
 
 const FALLBACK_COMMUNITIES = [
-  { _id: "1", name: "Doon Tech Hub", slug: "doon-tech-hub", description: "For developers, designers and tech enthusiasts in Dehradun.", banner: null, icon: null, category: "tech", memberCount: 245 },
-  { _id: "2", name: "Doon Nature Lovers", slug: "doon-nature-lovers", description: "Explore forests, rivers and hills around Dehradun.", banner: null, icon: null, category: "nature", memberCount: 320 },
-  { _id: "3", name: "Doon Foodies", slug: "doon-foodies", description: "Discover the best restaurants and street food in Dehradun.", banner: null, icon: null, category: "food", memberCount: 180 },
-  { _id: "4", name: "Doon Photographers", slug: "doon-photographers", description: "Find photogenic spots and organise photography walks.", banner: null, icon: null, category: "photography", memberCount: 156 },
-  { _id: "5", name: "Doon Sports Club", slug: "doon-sports-club", description: "Find players, organise matches and discover sports facilities.", banner: null, icon: null, category: "sports", memberCount: 210 },
-  { _id: "6", name: "Doon Arts & Culture", slug: "doon-arts-culture", description: "Celebrate art, music and culture of Dehradun.", banner: null, icon: null, category: "arts", memberCount: 98 },
-  { _id: "7", name: "Doon General", slug: "doon-general", description: "Everything and everyone in Dehradun.", banner: null, icon: null, category: "general", memberCount: 540 },
+  {
+    _id: "1",
+    name: "Doon Tech Hub",
+    slug: "doon-tech-hub",
+    description: "For developers, designers and tech enthusiasts in Dehradun.",
+    banner: null,
+    icon: null,
+    category: "tech",
+    memberCount: 245,
+  },
+  {
+    _id: "2",
+    name: "Doon Nature Lovers",
+    slug: "doon-nature-lovers",
+    description: "Explore forests, rivers and hills around Dehradun.",
+    banner: null,
+    icon: null,
+    category: "nature",
+    memberCount: 320,
+  },
+  {
+    _id: "3",
+    name: "Doon Foodies",
+    slug: "doon-foodies",
+    description: "Discover the best restaurants and street food in Dehradun.",
+    banner: null,
+    icon: null,
+    category: "food",
+    memberCount: 180,
+  },
+  {
+    _id: "4",
+    name: "Doon Photographers",
+    slug: "doon-photographers",
+    description: "Find photogenic spots and organise photography walks.",
+    banner: null,
+    icon: null,
+    category: "photography",
+    memberCount: 156,
+  },
+  {
+    _id: "5",
+    name: "Doon Sports Club",
+    slug: "doon-sports-club",
+    description: "Find players, organise matches and discover sports facilities.",
+    banner: null,
+    icon: null,
+    category: "sports",
+    memberCount: 210,
+  },
+  {
+    _id: "6",
+    name: "Doon Arts & Culture",
+    slug: "doon-arts-culture",
+    description: "Celebrate art, music and culture of Dehradun.",
+    banner: null,
+    icon: null,
+    category: "arts",
+    memberCount: 98,
+  },
+  {
+    _id: "7",
+    name: "Doon General",
+    slug: "doon-general",
+    description: "Everything and everyone in Dehradun.",
+    banner: null,
+    icon: null,
+    category: "general",
+    memberCount: 540,
+  },
 ];
 
 const CATEGORIES = [
@@ -62,7 +126,7 @@ export default async function CommunitiesPage({ searchParams }: CommunitiesPageP
 
   return (
     <div className="min-h-screen">
-      <div className="border-b py-14" style={{ backgroundColor: "rgb(var(--surface))", borderColor: "rgb(var(--border))" }}>
+      <div className="border-b py-14 bg-surface border-border">
         <div className="mx-auto max-w-7xl px-6">
           <PageHeader
             eyebrow="Find your tribe"
@@ -76,8 +140,8 @@ export default async function CommunitiesPage({ searchParams }: CommunitiesPageP
               { value: "7", label: "Categories" },
             ].map((stat) => (
               <div key={stat.label}>
-                <p className="text-xl font-black" style={{ color: "rgb(var(--primary))" }}>{stat.value}</p>
-                <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>{stat.label}</p>
+                <p className="text-xl font-black text-primary">{stat.value}</p>
+                <p className="text-xs text-muted">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -93,12 +157,11 @@ export default async function CommunitiesPage({ searchParams }: CommunitiesPageP
               <Link
                 key={cat.value}
                 href={cat.value ? `/communities?category=${cat.value}` : "/communities"}
-                className="shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-all"
-                style={{
-                  backgroundColor: isActive ? "rgb(var(--primary))" : "rgb(var(--surface))",
-                  borderColor: isActive ? "rgb(var(--primary))" : "rgb(var(--border))",
-                  color: isActive ? "white" : "rgb(var(--muted))",
-                }}
+                className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-all ${
+                  isActive
+                    ? "bg-primary border-primary text-white"
+                    : "bg-surface border-border text-muted"
+                }`}
               >
                 {cat.label}
               </Link>
@@ -107,21 +170,36 @@ export default async function CommunitiesPage({ searchParams }: CommunitiesPageP
         </div>
 
         {filtered.length === 0 ? (
-          <EmptyState icon="👥" title="No communities found" description="No communities in this category yet." />
+          <EmptyState
+            icon="👥"
+            title="No communities found"
+            description="No communities in this category yet."
+          />
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filtered.map((community: { _id: string; name: string; slug: string; description: string; banner: string | null; icon: string | null; category: string; memberCount: number }) => (
-              <CommunityCard
-                key={community._id}
-                name={community.name}
-                slug={community.slug}
-                description={community.description}
-                banner={community.banner}
-                icon={community.icon}
-                category={community.category}
-                memberCount={community.memberCount}
-              />
-            ))}
+            {filtered.map(
+              (community: {
+                _id: string;
+                name: string;
+                slug: string;
+                description: string;
+                banner: string | null;
+                icon: string | null;
+                category: string;
+                memberCount: number;
+              }) => (
+                <CommunityCard
+                  key={community._id}
+                  name={community.name}
+                  slug={community.slug}
+                  description={community.description}
+                  banner={community.banner}
+                  icon={community.icon}
+                  category={community.category}
+                  memberCount={community.memberCount}
+                />
+              )
+            )}
           </div>
         )}
       </div>

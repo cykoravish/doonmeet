@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import Logo from "./get-logo/Logo";
 
 const links = {
   Explore: [
@@ -22,37 +22,13 @@ const links = {
 export default function Footer() {
   return (
     <footer
-      className="hidden border-t md:block"
-      style={{
-        backgroundColor: "rgb(var(--surface))",
-        borderColor: "rgb(var(--border))",
-      }}
+      className="hidden border-t md:block bg-surface border-border"
     >
-    <div className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-8">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[minmax(280px,1.8fr)_repeat(3,minmax(140px,1fr))]">
           {/* Brand */}
           <div>
-            <Link href="/" className="mb-4 flex items-center gap-2">
-              <Image
-                src="/doonmeet-light.png"
-                alt="DoonMeet"
-                width={52}
-                height={52}
-                className="logo-light h-13 w-13 object-contain transition-transform group-hover:scale-105"
-                priority
-              />
-              <Image
-                src="/doonmeet-dark.png"
-                alt="DoonMeet"
-                width={52}
-                height={52}
-                className="logo-dark h-13 w-13 object-contain transition-transform group-hover:scale-105"
-                priority
-              />
-              <span className="font-black" style={{ color: "rgb(var(--primary))" }}>
-                DoonMeet
-              </span>
-            </Link>
+            <Logo />
             <p
               className="mb-4 max-w-xs text-sm leading-relaxed"
               style={{ color: "rgb(var(--muted))" }}

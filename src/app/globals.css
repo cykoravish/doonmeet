@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+@custom-variant night (&:where([data-theme="night"], [data-theme="night"] *));
+@custom-variant doon (&:where([data-theme="doon"], [data-theme="doon"] *));
+
 :root {
   --background: 245 248 245;
   --surface: 255 255 255;
@@ -48,9 +51,6 @@
 body {
   background-color: rgb(var(--background));
   color: rgb(var(--text));
-  transition:
-    background-color 0.25s ease,
-    color 0.25s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
