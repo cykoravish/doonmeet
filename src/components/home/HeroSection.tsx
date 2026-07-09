@@ -34,9 +34,9 @@ export default function HeroSection() {
 
           {/* Headline */}
           <h1 className="mb-6 text-5xl font-black leading-[1.05] text-white md:text-6xl lg:text-7xl">
-            Meet your
+            Meet new
             <br />
-            <span style={{ color: "rgb(var(--primary-light))" }}>Doon</span>
+            <span style={{ color: "rgb(var(--primary-light))" }}>Friends</span>
           </h1>
 
           <p className="mb-8 max-w-md text-base text-white/70">
