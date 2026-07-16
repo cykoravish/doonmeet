@@ -5,7 +5,17 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/", "/profile", "/notifications"],
+      disallow: [
+        "/api/",
+        "/profile",
+        "/notifications",
+        "/login",
+        "/signup",
+        "/forgot-password",
+        "/reset-password",
+        "/verify-email",
+        "/users/",
+      ],
     },
     sitemap: "https://doonmeet.in/sitemap.xml",
   };
