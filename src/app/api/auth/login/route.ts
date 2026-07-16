@@ -1,5 +1,4 @@
 // app/api/auth/login/route.ts
-//a simple change in comment
 // ============================================================
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
