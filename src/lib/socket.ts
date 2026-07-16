@@ -26,7 +26,7 @@ export function initSocket(httpServer: HttpServer): SocketServer {
 
   io = new SocketServer(httpServer, {
     cors: {
-      origin: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+      origin: [process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000", "http://localhost:3000"],
       methods: ["GET", "POST"],
       credentials: true,
     },

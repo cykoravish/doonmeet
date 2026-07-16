@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { Send, Loader2, Users, Wifi, WifiOff } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import GuestLimitBanner from "./GuestLimitBanner";
+import JoinChatModal from "./JoinChatModal";
 
 interface Message {
   _id: string;
@@ -33,15 +35,39 @@ interface ChatRoomProps {
 
 const GUEST_LIMIT = 20;
 
+function isSameDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function getDateLabel(dateStr: string) {
+  const date = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  if (isSameDay(date, today)) return "Today";
+  if (isSameDay(date, yesterday)) return "Yesterday";
+
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: date.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
+  });
+}
+
 export default function ChatRoom({ currentUser }: ChatRoomProps) {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
-  const [guestCount, setGuestCount] = useState(
-    currentUser?.guestMessageCount ?? 0
-  );
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [guestCount, setGuestCount] = useState(currentUser?.guestMessageCount ?? 0);
   const [limitReached, setLimitReached] = useState(
     (currentUser?.guestMessageCount ?? 0) >= GUEST_LIMIT
   );
@@ -75,7 +101,7 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
   useEffect(() => {
     if (!currentUser) return;
 
-    const socket = io(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000", {
+    const socket = io({
       withCredentials: true,
     });
 
@@ -108,7 +134,15 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
 
   function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!content.trim() || !socketRef.current || limitReached) return;
+    if (!content.trim()) return;
+
+    // Not logged in — show the join modal instead of sending
+    if (!currentUser) {
+      setShowJoinModal(true);
+      return;
+    }
+
+    if (!socketRef.current || limitReached) return;
 
     socketRef.current.emit("room:message", { content: content.trim() });
     setContent("");
@@ -122,12 +156,18 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
     inputRef.current?.focus();
   }
 
+  // Called after a successful guest sign-up from the modal —
+  // refresh server-fetched currentUser, then the socket effect
+  // below will connect and the pending message stays in the input.
+  function handleGuestJoined() {
+    setShowJoinModal(false);
+    router.refresh();
+  }
+
   const remaining = GUEST_LIMIT - guestCount;
-  const canSend = !limitReached && !!currentUser && connected;
 
   return (
     <div className="flex h-[calc(100vh-64px)] flex-col">
-
       {/* Chat header */}
       <div
         className="flex items-center justify-between border-b px-6 py-4"
@@ -163,17 +203,19 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
             </div>
           )}
 
-          {/* Connection status */}
-          <div className="flex items-center gap-1.5">
-            {connected ? (
-              <Wifi size={14} style={{ color: "rgb(var(--primary))" }} />
-            ) : (
-              <WifiOff size={14} style={{ color: "rgb(var(--muted))" }} />
-            )}
-            <span className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-              {connected ? "Connected" : "Connecting..."}
-            </span>
-          </div>
+          {/* Connection status — only meaningful once the user has joined */}
+          {currentUser && (
+            <div className="flex items-center gap-1.5">
+              {connected ? (
+                <Wifi size={14} style={{ color: "rgb(var(--primary))" }} />
+              ) : (
+                <WifiOff size={14} style={{ color: "rgb(var(--muted))" }} />
+              )}
+              <span className="text-xs" style={{ color: "rgb(var(--muted))" }}>
+                {connected ? "Connected" : "Connecting..."}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -192,17 +234,36 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
             </p>
           </div>
         ) : (
-          messages.map((msg) => (
-            <ChatMessage
-              key={msg._id}
-              content={msg.content}
-              senderName={msg.sender.name}
-              senderAvatar={msg.sender.avatar}
-              isGuest={msg.sender.isGuest}
-              isOwn={msg.sender._id === currentUser?._id}
-              createdAt={msg.createdAt}
-            />
-          ))
+          messages.map((msg, i) => {
+            const showDivider =
+              i === 0 || getDateLabel(msg.createdAt) !== getDateLabel(messages[i - 1].createdAt);
+
+            return (
+              <div key={msg._id}>
+                {showDivider && (
+                  <div className="flex items-center justify-center py-2">
+                    <span
+                      className="rounded-full px-3 py-1 text-[11px] font-medium"
+                      style={{
+                        backgroundColor: "rgb(var(--primary) / 0.08)",
+                        color: "rgb(var(--muted))",
+                      }}
+                    >
+                      {getDateLabel(msg.createdAt)}
+                    </span>
+                  </div>
+                )}
+                <ChatMessage
+                  content={msg.content}
+                  senderName={msg.sender.name}
+                  senderAvatar={msg.sender.avatar}
+                  isGuest={msg.sender.isGuest}
+                  isOwn={msg.sender._id === currentUser?._id}
+                  createdAt={msg.createdAt}
+                />
+              </div>
+            );
+          })
         )}
         <div ref={bottomRef} />
       </div>
@@ -216,39 +277,13 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
         }}
       >
         {/* Guest limit banner */}
-        {currentUser?.isGuest && (
-          <GuestLimitBanner remaining={remaining} reached={limitReached} />
-        )}
+        {currentUser?.isGuest && <GuestLimitBanner remaining={remaining} reached={limitReached} />}
 
-        {/* Not logged in */}
+        {/* Not logged in — hint (no more blocked input) */}
         {!currentUser && (
-          <div
-            className="flex items-center justify-between rounded-xl border px-4 py-3"
-            style={{
-              borderColor: "rgb(var(--border))",
-              backgroundColor: "rgb(var(--primary) / 0.05)",
-            }}
-          >
-            <p className="text-sm" style={{ color: "rgb(var(--muted))" }}>
-              Join to participate in the chat
-            </p>
-            <div className="flex gap-2">
-              
-              <a href="/login"
-                className="rounded-lg border px-3 py-1.5 text-xs font-medium"
-                style={{ borderColor: "rgb(var(--border))" }}
-              >
-                Log in
-              </a>
-              
-               <a href="/signup"
-                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
-                style={{ backgroundColor: "rgb(var(--primary))" }}
-              >
-                Sign up
-              </a>
-            </div>
-          </div>
+          <p className="text-center text-xs" style={{ color: "rgb(var(--muted))" }}>
+            Type your message below — you&apos;ll be asked to join when you hit send
+          </p>
         )}
 
         {/* Input */}
@@ -258,13 +293,11 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder={
-              !currentUser
-                ? "Log in to send messages..."
-                : limitReached
+              limitReached
                 ? "Message limit reached — sign up to continue"
                 : "Say something to Dehradun..."
             }
-            disabled={!canSend}
+            disabled={limitReached}
             maxLength={500}
             className="flex-1 rounded-xl border px-4 py-3 text-sm outline-none transition-all disabled:opacity-50"
             style={{
@@ -275,7 +308,7 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
           />
           <button
             type="submit"
-            disabled={!canSend || !content.trim()}
+            disabled={limitReached || !content.trim()}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-opacity disabled:opacity-40 hover:opacity-85"
             style={{ backgroundColor: "rgb(var(--primary))" }}
           >
@@ -289,6 +322,14 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
           </p>
         )}
       </div>
+
+      {showJoinModal && (
+        <JoinChatModal
+          pendingMessage={content}
+          onClose={() => setShowJoinModal(false)}
+          onGuestSuccess={handleGuestJoined}
+        />
+      )}
     </div>
   );
 }

@@ -45,8 +45,7 @@ export default function ChatMessage({
       {/* Bubble */}
       <div className={`max-w-[70%] ${isOwn ? "items-end" : "items-start"} flex flex-col gap-1`}>
         {/* Name + badge */}
-        {!isOwn && (
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5">
             <span className="text-xs font-semibold">{senderName}</span>
             {isGuest && (
               <span
@@ -60,7 +59,6 @@ export default function ChatMessage({
               </span>
             )}
           </div>
-        )}
 
         <div
           className="rounded-2xl px-4 py-2.5 text-sm leading-relaxed"
