@@ -16,14 +16,13 @@ const links = {
   Legal: [
     { label: "Privacy Policy", href: "/privacy" },
     { label: "Terms of Service", href: "/terms" },
+    { label: "Refund & Cancellation", href: "/refund-policy" },
   ],
 };
 
 export default function Footer() {
   return (
-    <footer
-      className="hidden border-t md:block bg-surface border-border"
-    >
+    <footer className="hidden border-t md:block bg-surface border-border">
       <div className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-8">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[minmax(280px,1.8fr)_repeat(3,minmax(140px,1fr))]">
           {/* Brand */}

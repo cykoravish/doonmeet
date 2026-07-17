@@ -17,6 +17,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   );
 
+  const legalRoutes = ["/privacy", "/terms", "/refund-policy"].map((route) => ({
+    url: `${base}${route}`,
+    lastModified: new Date(),
+    changeFrequency: "yearly" as const,
+    priority: 0.3,
+  }));
+
   const placeRoutes = PLACE_SLUGS.map((slug) => ({
     url: `${base}/places/${slug}`,
     lastModified: new Date(),
@@ -30,9 +37,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     await connectDB();
 
-    const communities = await Community.find({ isActive: true })
-      .select("slug updatedAt")
-      .lean();
+    const communities = await Community.find({ isActive: true }).select("slug updatedAt").lean();
     communityRoutes = communities.map((c) => ({
       url: `${base}/communities/${c.slug}`,
       lastModified: c.updatedAt ?? new Date(),
@@ -49,11 +54,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.6,
     }));
-    console.log("even ", eventRoutes)
-    console.log(" comm: ", communityRoutes)
+    console.log("even ", eventRoutes);
+    console.log(" comm: ", communityRoutes);
   } catch (err) {
     console.error("[sitemap] Failed to fetch dynamic routes:", err);
   }
 
-  return [...staticRoutes, ...placeRoutes, ...communityRoutes, ...eventRoutes];
+  return [...staticRoutes, ...legalRoutes, ...placeRoutes, ...communityRoutes, ...eventRoutes];
 }
