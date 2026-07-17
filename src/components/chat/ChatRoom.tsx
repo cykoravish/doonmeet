@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
-import { Send, Loader2, Users, Wifi, WifiOff } from "lucide-react";
+import { Send, Loader2, Users, Wifi, WifiOff, Sparkles } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import GuestLimitBanner from "./GuestLimitBanner";
 import JoinChatModal from "./JoinChatModal";
@@ -170,25 +170,25 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
     <div className="flex h-[calc(100vh-64px-72px)] flex-col md:h-[calc(100vh-64px)]">
       {/* Chat header */}
       <div
-        className="flex items-center justify-between border-b px-6 py-4"
+        className="flex items-center justify-between border-b px-4 py-2 md:px-6 md:py-2.5"
         style={{
           backgroundColor: "rgb(var(--surface))",
           borderColor: "rgb(var(--border))",
         }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <div
-            className="flex h-9 w-9 items-center justify-center rounded-xl"
+            className="flex h-7 w-7 items-center justify-center rounded-lg"
             style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}
           >
-            <span className="text-lg">🏔️</span>
+            <span className="text-sm">🏔️</span>
           </div>
-          <div>
-            <p className="font-bold text-sm">Doon Public Chat</p>
-            <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-              Everyone in Dehradun
-            </p>
-          </div>
+          <p className="flex items-baseline gap-1.5 text-sm font-bold">
+            Doon Public Chat
+            <span className="text-xs font-normal" style={{ color: "rgb(var(--muted))" }}>
+              · Everyone in Dehradun
+            </span>
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -260,6 +260,17 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
                   isGuest={msg.sender.isGuest}
                   isOwn={msg.sender._id === currentUser?._id}
                   createdAt={msg.createdAt}
+                  showName={showDivider || messages[i - 1]?.sender._id !== msg.sender._id}
+                  showAvatar={
+                    i === messages.length - 1 ||
+                    messages[i + 1].sender._id !== msg.sender._id ||
+                    getDateLabel(messages[i + 1].createdAt) !== getDateLabel(msg.createdAt)
+                  }
+                  isLastInGroup={
+                    i === messages.length - 1 ||
+                    messages[i + 1].sender._id !== msg.sender._id ||
+                    getDateLabel(messages[i + 1].createdAt) !== getDateLabel(msg.createdAt)
+                  }
                 />
               </div>
             );
@@ -270,7 +281,7 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
 
       {/* Bottom input area */}
       <div
-        className="border-t px-6 py-4 space-y-3"
+        className="border-t px-4 py-2 space-y-1.5 md:px-6 md:py-2.5 md:space-y-2"
         style={{
           backgroundColor: "rgb(var(--surface))",
           borderColor: "rgb(var(--border))",
@@ -279,11 +290,20 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
         {/* Guest limit banner */}
         {currentUser?.isGuest && <GuestLimitBanner remaining={remaining} reached={limitReached} />}
 
-        {/* Not logged in — hint (no more blocked input) */}
+        {/* Not logged in — subtle pill hint instead of a plain sentence */}
         {!currentUser && (
-          <p className="text-center text-xs" style={{ color: "rgb(var(--muted))" }}>
-            Type your message below — you&apos;ll be asked to join when you hit send
-          </p>
+          <div className="flex justify-center">
+            <div
+              className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
+              style={{
+                backgroundColor: "rgb(var(--primary) / 0.1)",
+                color: "rgb(var(--primary))",
+              }}
+            >
+              <Sparkles size={11} />
+              Join to send your first message
+            </div>
+          </div>
         )}
 
         {/* Input */}
@@ -295,7 +315,9 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
             placeholder={
               limitReached
                 ? "Message limit reached — sign up to continue"
-                : "Say something to Dehradun..."
+                : currentUser?.isGuest
+                  ? `Say something to Dehradun... (${remaining} left)`
+                  : "Say something to Dehradun..."
             }
             disabled={limitReached}
             maxLength={500}
@@ -315,12 +337,6 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
             <Send size={16} className="text-white" />
           </button>
         </form>
-
-        {currentUser?.isGuest && !limitReached && (
-          <p className="text-center text-xs" style={{ color: "rgb(var(--muted))" }}>
-            {remaining} messages remaining as guest
-          </p>
-        )}
       </div>
 
       {showJoinModal && (

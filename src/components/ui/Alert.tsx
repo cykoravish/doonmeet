@@ -1,5 +1,5 @@
 interface AlertProps {
-  type: "success" | "error";
+  type: "success" | "error" | "info";
   message: string;
 }
 
@@ -14,6 +14,11 @@ export default function Alert({ type, message }: AlertProps) {
       backgroundColor: "rgb(220 38 38 / 0.08)",
       borderColor: "rgb(220 38 38 / 0.2)",
       color: "rgb(220 38 38)",
+    },
+    info: {
+      backgroundColor: "rgb(var(--accent) / 0.08)",
+      borderColor: "rgb(var(--accent) / 0.2)",
+      color: "rgb(var(--accent))",
     },
   };
 
