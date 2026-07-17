@@ -1,4 +1,5 @@
 import Image from "next/image";
+import type { Metadata } from "next";
 
 const locations = {
   "clock-tower": {
@@ -42,6 +43,30 @@ const locations = {
   },
 } as const;
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const place = locations[slug as keyof typeof locations];
+
+  if (!place) {
+    return { title: "Place Not Found | DoonMeet" };
+  }
+
+  return {
+    title: `${place.title} — Dehradun | DoonMeet`,
+    description: place.description,
+    openGraph: {
+      title: `${place.title} | DoonMeet`,
+      description: place.description,
+      images: [place.image],
+      url: `https://doonmeet.in/places/${slug}`,
+    },
+  };
+}
+
 export default async function LocationPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
@@ -50,8 +75,33 @@ export default async function LocationPage({ params }: { params: Promise<{ slug:
   if (!place) {
     return <div>Location not found</div>;
   }
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "TouristAttraction",
+    name: place.title,
+    description: place.description,
+    image: `https://doonmeet.in${place.image}`,
+    url: `https://doonmeet.in/places/${slug}`,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Dehradun",
+      addressRegion: "Uttarakhand",
+      addressCountry: "IN",
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: place.rating,
+      reviewCount: place.reviews,
+    },
+  };
+
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Hero */}
       <section className="relative h-[50vh] min-h-[400px] overflow-hidden">
         <Image src={place.image} alt={place.title} fill priority className="object-cover" />

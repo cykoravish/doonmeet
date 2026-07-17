@@ -37,7 +37,44 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "DoonMeet",
+              url: "https://doonmeet.in",
+              description:
+                "Discover local events, join communities, chat with people, and connect with others in Dehradun through DoonMeet.",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: "https://doonmeet.in/communities?search={search_term_string}",
+                "query-input": "required name=search_term_string",
+              },
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "DoonMeet",
+              url: "https://doonmeet.in",
+              logo: "https://doonmeet.in/doonmeet-light.png",
+              sameAs: ["https://instagram.com/cykoravish"],
+            }),
+          }}
+        />
+      </head>
       <body className="min-h-screen flex flex-col">
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
           <ThemeProvider>{children}</ThemeProvider>

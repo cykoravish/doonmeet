@@ -153,8 +153,29 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
   const emoji = CATEGORY_ICONS[community.category] ?? "🏙️";
   const events = COMMUNITY_EVENTS[slug] ?? [];
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: community.name,
+    description: community.description,
+    url: `https://doonmeet.in/communities/${slug}`,
+    memberOf: {
+      "@type": "Organization",
+      name: "DoonMeet",
+      url: "https://doonmeet.in",
+    },
+    location: {
+      "@type": "Place",
+      name: "Dehradun, Uttarakhand, India",
+    },
+  };
+
   return (
     <div className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Hero banner */}
       <div
         className="relative overflow-hidden py-16"
@@ -200,11 +221,7 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
               </span>
 
               <h1 className="mb-2 text-3xl font-black md:text-4xl">{community.name}</h1>
-              <p
-                className="max-w-xl text-sm leading-relaxed text-muted"
-              >
-                {community.description}
-              </p>
+              <p className="max-w-xl text-sm leading-relaxed text-muted">{community.description}</p>
 
               {/* Stats row */}
               <div className="mt-5 flex flex-wrap items-center gap-5">

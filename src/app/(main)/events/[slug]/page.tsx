@@ -7,10 +7,9 @@ import EventComments from "@/components/events/EventComments";
 
 async function getEvent(slug: string) {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/events/${slug}`,
-      { next: { revalidate: 60 } }
-    );
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/events/${slug}`, {
+      next: { revalidate: 60 },
+    });
     if (!res.ok) return null;
     const data = await res.json();
     return data.event ?? null;
@@ -48,8 +47,39 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   const eventDate = new Date(event.date);
   const endsAt = event.endsAt ? new Date(event.endsAt) : null;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: event.title,
+    description: event.description,
+    startDate: eventDate.toISOString(),
+    ...(endsAt && { endDate: endsAt.toISOString() }),
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    eventStatus: "https://schema.org/EventScheduled",
+    image: event.banner ? [event.banner] : undefined,
+    location: {
+      "@type": "Place",
+      name: event.location?.name || "Dehradun",
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: event.location?.address || "",
+        addressLocality: "Dehradun",
+        addressRegion: "Uttarakhand",
+        addressCountry: "IN",
+      },
+    },
+    organizer: {
+      "@type": "Person",
+      name: event.creator?.name || "DoonMeet",
+    },
+  };
+
   return (
     <div className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       {/* Banner */}
       <div className="relative h-72 w-full overflow-hidden md:h-96">
@@ -59,7 +89,8 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           <div
             className="absolute inset-0"
             style={{
-              background: "linear-gradient(135deg, rgb(var(--primary)) 0%, rgb(var(--primary-light)) 100%)",
+              background:
+                "linear-gradient(135deg, rgb(var(--primary)) 0%, rgb(var(--primary-light)) 100%)",
             }}
           />
         )}
@@ -80,7 +111,10 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
         <div className="absolute bottom-6 left-6 right-6">
           <div className="flex items-end gap-4">
             <div className="flex shrink-0 flex-col items-center rounded-xl bg-white px-3 py-2 shadow-lg">
-              <span className="text-xs font-bold uppercase" style={{ color: "rgb(var(--primary))" }}>
+              <span
+                className="text-xs font-bold uppercase"
+                style={{ color: "rgb(var(--primary))" }}
+              >
                 {eventDate.toLocaleDateString("en-IN", { month: "short" })}
               </span>
               <span className="text-2xl font-black leading-none text-gray-900">
@@ -88,7 +122,9 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               </span>
             </div>
             <div>
-              <p className="text-lg font-black text-white leading-tight line-clamp-2">{event.title}</p>
+              <p className="text-lg font-black text-white leading-tight line-clamp-2">
+                {event.title}
+              </p>
               <p className="mt-1 text-sm text-white/70">
                 {eventDate.toLocaleDateString("en-IN", {
                   weekday: "long",
@@ -105,7 +141,6 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
       {/* Body */}
       <div className="mx-auto max-w-4xl px-6 py-10">
         <div className="grid gap-8 lg:grid-cols-[1fr_300px]">
-
           {/* Left */}
           <div>
             {event.tags?.length > 0 && (
@@ -114,7 +149,10 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                   <span
                     key={tag}
                     className="rounded-full px-3 py-1 text-xs font-semibold capitalize"
-                    style={{ backgroundColor: "rgb(var(--primary) / 0.1)", color: "rgb(var(--primary))" }}
+                    style={{
+                      backgroundColor: "rgb(var(--primary) / 0.1)",
+                      color: "rgb(var(--primary))",
+                    }}
                   >
                     {tag}
                   </span>
@@ -152,7 +190,9 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                 </div>
               )}
               <div>
-                <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>Organised by</p>
+                <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
+                  Organised by
+                </p>
                 <p className="font-semibold">{event.creator?.name}</p>
               </div>
             </div>
@@ -176,7 +216,9 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                   <CalendarDays size={16} style={{ color: "rgb(var(--primary))" }} />
                 </div>
                 <div>
-                  <p className="text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>Date</p>
+                  <p className="text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>
+                    Date
+                  </p>
                   <p className="text-sm font-semibold">
                     {eventDate.toLocaleDateString("en-IN", {
                       weekday: "short",
@@ -196,10 +238,13 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                   <Clock size={16} style={{ color: "rgb(var(--primary))" }} />
                 </div>
                 <div>
-                  <p className="text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>Time</p>
+                  <p className="text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>
+                    Time
+                  </p>
                   <p className="text-sm font-semibold">
                     {eventDate.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
-                    {endsAt && ` — ${endsAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`}
+                    {endsAt &&
+                      ` — ${endsAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`}
                   </p>
                 </div>
               </div>
@@ -213,10 +258,14 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                     <MapPin size={16} style={{ color: "rgb(var(--primary))" }} />
                   </div>
                   <div>
-                    <p className="text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>Location</p>
+                    <p className="text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>
+                      Location
+                    </p>
                     <p className="text-sm font-semibold">{event.location.name}</p>
                     {event.location.address && (
-                      <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>{event.location.address}</p>
+                      <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
+                        {event.location.address}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -231,7 +280,9 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                     <Users size={16} style={{ color: "rgb(var(--primary))" }} />
                   </div>
                   <div>
-                    <p className="text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>Capacity</p>
+                    <p className="text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>
+                      Capacity
+                    </p>
                     <p className="text-sm font-semibold">{event.capacity} people</p>
                   </div>
                 </div>
