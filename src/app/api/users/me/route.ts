@@ -17,10 +17,9 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
   try {
     await connectDB();
 
-    // Fetch fresh from DB — lean() for speed
     const user = await User.findById(req.user._id)
       .select(
-        "-passwordHash -googleId -verificationToken -verificationExpires -resetPasswordToken -resetPasswordExpires -__v"
+        "+passwordHash -googleId -verificationToken -verificationExpires -resetPasswordToken -resetPasswordExpires -__v"
       )
       .lean();
 
@@ -28,7 +27,12 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
       return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, user }, { status: 200 });
+    const { passwordHash, ...safeUser } = user;
+
+    return NextResponse.json(
+      { success: true, user: { ...safeUser, hasPassword: !!passwordHash } },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("[GET /users/me] Error:", error);
     return NextResponse.json({ success: false, message: "Something went wrong." }, { status: 500 });

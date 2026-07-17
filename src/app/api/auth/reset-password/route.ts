@@ -8,7 +8,6 @@ import { Session } from "@/models/Session";
 import { validateBody } from "@/middleware/validate";
 import { authLimiter } from "@/middleware/rateLimit";
 import { resetPasswordSchema } from "@/validations/auth";
-import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
   const limited = authLimiter(req);
@@ -37,8 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Hash and save new password
-    const salt = await bcrypt.genSalt(12);
-    user.passwordHash = await bcrypt.hash(password, salt);
+    user.passwordHash = password;
 
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;

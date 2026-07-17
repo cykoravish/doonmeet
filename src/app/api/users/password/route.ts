@@ -9,7 +9,6 @@ import { withAuth, AuthenticatedRequest } from "@/middleware/auth";
 import { validateBody } from "@/middleware/validate";
 import { authLimiter } from "@/middleware/rateLimit";
 import { changePasswordSchema, setPasswordSchema } from "@/validations/auth";
-import bcrypt from "bcryptjs";
 
 export const PATCH = withAuth(async (req: AuthenticatedRequest) => {
   const limited = authLimiter(req, String(req.user._id));
@@ -38,8 +37,7 @@ export const PATCH = withAuth(async (req: AuthenticatedRequest) => {
       if (result instanceof NextResponse) return result;
       const data = result.data as { password: string };
 
-      const salt = await bcrypt.genSalt(12);
-      user.passwordHash = await bcrypt.hash(data.password, salt);
+      user.passwordHash = data.password;
       await user.save();
 
       return NextResponse.json(
@@ -63,8 +61,7 @@ export const PATCH = withAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    const salt = await bcrypt.genSalt(12);
-    user.passwordHash = await bcrypt.hash(data.newPassword, salt);
+    user.passwordHash = data.newPassword;
     await user.save();
 
     // Invalidate all other sessions — force re-login on other devices

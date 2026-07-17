@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, Settings, Shield, KeyRound, LogOut } from "lucide-react";
+import { MapPin, Settings, Shield, KeyRound, LogOut, Check, X } from "lucide-react";
 import ProfileAvatar from "./ProfileAvatar";
 import EditProfileForm from "./EditProfileForm";
 import PrivacySettings from "./PrivacySettings";
@@ -32,6 +32,7 @@ interface User {
     showInterests: boolean;
   };
   createdAt: string;
+  hasPassword: boolean;
 }
 
 export default function OwnProfileClient({ user }: { user: User }) {
@@ -58,7 +59,6 @@ export default function OwnProfileClient({ user }: { user: User }) {
 
   return (
     <div className="min-h-screen">
-
       {/* Profile hero */}
       <div
         className="border-b py-12"
@@ -99,10 +99,7 @@ export default function OwnProfileClient({ user }: { user: User }) {
               </div>
 
               {currentUser.bio && (
-                <p
-                  className="mt-2 text-sm leading-relaxed"
-                  style={{ color: "rgb(var(--muted))" }}
-                >
+                <p className="mt-2 text-sm leading-relaxed" style={{ color: "rgb(var(--muted))" }}>
                   {currentUser.bio}
                 </p>
               )}
@@ -146,7 +143,6 @@ export default function OwnProfileClient({ user }: { user: User }) {
 
       {/* Tabs + content */}
       <div className="mx-auto max-w-3xl px-6 py-8">
-
         {/* Tab nav */}
         <div
           className="mb-6 flex gap-1 rounded-xl border p-1"
@@ -161,14 +157,8 @@ export default function OwnProfileClient({ user }: { user: User }) {
               onClick={() => setActiveTab(tab.key)}
               className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all"
               style={{
-                backgroundColor:
-                  activeTab === tab.key
-                    ? "rgb(var(--primary))"
-                    : "transparent",
-                color:
-                  activeTab === tab.key
-                    ? "white"
-                    : "rgb(var(--muted))",
+                backgroundColor: activeTab === tab.key ? "rgb(var(--primary))" : "transparent",
+                color: activeTab === tab.key ? "white" : "rgb(var(--muted))",
               }}
             >
               {tab.icon}
@@ -195,9 +185,7 @@ export default function OwnProfileClient({ user }: { user: User }) {
                 interests: currentUser.interests ?? [],
                 phone: currentUser.phone ?? "",
               }}
-              onSuccess={(updated) =>
-                setCurrentUser((prev) => ({ ...prev, ...updated }))
-              }
+              onSuccess={(updated) => setCurrentUser((prev) => ({ ...prev, ...updated }))}
             />
           )}
 
@@ -221,7 +209,7 @@ export default function OwnProfileClient({ user }: { user: User }) {
                   Manage your password and account security.
                 </p>
               </div>
-              <ChangePasswordForm />
+              <ChangePasswordForm hasPassword={currentUser.hasPassword} />
             </div>
           )}
         </div>
@@ -231,7 +219,7 @@ export default function OwnProfileClient({ user }: { user: User }) {
 }
 
 // Inline change password form
-function ChangePasswordForm() {
+function ChangePasswordForm({ hasPassword }: { hasPassword: boolean }) {
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -241,28 +229,61 @@ function ChangePasswordForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [show, setShow] = useState(false);
+  const [touched, setTouched] = useState(false);
+
+  const rules = [
+    { label: "At least 8 characters", valid: form.newPassword.length >= 8 },
+    { label: "One uppercase letter (A-Z)", valid: /[A-Z]/.test(form.newPassword) },
+    { label: "One number (0-9)", valid: /[0-9]/.test(form.newPassword) },
+  ];
+  const allValid = rules.every((r) => r.valid);
+  const passwordsMatch =
+    form.confirmPassword.length === 0 || form.newPassword === form.confirmPassword;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setTouched(true);
+    setError("");
+    setSuccess("");
+
+    if (!allValid) {
+      setError("Please meet all password requirements below.");
+      return;
+    }
     if (form.newPassword !== form.confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
-    setError("");
-    setLoading(true);
 
+    setLoading(true);
     try {
-      const res = await fetch("/api/users/me/password", {
+      const body = hasPassword
+        ? {
+            currentPassword: form.currentPassword,
+            newPassword: form.newPassword,
+            confirmPassword: form.confirmPassword,
+          }
+        : { password: form.newPassword, confirmPassword: form.confirmPassword };
+
+      const res = await fetch("/api/users/password", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.message); return; }
-      setSuccess("Password changed successfully!");
+
+      if (!res.ok) {
+        // Prefer the specific field-level reason over the generic message
+        const fieldError = data.errors?.[0]?.message;
+        setError(fieldError || data.message || "Something went wrong.");
+        return;
+      }
+
+      setSuccess(data.message || "Password saved successfully!");
       setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setTouched(false);
     } catch {
-      setError("Network error.");
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -273,27 +294,74 @@ function ChangePasswordForm() {
       {error && <Alert type="error" message={error} />}
       {success && <Alert type="success" message={success} />}
 
-      <Input
-        label="Current Password"
-        type={show ? "text" : "password"}
-        value={form.currentPassword}
-        onChange={(e) => setForm({ ...form, currentPassword: e.target.value })}
-        required
-      />
-      <Input
-        label="New Password"
-        type={show ? "text" : "password"}
-        value={form.newPassword}
-        onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
-        required
-      />
-      <Input
-        label="Confirm New Password"
-        type={show ? "text" : "password"}
-        value={form.confirmPassword}
-        onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-        required
-      />
+      {!hasPassword && (
+        <Alert
+          type="info"
+          message="You signed up with Google — set a password here to also enable email login."
+        />
+      )}
+
+      {hasPassword && (
+        <Input
+          label="Current Password"
+          type={show ? "text" : "password"}
+          value={form.currentPassword}
+          onChange={(e) => setForm({ ...form, currentPassword: e.target.value })}
+          required
+        />
+      )}
+
+      <div>
+        <Input
+          label={hasPassword ? "New Password" : "Set Password"}
+          type={show ? "text" : "password"}
+          value={form.newPassword}
+          onChange={(e) => {
+            setForm({ ...form, newPassword: e.target.value });
+            setTouched(true);
+          }}
+          required
+        />
+
+        {/* Live requirements checklist */}
+        {(touched || form.newPassword.length > 0) && (
+          <ul className="mt-2 space-y-1">
+            {rules.map((rule) => (
+              <li
+                key={rule.label}
+                className="flex items-center gap-1.5 text-xs"
+                style={{
+                  color: rule.valid ? "rgb(var(--primary))" : "rgb(var(--muted))",
+                }}
+              >
+                {rule.valid ? <Check size={13} /> : <X size={13} />}
+                {rule.label}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div>
+        <Input
+          label="Confirm New Password"
+          type={show ? "text" : "password"}
+          value={form.confirmPassword}
+          onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+          required
+        />
+        {form.confirmPassword.length > 0 && (
+          <p
+            className="mt-1.5 flex items-center gap-1.5 text-xs"
+            style={{
+              color: passwordsMatch ? "rgb(var(--primary))" : "rgb(220 38 38)",
+            }}
+          >
+            {passwordsMatch ? <Check size={13} /> : <X size={13} />}
+            {passwordsMatch ? "Passwords match" : "Passwords do not match"}
+          </p>
+        )}
+      </div>
 
       <div className="flex items-center gap-2">
         <input
@@ -309,7 +377,7 @@ function ChangePasswordForm() {
       </div>
 
       <Button type="submit" loading={loading}>
-        Change Password
+        {hasPassword ? "Change Password" : "Set Password"}
       </Button>
     </form>
   );
