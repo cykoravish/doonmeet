@@ -19,7 +19,7 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
 
     const user = await User.findById(req.user._id)
       .select(
-        "+passwordHash -googleId -verificationToken -verificationExpires -resetPasswordToken -resetPasswordExpires -__v"
+        "-googleId -verificationToken -verificationExpires -resetPasswordToken -resetPasswordExpires -__v"
       )
       .lean();
 
