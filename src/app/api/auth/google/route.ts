@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
       token: refreshToken,
       userAgent: req.headers.get("user-agent"),
       ip: req.headers.get("x-forwarded-for")?.split(",")[0] ?? null,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     });
 
     const response = NextResponse.json(

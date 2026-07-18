@@ -9,6 +9,7 @@ export async function getSessionUser() {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("access_token")?.value;
+    console.log("[SESSION] token present:", !!token);
     if (!token) return null;
 
     const { payload } = await jwtVerify(token, ACCESS_TOKEN_SECRET);

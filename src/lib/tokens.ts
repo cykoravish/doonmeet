@@ -11,7 +11,7 @@ export function generateAccessToken(userId: string, role: string): string {
 }
 
 export function generateRefreshToken(userId: string): string {
-  return jwt.sign({ userId }, REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
+  return jwt.sign({ userId }, REFRESH_TOKEN_SECRET, { expiresIn: "30d" });
 }
 
 // For email verification and password reset — cryptographically secure
@@ -32,7 +32,7 @@ export function setAuthCookies(
   );
   response.headers.append(
     "Set-Cookie",
-    `refresh_token=${refreshToken}; HttpOnly; Path=/; Max-Age=604800; SameSite=Strict${isProd ? "; Secure" : ""}`
+    `refresh_token=${refreshToken}; HttpOnly; Path=/; Max-Age=2592000; SameSite=Strict${isProd ? "; Secure" : ""}`
   );
 }
 
