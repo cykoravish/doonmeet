@@ -16,11 +16,9 @@ const AUTH_ROUTES = ["/login", "/signup", "/verify-email", "/reset-password", "/
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  console.log("[PROXY]", pathname);
 
   let accessToken = req.cookies.get("access_token")?.value;
   const refreshToken = req.cookies.get("refresh_token")?.value;
-  console.log("[PROXY] accessToken:", !!accessToken, "refreshToken:", !!refreshToken);
 
   let isAuthenticated = false;
   let isGuest = false;
@@ -33,7 +31,6 @@ export async function proxy(req: NextRequest) {
         userAgent: req.headers.get("user-agent"),
         ip: req.headers.get("x-forwarded-for")?.split(",")[0] ?? null,
       });
-        console.log("[PROXY] rotateSession result:", result ? "SUCCESS" : "NULL");
       if (result) {
         accessToken = result.accessToken;
         refreshedTokens = result;

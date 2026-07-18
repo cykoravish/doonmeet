@@ -54,8 +54,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.6,
     }));
-    console.log("even ", eventRoutes);
-    console.log(" comm: ", communityRoutes);
+
   } catch (err) {
     console.error("[sitemap] Failed to fetch dynamic routes:", err);
   }

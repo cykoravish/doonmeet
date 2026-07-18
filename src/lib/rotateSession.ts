@@ -10,17 +10,13 @@ export async function rotateSession(
   refreshToken: string,
   meta: { userAgent: string | null; ip: string | null }
 ) {
-     console.log("[ROTATE] called");
   const payload = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as { userId: string };
-console.log("[ROTATE] payload.userId:", payload.userId);
   await connectDB();
 
   const session = await Session.findOne({ token: refreshToken });
-    console.log("[ROTATE] session found in DB:", !!session);
   if (!session) return null;
 
   const user = await User.findById(payload.userId).select("_id role isActive");
-    console.log("[ROTATE] user found:", !!user, "isActive:", user?.isActive);
   if (!user || !user.isActive) {
     await Session.deleteOne({ _id: session._id });
     return null;
