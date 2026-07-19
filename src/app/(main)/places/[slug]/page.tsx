@@ -1,47 +1,6 @@
 import Image from "next/image";
 import type { Metadata } from "next";
-
-const locations = {
-  "clock-tower": {
-    title: "Clock Tower",
-    image: "/images/hero-clock-tower.webp",
-    description:
-      "The Clock Tower is one of the most iconic landmarks of Dehradun and serves as a popular meeting point for locals and visitors.",
-    rating: "4.8",
-    reviews: "124",
-    category: "Dehradun Landmark",
-  },
-
-  "rajpur-road": {
-    title: "Rajpur Road",
-    image: "/images/places/rajpur-road.webp",
-    description:
-      "Rajpur Road is one of Dehradun's most popular streets, known for cafes, restaurants and shopping destinations.",
-    rating: "4.7",
-    reviews: "89",
-    category: "Popular Area",
-  },
-
-  fri: {
-    title: "Forest Research Institute",
-    image: "/images/places/fri.webp",
-    description:
-      "FRI is one of the most beautiful campuses in India and a favorite place for photography and walks.",
-    rating: "4.9",
-    reviews: "156",
-    category: "Historic Campus",
-  },
-
-  "robbers-cave": {
-    title: "Robber's Cave",
-    image: "/images/places/robbers-cave.webp",
-    description:
-      "Robber's Cave is a famous natural attraction where visitors can walk through a river flowing inside a cave.",
-    rating: "4.8",
-    reviews: "201",
-    category: "Natural Attraction",
-  },
-} as const;
+import { places, getPlaceBySlug } from "@/data/places";
 
 export async function generateMetadata({
   params,
@@ -49,7 +8,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const place = locations[slug as keyof typeof locations];
+  const place = getPlaceBySlug(slug);
 
   if (!place) {
     return { title: "Place Not Found | DoonMeet" };
@@ -70,7 +29,7 @@ export async function generateMetadata({
 export default async function LocationPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  const place = locations[slug as keyof typeof locations];
+  const place = getPlaceBySlug(slug);
 
   if (!place) {
     return <div>Location not found</div>;

@@ -43,12 +43,8 @@ const places = [
 
 export default function PopularPlaces() {
   return (
-    <section
-      className="py-20"
-      style={{ backgroundColor: "rgb(var(--surface))" }}
-    >
+    <section className="py-20" style={{ backgroundColor: "rgb(var(--surface))" }}>
       <div className="mx-auto max-w-7xl px-6">
-
         {/* Header */}
         <div className="mb-12 flex items-end justify-between">
           <div>
@@ -58,12 +54,10 @@ export default function PopularPlaces() {
             >
               Discover
             </p>
-            <h2 className="text-3xl font-black md:text-4xl">
-              Popular in Dehradun
-            </h2>
+            <h2 className="text-3xl font-black md:text-4xl">Popular in Dehradun</h2>
           </div>
           <Link
-            href="/locations"
+            href="/places"
             className="hidden items-center gap-1.5 text-sm font-semibold hover:underline sm:flex"
             style={{ color: "rgb(var(--primary))" }}
           >
@@ -105,10 +99,7 @@ export default function PopularPlaces() {
               {/* Content */}
               <div className="p-4">
                 <h3 className="mb-1 font-bold">{place.name}</h3>
-                <p
-                  className="mb-3 text-xs leading-relaxed"
-                  style={{ color: "rgb(var(--muted))" }}
-                >
+                <p className="mb-3 text-xs leading-relaxed" style={{ color: "rgb(var(--muted))" }}>
                   {place.description}
                 </p>
 
@@ -121,17 +112,11 @@ export default function PopularPlaces() {
                       style={{ color: "rgb(var(--accent))" }}
                     />
                     <span className="text-xs font-semibold">{place.rating}</span>
-                    <span
-                      className="text-xs"
-                      style={{ color: "rgb(var(--muted))" }}
-                    >
+                    <span className="text-xs" style={{ color: "rgb(var(--muted))" }}>
                       ({place.reviews})
                     </span>
                   </div>
-                  <span
-                    className="text-xs font-semibold"
-                    style={{ color: "rgb(var(--primary))" }}
-                  >
+                  <span className="text-xs font-semibold" style={{ color: "rgb(var(--primary))" }}>
                     Explore →
                   </span>
                 </div>
@@ -143,7 +128,7 @@ export default function PopularPlaces() {
         {/* Mobile view all */}
         <div className="mt-8 flex justify-center sm:hidden">
           <Link
-            href="/locations"
+            href="/places"
             className="flex items-center gap-1.5 text-sm font-semibold"
             style={{ color: "rgb(var(--primary))" }}
           >
