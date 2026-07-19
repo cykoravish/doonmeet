@@ -11,6 +11,7 @@ export interface ICommunity extends Document {
   createdBy: mongoose.Types.ObjectId;
   memberCount: number;
   isActive: boolean;
+  announcement: { text: string | null; updatedAt: Date | null };
 }
 
 const CommunitySchema = new Schema<ICommunity>(
@@ -38,6 +39,10 @@ const CommunitySchema = new Schema<ICommunity>(
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     memberCount: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
+    announcement: {
+      text: { type: String, maxlength: 300, default: null },
+      updatedAt: { type: Date, default: null },
+    },
   },
   { timestamps: true }
 );

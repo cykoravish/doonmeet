@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export interface IEvent extends Document {
   creator: mongoose.Types.ObjectId;
+  community: mongoose.Types.ObjectId | null;
   title: string;
   description: string;
   banner: string | null;
@@ -23,6 +24,7 @@ export interface IEvent extends Document {
 const EventSchema = new Schema<IEvent>(
   {
     creator: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    community: { type: Schema.Types.ObjectId, ref: "Community", default: null },
     title: {
       type: String,
       required: true,
@@ -67,5 +69,6 @@ EventSchema.index({ creator: 1 });
 EventSchema.index({ status: 1, date: 1 }); // listing upcoming published events
 EventSchema.index({ tags: 1 });
 EventSchema.index({ title: "text", description: "text" }); // full-text search
+EventSchema.index({ community: 1, date: 1 });
 
 export const Event = mongoose.models.Event ?? mongoose.model<IEvent>("Event", EventSchema);
