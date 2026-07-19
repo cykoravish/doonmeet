@@ -3,20 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MapPin, CalendarDays, Clock, ArrowLeft, Users } from "lucide-react";
 import type { Metadata } from "next";
+import { connectDB } from "@/lib/db";
+import { EventRSVP } from "@/models/EventRSVP";
+import { getEventBySlug } from "@/lib/events";
+import { getSessionUser } from "@/lib/getSessionUser";
 import EventComments from "@/components/events/EventComments";
-
-async function getEvent(slug: string) {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/events/${slug}`, {
-      next: { revalidate: 60 },
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.event ?? null;
-  } catch {
-    return null;
-  }
-}
+import RSVPButton from "@/components/events/RSVPButton";
+import ShareButton from "@/components/events/ShareButton";
 
 interface EventDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -24,28 +17,42 @@ interface EventDetailPageProps {
 
 export async function generateMetadata({ params }: EventDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const event = await getEvent(slug);
+  const event = await getEventBySlug(slug);
   if (!event) return { title: "Event Not Found | DoonMeet" };
 
   return {
     title: `${event.title} | DoonMeet Events`,
-    description: event.description?.slice(0, 155),
+    description: (event.description as string)?.slice(0, 155),
     openGraph: {
-      title: event.title,
-      description: event.description?.slice(0, 155),
-      images: event.banner ? [event.banner] : [],
+      title: event.title as string,
+      description: (event.description as string)?.slice(0, 155),
+      images: event.banner ? [event.banner as string] : [],
     },
   };
 }
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
   const { slug } = await params;
-  const event = await getEvent(slug);
+  const [event, currentUser] = await Promise.all([getEventBySlug(slug), getSessionUser()]);
 
   if (!event) notFound();
 
-  const eventDate = new Date(event.date);
-  const endsAt = event.endsAt ? new Date(event.endsAt) : null;
+  await connectDB();
+  const [attendees, totalGoing, isGoing] = await Promise.all([
+    EventRSVP.find({ event: event._id })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .populate("user", "name avatar")
+      .lean(),
+    EventRSVP.countDocuments({ event: event._id }),
+    currentUser
+      ? EventRSVP.exists({ event: event._id, user: currentUser._id })
+      : Promise.resolve(false),
+  ]);
+
+  const eventDate = new Date(event.date as string);
+  const endsAt = event.endsAt ? new Date(event.endsAt as string) : null;
+  const isFull = !!event.capacity && totalGoing >= (event.capacity as number);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -59,10 +66,10 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
     image: event.banner ? [event.banner] : undefined,
     location: {
       "@type": "Place",
-      name: event.location?.name || "Dehradun",
+      name: (event.location as { name: string })?.name || "Dehradun",
       address: {
         "@type": "PostalAddress",
-        streetAddress: event.location?.address || "",
+        streetAddress: (event.location as { address: string })?.address || "",
         addressLocality: "Dehradun",
         addressRegion: "Uttarakhand",
         addressCountry: "IN",
@@ -70,7 +77,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
     },
     organizer: {
       "@type": "Person",
-      name: event.creator?.name || "DoonMeet",
+      name: (event.creator as { name: string })?.name || "DoonMeet",
     },
   };
 
@@ -84,37 +91,28 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
       {/* Banner */}
       <div className="relative h-72 w-full overflow-hidden md:h-96">
         {event.banner ? (
-          <Image src={event.banner} alt={event.title} fill priority className="object-cover" />
+          <Image src={event.banner as string} alt={event.title as string} fill priority className="object-cover" />
         ) : (
           <div
             className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(135deg, rgb(var(--primary)) 0%, rgb(var(--primary-light)) 100%)",
-            }}
+            style={{ background: "linear-gradient(135deg, rgb(var(--primary)) 0%, rgb(var(--primary-light)) 100%)" }}
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
 
-        {/* Back button */}
         <div className="absolute left-6 top-6">
           <Link
             href="/events"
             className="flex items-center gap-1.5 rounded-xl border border-white/20 bg-black/30 px-3 py-2 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-black/50"
           >
-            <ArrowLeft size={13} />
-            All Events
+            <ArrowLeft size={13} /> All Events
           </Link>
         </div>
 
-        {/* Date + title overlay */}
         <div className="absolute bottom-6 left-6 right-6">
           <div className="flex items-end gap-4">
             <div className="flex shrink-0 flex-col items-center rounded-xl bg-white px-3 py-2 shadow-lg">
-              <span
-                className="text-xs font-bold uppercase"
-                style={{ color: "rgb(var(--primary))" }}
-              >
+              <span className="text-xs font-bold uppercase" style={{ color: "rgb(var(--primary))" }}>
                 {eventDate.toLocaleDateString("en-IN", { month: "short" })}
               </span>
               <span className="text-2xl font-black leading-none text-gray-900">
@@ -122,16 +120,9 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               </span>
             </div>
             <div>
-              <p className="text-lg font-black text-white leading-tight line-clamp-2">
-                {event.title}
-              </p>
+              <p className="text-lg font-black leading-tight text-white line-clamp-2">{event.title as string}</p>
               <p className="mt-1 text-sm text-white/70">
-                {eventDate.toLocaleDateString("en-IN", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
+                {eventDate.toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
               </p>
             </div>
           </div>
@@ -143,16 +134,13 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
         <div className="grid gap-8 lg:grid-cols-[1fr_300px]">
           {/* Left */}
           <div>
-            {event.tags?.length > 0 && (
+            {(event.tags as string[])?.length > 0 && (
               <div className="mb-5 flex flex-wrap gap-2">
-                {event.tags.map((tag: string) => (
+                {(event.tags as string[]).map((tag) => (
                   <span
                     key={tag}
                     className="rounded-full px-3 py-1 text-xs font-semibold capitalize"
-                    style={{
-                      backgroundColor: "rgb(var(--primary) / 0.1)",
-                      color: "rgb(var(--primary))",
-                    }}
+                    style={{ backgroundColor: "rgb(var(--primary) / 0.1)", color: "rgb(var(--primary))" }}
                   >
                     {tag}
                   </span>
@@ -160,23 +148,29 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               </div>
             )}
 
+            {event.community && (
+              <Link
+                href={`/communities/${(event.community as { slug: string }).slug}`}
+                className="mb-5 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
+                style={{ backgroundColor: "rgb(var(--accent) / 0.1)", color: "rgb(var(--accent))" }}
+              >
+                Hosted by {(event.community as { name: string }).name}
+              </Link>
+            )}
+
             <h2 className="mb-3 text-xl font-bold">About this event</h2>
-            <p
-              className="mb-8 leading-relaxed whitespace-pre-line text-sm"
-              style={{ color: "rgb(var(--muted))" }}
-            >
-              {event.description}
+            <p className="mb-8 whitespace-pre-line text-sm leading-relaxed" style={{ color: "rgb(var(--muted))" }}>
+              {event.description as string}
             </p>
 
-            {/* Creator */}
             <div
               className="mb-8 flex items-center gap-3 rounded-2xl border p-4"
               style={{ borderColor: "rgb(var(--border))", backgroundColor: "rgb(var(--surface))" }}
             >
-              {event.creator?.avatar ? (
+              {(event.creator as { avatar: string | null })?.avatar ? (
                 <Image
-                  src={event.creator.avatar}
-                  alt={event.creator.name}
+                  src={(event.creator as { avatar: string }).avatar}
+                  alt={(event.creator as { name: string }).name}
                   width={44}
                   height={44}
                   className="rounded-full object-cover"
@@ -186,115 +180,125 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                   className="flex h-11 w-11 items-center justify-center rounded-full text-base font-bold text-white"
                   style={{ backgroundColor: "rgb(var(--primary))" }}
                 >
-                  {event.creator?.name?.[0] ?? "D"}
+                  {(event.creator as { name: string })?.name?.[0] ?? "D"}
                 </div>
               )}
               <div>
-                <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-                  Organised by
-                </p>
-                <p className="font-semibold">{event.creator?.name}</p>
+                <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>Organised by</p>
+                <p className="font-semibold">{(event.creator as { name: string })?.name}</p>
               </div>
             </div>
 
-            <EventComments eventId={slug} commentCount={event.commentCount} />
+            {/* Attendees */}
+            {attendees.length > 0 && (
+              <div className="mb-8">
+                <h3 className="mb-3 text-sm font-bold">
+                  {totalGoing} {totalGoing === 1 ? "person" : "people"} going
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {attendees.map((a) => {
+                    const user = a.user as { _id: string; name: string; avatar: string | null };
+                    return user.avatar ? (
+                      <Image
+                        key={String(a._id)}
+                        src={user.avatar}
+                        alt={user.name}
+                        width={36}
+                        height={36}
+                        title={user.name}
+                        className="rounded-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        key={String(a._id)}
+                        title={user.name}
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
+                        style={{ backgroundColor: "rgb(var(--primary))" }}
+                      >
+                        {user.name[0]?.toUpperCase()}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <EventComments eventId={slug} commentCount={event.commentCount as number} />
           </div>
 
-          {/* Right — details card */}
+          {/* Right */}
           <div className="space-y-4">
             <div
-              className="rounded-2xl border p-5 space-y-4"
+              className="space-y-4 rounded-2xl border p-5"
               style={{ borderColor: "rgb(var(--border))", backgroundColor: "rgb(var(--surface))" }}
             >
               <h3 className="font-bold">Event Details</h3>
 
               <div className="flex items-start gap-3">
-                <div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}
-                >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}>
                   <CalendarDays size={16} style={{ color: "rgb(var(--primary))" }} />
                 </div>
                 <div>
-                  <p className="text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>
-                    Date
-                  </p>
+                  <p className="text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>Date</p>
                   <p className="text-sm font-semibold">
-                    {eventDate.toLocaleDateString("en-IN", {
-                      weekday: "short",
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
+                    {eventDate.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "long", year: "numeric" })}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}
-                >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}>
                   <Clock size={16} style={{ color: "rgb(var(--primary))" }} />
                 </div>
                 <div>
-                  <p className="text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>
-                    Time
-                  </p>
+                  <p className="text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>Time</p>
                   <p className="text-sm font-semibold">
                     {eventDate.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
-                    {endsAt &&
-                      ` — ${endsAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`}
+                    {endsAt && ` — ${endsAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`}
                   </p>
                 </div>
               </div>
 
-              {(event.location?.name || event.location?.address) && (
+              {((event.location as { name: string })?.name || (event.location as { address: string })?.address) && (
                 <div className="flex items-start gap-3">
-                  <div
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}
-                  >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}>
                     <MapPin size={16} style={{ color: "rgb(var(--primary))" }} />
                   </div>
                   <div>
-                    <p className="text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>
-                      Location
-                    </p>
-                    <p className="text-sm font-semibold">{event.location.name}</p>
-                    {event.location.address && (
+                    <p className="text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>Location</p>
+                    <p className="text-sm font-semibold">{(event.location as { name: string }).name}</p>
+                    {(event.location as { address: string }).address && (
                       <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-                        {event.location.address}
+                        {(event.location as { address: string }).address}
                       </p>
                     )}
                   </div>
                 </div>
               )}
 
-              {event.capacity && (
-                <div className="flex items-start gap-3">
-                  <div
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}
-                  >
-                    <Users size={16} style={{ color: "rgb(var(--primary))" }} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>
-                      Capacity
-                    </p>
-                    <p className="text-sm font-semibold">{event.capacity} people</p>
-                  </div>
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}>
+                  <Users size={16} style={{ color: "rgb(var(--primary))" }} />
                 </div>
-              )}
+                <div>
+                  <p className="text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>
+                    {event.capacity ? "Spots" : "Attendance"}
+                  </p>
+                  <p className="text-sm font-semibold">
+                    {event.capacity ? `${totalGoing}/${event.capacity} going` : `${totalGoing} going`}
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <button
-              className="w-full rounded-xl border py-3 text-sm font-semibold transition-opacity hover:opacity-80"
-              style={{ borderColor: "rgb(var(--border))", color: "rgb(var(--text))" }}
-            >
-              Share Event
-            </button>
+            <RSVPButton
+              slug={slug}
+              isGoing={!!isGoing}
+              isFull={isFull}
+              isLoggedIn={!!currentUser}
+              isGuest={!!currentUser?.isGuest}
+            />
+            <ShareButton title={event.title as string} url={`https://doonmeet.in/events/${slug}`} />
           </div>
         </div>
       </div>

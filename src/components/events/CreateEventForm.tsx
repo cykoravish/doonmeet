@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, X } from "lucide-react";
 import Input from "@/components/ui/Input";
@@ -16,6 +16,17 @@ export default function CreateEventForm() {
   const [banner, setBanner] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [myCommunities, setMyCommunities] = useState<{ _id: string; name: string; slug: string }[]>(
+    []
+  );
+  const [selectedCommunity, setSelectedCommunity] = useState("");
+
+  useEffect(() => {
+    fetch("/api/communities/mine")
+      .then((r) => r.json())
+      .then((d) => setMyCommunities(d.communities ?? []))
+      .catch(() => {});
+  }, []);
 
   const [form, setForm] = useState({
     title: "",
@@ -66,6 +77,9 @@ export default function CreateEventForm() {
         })
       );
       formData.append("tags", JSON.stringify(selectedTags));
+      if (selectedCommunity) {
+        formData.append("community", JSON.stringify(selectedCommunity));
+      }
 
       if (banner) formData.append("banner", banner);
 
@@ -104,7 +118,10 @@ export default function CreateEventForm() {
             <img src={bannerPreview} alt="Banner" className="h-full w-full object-cover" />
             <button
               type="button"
-              onClick={() => { setBanner(null); setBannerPreview(null); }}
+              onClick={() => {
+                setBanner(null);
+                setBannerPreview(null);
+              }}
               className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white"
             >
               <X size={14} />
@@ -234,6 +251,31 @@ export default function CreateEventForm() {
           })}
         </div>
       </div>
+
+      {myCommunities.length > 0 && (
+        <div>
+          <p className="mb-2 text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>
+            Link to a community (optional)
+          </p>
+          <select
+            value={selectedCommunity}
+            onChange={(e) => setSelectedCommunity(e.target.value)}
+            className="w-full rounded-xl border px-4 py-3 text-sm outline-none"
+            style={{
+              backgroundColor: "rgb(var(--surface))",
+              borderColor: "rgb(var(--border))",
+              color: "rgb(var(--text))",
+            }}
+          >
+            <option value="">None — general event</option>
+            {myCommunities.map((c) => (
+              <option key={c._id} value={c._id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <Button type="submit" loading={loading}>
         Publish Event

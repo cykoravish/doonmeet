@@ -40,6 +40,11 @@ const eventBaseSchema = z.object({
     .optional()
     .nullable(),
   status: z.enum(["draft", "published", "cancelled"]).optional(),
+  community: z
+    .string()
+    .regex(/^[a-f\d]{24}$/i, "Invalid community id")
+    .optional()
+    .nullable(),
 });
 
 export const createEventSchema = eventBaseSchema.extend({

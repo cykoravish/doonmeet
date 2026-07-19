@@ -3,6 +3,7 @@
 // ============================================================
 import mongoose from "mongoose";
 import { Community } from "../src/models/Community";
+import { User } from "../src/models/User";
 
 const MONGODB_URI = process.env.MONGODB_URI as string;
 
@@ -69,9 +70,15 @@ async function seed() {
     await mongoose.connect(MONGODB_URI);
     console.log("Connected to MongoDB");
 
-    // Find or create a system admin user to be the creator
-    // Replace this ObjectId with your actual admin user _id after first signup
-    const adminId = new mongoose.Types.ObjectId("000000000000000000000001");
+// Communities are attributed to your own account (the platform owner)
+    const admin = await User.findOne({ email: "cykoravish@gmail.com" }).select("_id");
+    if (!admin) {
+      console.error(
+        "Admin user not found. Make sure you've signed up on the site first with this email."
+      );
+      process.exit(1);
+    }
+    const adminId = admin._id;
 
     for (const community of communities) {
       const exists = await Community.findOne({ slug: community.slug });

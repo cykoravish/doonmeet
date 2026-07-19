@@ -155,6 +155,25 @@ export const POST = requireVerified(async (req: AuthenticatedRequest) => {
       bannerUrl = uploadResult.secure_url;
       bannerPublicId = uploadResult.public_id;
     }
+    // If a community was selected, verify the user is actually a member
+    const communityId = (result.data as { community?: string | null }).community;
+    if (communityId) {
+      const { CommunityMember } = await import("@/models/CommunityMember");
+      const isMember = await CommunityMember.exists({
+        community: communityId,
+        user: req.user._id,
+      });
+      if (!isMember) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "You can only link events to communities you're a member of.",
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     // Auto-generate slug from title
     const baseSlug = slugify(result.data.title, { lower: true, strict: true });
     const uniqueSlug = `${baseSlug}-${Date.now()}`;
