@@ -4,10 +4,20 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Search, Star, ArrowRight, MapPinOff } from "lucide-react";
-import type { Place } from "@/data/places";
+
+interface PlaceCard {
+  _id: string;
+  title: string;
+  slug: string;
+  image: string;
+  category: string;
+  shortDescription: string;
+  rating: number | null;
+  reviewCount: number;
+}
 
 interface PlacesExplorerProps {
-  places: readonly Place[];
+  places: PlaceCard[];
 }
 
 export default function PlacesExplorer({ places }: PlacesExplorerProps) {
@@ -26,7 +36,7 @@ export default function PlacesExplorer({ places }: PlacesExplorerProps) {
       const matchesQuery =
         !q ||
         p.title.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
+        p.shortDescription.toLowerCase().includes(q) ||
         p.category.toLowerCase().includes(q);
       return matchesCategory && matchesQuery;
     });
@@ -34,7 +44,6 @@ export default function PlacesExplorer({ places }: PlacesExplorerProps) {
 
   return (
     <>
-      {/* Search */}
       <div className="relative mt-8">
         <Search
           size={18}
@@ -55,7 +64,6 @@ export default function PlacesExplorer({ places }: PlacesExplorerProps) {
         />
       </div>
 
-      {/* Category chips */}
       <div className="mt-4 flex flex-wrap gap-2">
         {categories.map((cat) => {
           const active = cat === category;
@@ -75,14 +83,14 @@ export default function PlacesExplorer({ places }: PlacesExplorerProps) {
         })}
       </div>
 
-      {/* Results */}
       <div className="mt-10">
         <p className="mb-6 text-sm" style={{ color: "rgb(var(--muted))" }}>
           {filtered.length} {filtered.length === 1 ? "place" : "places"} found
         </p>
 
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border py-20 text-center"
+          <div
+            className="flex flex-col items-center justify-center rounded-2xl border py-20 text-center"
             style={{ borderColor: "rgb(var(--border))" }}
           >
             <MapPinOff size={32} style={{ color: "rgb(var(--muted))" }} />
@@ -121,18 +129,21 @@ export default function PlacesExplorer({ places }: PlacesExplorerProps) {
 
                 <div className="p-5">
                   <h3 className="font-bold">{place.title}</h3>
-                  <p
-                    className="mt-1 line-clamp-2 text-sm"
-                    style={{ color: "rgb(var(--muted))" }}
-                  >
-                    {place.description}
+                  <p className="mt-1 line-clamp-2 text-sm" style={{ color: "rgb(var(--muted))" }}>
+                    {place.shortDescription}
                   </p>
 
                   <div className="mt-4 flex items-center justify-between">
                     <span className="flex items-center gap-1 text-sm font-medium">
                       <Star size={14} fill="currentColor" style={{ color: "rgb(var(--accent))" }} />
-                      {place.rating}
-                      <span style={{ color: "rgb(var(--muted))" }}>({place.reviews})</span>
+                      {place.rating ? (
+                        <>
+                          {place.rating}{" "}
+                          <span style={{ color: "rgb(var(--muted))" }}>({place.reviewCount})</span>
+                        </>
+                      ) : (
+                        <span style={{ color: "rgb(var(--muted))" }}>No reviews yet</span>
+                      )}
                     </span>
                     <span
                       className="flex items-center gap-1 text-sm font-semibold"

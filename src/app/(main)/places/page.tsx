@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { places } from "@/data/places";
+import { getAllPlacesWithRatings } from "@/lib/places";
 import PlacesExplorer from "@/components/places/PlacesExplorer";
 
 export const metadata: Metadata = {
@@ -8,7 +8,9 @@ export const metadata: Metadata = {
     "Discover landmarks, attractions, cafes, nature spots and local experiences across Dehradun.",
 };
 
-export default function PlacesPage() {
+export default async function PlacesPage() {
+  const places = await getAllPlacesWithRatings();
+
   return (
     <div>
       <section className="mx-auto max-w-7xl px-6 py-16">
