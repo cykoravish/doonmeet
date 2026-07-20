@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   description:
     "Discover landmarks, attractions, cafes, nature spots and local experiences across Dehradun.",
 };
+export const dynamic = "force-dynamic";
 
 export default async function PlacesPage() {
   const places = await getAllPlacesWithRatings();
