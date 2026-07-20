@@ -17,6 +17,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           timeout: 60s
+          command_timeout: 25m
           script: |
             cd /var/www/doonmeet
             git pull origin main
