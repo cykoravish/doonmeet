@@ -46,20 +46,14 @@ interface LocationsClientProps {
   initialLocations: LocationPin[];
 }
 
-export default function LocationsClient({
-  currentUser,
-  initialLocations,
-}: LocationsClientProps) {
+export default function LocationsClient({ currentUser, initialLocations }: LocationsClientProps) {
   const [locations, setLocations] = useState<LocationPin[]>(initialLocations);
   const [hasCheckedIn, setHasCheckedIn] = useState(
     initialLocations.some((l) => l.userId === currentUser?._id)
   );
   const [isVisible, setIsVisible] = useState(true);
 
-  async function handleCheckIn(
-    coords: { lat: number; lng: number },
-    label: string | null
-  ) {
+  async function handleCheckIn(coords: { lat: number; lng: number }, label: string | null) {
     try {
       const res = await fetch("/api/locations", {
         method: "POST",
@@ -104,13 +98,9 @@ export default function LocationsClient({
       setIsVisible(visible);
 
       if (!visible) {
-        setLocations((prev) =>
-          prev.filter((l) => l.userId !== currentUser?._id)
-        );
+        setLocations((prev) => prev.filter((l) => l.userId !== currentUser?._id));
       } else {
-        const myPin = initialLocations.find(
-          (l) => l.userId === currentUser?._id
-        );
+        const myPin = initialLocations.find((l) => l.userId === currentUser?._id);
         if (myPin) setLocations((prev) => [...prev, myPin]);
       }
     } catch {
@@ -121,9 +111,7 @@ export default function LocationsClient({
   async function handleRemove() {
     try {
       await fetch("/api/locations/me", { method: "DELETE" });
-      setLocations((prev) =>
-        prev.filter((l) => l.userId !== currentUser?._id)
-      );
+      setLocations((prev) => prev.filter((l) => l.userId !== currentUser?._id));
       setHasCheckedIn(false);
     } catch {
       console.error("Remove failed");
@@ -132,7 +120,6 @@ export default function LocationsClient({
 
   return (
     <div className="min-h-screen">
-
       {/* Header */}
       <div
         className="border-b py-10"
@@ -150,13 +137,8 @@ export default function LocationsClient({
               >
                 Live Map
               </p>
-              <h1 className="text-3xl font-black md:text-4xl">
-                Who&apos;s around in Dehradun?
-              </h1>
-              <p
-                className="mt-2 text-sm"
-                style={{ color: "rgb(var(--muted))" }}
-              >
+              <h1 className="text-3xl font-black md:text-4xl">Who&apos;s around in Dehradun?</h1>
+              <p className="mt-2 text-sm" style={{ color: "rgb(var(--muted))" }}>
                 See where people are and let others know you&apos;re here.
               </p>
             </div>
@@ -164,10 +146,7 @@ export default function LocationsClient({
             {/* Stats */}
             <div className="hidden items-center gap-6 sm:flex">
               <div className="text-center">
-                <p
-                  className="text-2xl font-black"
-                  style={{ color: "rgb(var(--primary))" }}
-                >
+                <p className="text-2xl font-black" style={{ color: "rgb(var(--primary))" }}>
                   {locations.length}
                 </p>
                 <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
@@ -181,8 +160,25 @@ export default function LocationsClient({
 
       {/* Main content */}
       <div className="mx-auto max-w-7xl px-6 py-8">
+        {locations.length <= 2 && (
+          <div
+            className="mb-6 rounded-2xl border p-4 text-center"
+            style={{
+              borderColor: "rgb(var(--primary) / 0.25)",
+              backgroundColor: "rgb(var(--primary) / 0.06)",
+            }}
+          >
+            <p className="text-sm font-semibold" style={{ color: "rgb(var(--primary))" }}>
+              {locations.length === 0
+                ? "No one's checked in yet — be the first!"
+                : "It's quiet right now — check in and be seen."}
+            </p>
+            <p className="mt-1 text-xs" style={{ color: "rgb(var(--muted))" }}>
+              DoonMeet is growing every day. Early check-ins help others find their people.
+            </p>
+          </div>
+        )}
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-
           {/* Map */}
           <div
             className="overflow-hidden rounded-2xl border"
@@ -191,15 +187,11 @@ export default function LocationsClient({
               height: "clamp(360px, 55vw, 640px)",
             }}
           >
-            <DehradunMap
-              pins={locations}
-              currentUserId={currentUser?._id}
-            />
+            <DehradunMap pins={locations} currentUserId={currentUser?._id} />
           </div>
 
           {/* Sidebar */}
           <div className="space-y-4">
-
             {/* Check in section */}
             {currentUser && !currentUser.isGuest ? (
               <CheckInButton
@@ -223,10 +215,7 @@ export default function LocationsClient({
                   style={{ color: "rgb(var(--muted))" }}
                 />
                 <p className="text-sm font-semibold">Sign up to check in</p>
-                <p
-                  className="mt-1 mb-3 text-xs"
-                  style={{ color: "rgb(var(--muted))" }}
-                >
+                <p className="mt-1 mb-3 text-xs" style={{ color: "rgb(var(--muted))" }}>
                   Guests can view the map but can&apos;t share location
                 </p>
                 <Link
@@ -245,16 +234,9 @@ export default function LocationsClient({
                   backgroundColor: "rgb(var(--surface))",
                 }}
               >
-                <MapPin
-                  size={24}
-                  className="mx-auto mb-2"
-                  style={{ color: "rgb(var(--muted))" }}
-                />
+                <MapPin size={24} className="mx-auto mb-2" style={{ color: "rgb(var(--muted))" }} />
                 <p className="text-sm font-semibold">Log in to check in</p>
-                <p
-                  className="mt-1 mb-3 text-xs"
-                  style={{ color: "rgb(var(--muted))" }}
-                >
+                <p className="mt-1 mb-3 text-xs" style={{ color: "rgb(var(--muted))" }}>
                   Share your location and connect with people nearby
                 </p>
                 <Link
@@ -292,10 +274,7 @@ export default function LocationsClient({
               </div>
 
               <div className="max-h-96 overflow-y-auto">
-                <PeopleOnMap
-                  pins={locations}
-                  currentUserId={currentUser?._id}
-                />
+                <PeopleOnMap pins={locations} currentUserId={currentUser?._id} />
               </div>
             </div>
 
@@ -323,10 +302,7 @@ export default function LocationsClient({
                     <span className="text-xl">{spot.emoji}</span>
                     <div>
                       <p className="text-xs font-semibold">{spot.name}</p>
-                      <p
-                        className="text-xs"
-                        style={{ color: "rgb(var(--muted))" }}
-                      >
+                      <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
                         {spot.area}
                       </p>
                     </div>

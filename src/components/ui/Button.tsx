@@ -9,15 +9,15 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export default function Button({
-  variant = "primary",
+variant = "primary",
   loading = false,
   children,
-  className = "",
+  className = "w-full",
   disabled,
   ...props
 }: ButtonProps) {
   const base =
-    "flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-opacity disabled:opacity-50 w-full";
+    "flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-opacity disabled:opacity-50";
 
   const variants = {
     primary: {
