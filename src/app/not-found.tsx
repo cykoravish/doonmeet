@@ -21,7 +21,7 @@ export default function NotFound() {
 
       <h1 className="mb-2 text-3xl font-black">Lost in the Doon Valley?</h1>
       <p className="mb-8 max-w-sm text-sm text-muted">
-        Looks like this page wandered off into the hills. Let&apos;s get you back to somewhere familiar.
+        Looks like this page wandered off into the hills. Let&apos;s get you back.
       </p>
 
       <div className="flex flex-wrap justify-center gap-3">
