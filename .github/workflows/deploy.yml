@@ -8,6 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
@@ -17,10 +18,25 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           timeout: 60s
-          command_timeout: 25m
+          command_timeout: 30m
+
           script: |
+            set -e
+
             cd /var/www/doonmeet
-            git pull origin main
-            npm install
+
+            echo "Pulling latest code..."
+            git fetch origin
+            git reset --hard origin/main
+
+            echo "Installing dependencies..."
+            npm ci
+
+            echo "Building application..."
             npm run build
-            pm2 restart doonmeet
+
+            echo "Restarting PM2..."
+            pm2 restart doonmeet --update-env
+            pm2 save
+
+            echo "✅ Deployment completed successfully!"
