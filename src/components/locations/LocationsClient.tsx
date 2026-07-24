@@ -47,10 +47,20 @@ interface LocationsClientProps {
 }
 
 export default function LocationsClient({ currentUser, initialLocations }: LocationsClientProps) {
-  const [locations, setLocations] = useState<LocationPin[]>(initialLocations);
-  const [hasCheckedIn, setHasCheckedIn] = useState(
-    initialLocations.some((l) => l.userId === currentUser?._id)
-  );
+ // eslint-disable-next-line @typescript-eslint/no-explicit-any
+ const formattedLocations: LocationPin[] = (initialLocations as any[]).map((location) => ({
+  userId: location.user._id,
+  name: location.user.name,
+  avatar: location.user.avatar,
+  coords: location.coords,
+  label: location.label,
+  checkedInAt: location.checkedInAt,
+}));
+
+const [locations, setLocations] = useState<LocationPin[]>(formattedLocations);
+const [hasCheckedIn, setHasCheckedIn] = useState(
+  formattedLocations.some((l) => l.userId === currentUser?._id)
+);
   const [isVisible, setIsVisible] = useState(true);
 
   async function handleCheckIn(coords: { lat: number; lng: number }, label: string | null) {

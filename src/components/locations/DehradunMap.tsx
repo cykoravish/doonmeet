@@ -32,6 +32,7 @@ export default function DehradunMap({ pins, currentUserId }: DehradunMapProps) {
   const [scrollEnabled, setScrollEnabled] = useState(false);
 
   useEffect(() => {
+    console.log("DehradunMap pins:", pins);
     if (!mapRef.current) return;
     let cancelled = false;
 
@@ -180,7 +181,7 @@ export default function DehradunMap({ pins, currentUserId }: DehradunMapProps) {
               ">
                 ${pin.avatar
                   ? `<img src="${pin.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`
-                  : `<span style="font-family:sans-serif">${pin.name[0].toUpperCase()}</span>`
+                  : `<span style="font-family:sans-serif">${(pin.name?.charAt(0) || "?").toUpperCase()}</span>`
                 }
                 ${isCurrentUser ? `<div style="position:absolute;bottom:1px;right:1px;width:10px;height:10px;border-radius:50%;background:#4ade80;border:2px solid white"></div>` : ""}
               </div>
@@ -210,7 +211,7 @@ export default function DehradunMap({ pins, currentUserId }: DehradunMapProps) {
               ">
                 ${pin.avatar
                   ? `<img src="${pin.avatar}" style="width:100%;height:100%;object-fit:cover"/>`
-                  : pin.name[0].toUpperCase()
+                  : (pin.name?.charAt(0) || "?").toUpperCase()
                 }
               </div>
               <div>

@@ -37,6 +37,7 @@ export default function PeopleOnMap({ pins, currentUserId }: PeopleOnMapProps) {
 
   return (
     <div className="space-y-2">
+     {/* { console.log("Pins:", pins)} */}
       {pins.map((pin) => {
         const isCurrentUser = pin.userId === currentUserId;
         const timeAgo = new Date(pin.checkedInAt).toLocaleTimeString("en-IN", {
@@ -55,7 +56,7 @@ export default function PeopleOnMap({ pins, currentUserId }: PeopleOnMapProps) {
             {pin.avatar ? (
               <Image
                 src={pin.avatar}
-                alt={pin.name}
+                alt={pin.name ?? "User"}
                 width={40}
                 height={40}
                 className="rounded-full object-cover shrink-0"
@@ -69,7 +70,7 @@ export default function PeopleOnMap({ pins, currentUserId }: PeopleOnMapProps) {
                     : "rgb(var(--muted))",
                 }}
               >
-                {pin.name[0].toUpperCase()}
+               {(pin.name?.charAt(0) || "?").toUpperCase()}
               </div>
             )}
 
