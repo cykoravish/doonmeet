@@ -1,15 +1,10 @@
 // GET  — get all visible user locations for map display
 // POST — check in (create or update own location)
 // ============================================================
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Location } from "@/models/Location";
-import {
-  withAuth,
-  withGuestAllowed,
-  requireVerified,
-  AuthenticatedRequest,
-} from "@/middleware/auth";
+import { withGuestAllowed, requireVerified, AuthenticatedRequest } from "@/middleware/auth";
 import { validateBody } from "@/middleware/validate";
 import { generalLimiter } from "@/middleware/rateLimit";
 import { checkInSchema } from "@/validations/location";
@@ -24,7 +19,7 @@ export const GET = withGuestAllowed(async (req: AuthenticatedRequest) => {
     await connectDB();
 
     const locations = await Location.find({ isVisible: true })
-      .populate("user", "name avatar lastSeenAt")
+      .populate("user", "name avatar lastSeenAt bio interests privacy")
       .select("coords label checkedInAt user")
       .lean();
 

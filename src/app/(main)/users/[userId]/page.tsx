@@ -5,24 +5,11 @@ import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import { MapPin, MessageCircle, Calendar } from "lucide-react";
 import type { Metadata } from "next";
+import { getPublicUser } from "@/lib/getPublicUser";
 
 const ACCESS_TOKEN_SECRET = new TextEncoder().encode(
   process.env.ACCESS_TOKEN_SECRET
 );
-
-async function getPublicUser(userId: string) {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/users/${userId}`,
-      { next: { revalidate: 60 } }
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.user ?? null;
-  } catch {
-    return null;
-  }
-}
 
 async function getCurrentUserId() {
   try {
@@ -212,11 +199,8 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
   );
 }
 
-// Start DM button — client component
+// Static link — no client interactivity needed yet, so this stays server-rendered.
 function StartDMButton({ recipientId, recipientName }: { recipientId: string; recipientName: string }) {
-  "use client";
-  // This needs to be a separate client component file
-  // For now using a link
   return (
     <Link
       href={`/chat?dm=${recipientId}`}

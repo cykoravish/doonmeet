@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, Clock } from "lucide-react";
+import { MapPin, Clock, Sparkles } from "lucide-react";
 
 interface LocationPin {
   userId: string;
@@ -9,14 +9,17 @@ interface LocationPin {
   coords: { lat: number; lng: number };
   label: string | null;
   checkedInAt: string;
+  bio?: string;
+  interests?: string[];
 }
 
 interface PeopleOnMapProps {
   pins: LocationPin[];
   currentUserId?: string;
+  myInterests?: Set<string>;
 }
 
-export default function PeopleOnMap({ pins, currentUserId }: PeopleOnMapProps) {
+export default function PeopleOnMap({ pins, currentUserId, myInterests }: PeopleOnMapProps) {
   if (pins.length === 0) {
     return (
       <div
@@ -37,9 +40,11 @@ export default function PeopleOnMap({ pins, currentUserId }: PeopleOnMapProps) {
 
   return (
     <div className="space-y-2">
-     {/* { console.log("Pins:", pins)} */}
       {pins.map((pin) => {
         const isCurrentUser = pin.userId === currentUserId;
+        const sharedInterest = !isCurrentUser
+          ? pin.interests?.find((i) => myInterests?.has(i))
+          : undefined;
         const timeAgo = new Date(pin.checkedInAt).toLocaleTimeString("en-IN", {
           hour: "2-digit",
           minute: "2-digit",
@@ -60,6 +65,11 @@ export default function PeopleOnMap({ pins, currentUserId }: PeopleOnMapProps) {
                 width={40}
                 height={40}
                 className="rounded-full object-cover shrink-0"
+                style={
+                  sharedInterest
+                    ? { boxShadow: "0 0 0 2px rgb(var(--accent))" }
+                    : undefined
+                }
               />
             ) : (
               <div
@@ -68,9 +78,10 @@ export default function PeopleOnMap({ pins, currentUserId }: PeopleOnMapProps) {
                   backgroundColor: isCurrentUser
                     ? "rgb(var(--primary))"
                     : "rgb(var(--muted))",
+                  boxShadow: sharedInterest ? "0 0 0 2px rgb(var(--accent))" : undefined,
                 }}
               >
-               {(pin.name?.charAt(0) || "?").toUpperCase()}
+                {(pin.name?.charAt(0) || "?").toUpperCase()}
               </div>
             )}
 
@@ -90,12 +101,20 @@ export default function PeopleOnMap({ pins, currentUserId }: PeopleOnMapProps) {
                   </span>
                 )}
               </div>
-              {pin.label && (
+              {sharedInterest ? (
+                <p
+                  className="truncate text-xs font-medium capitalize"
+                  style={{ color: "rgb(var(--accent))" }}
+                >
+                  <Sparkles size={10} className="inline mr-0.5" />
+                  Both like {sharedInterest}
+                </p>
+              ) : pin.label ? (
                 <p className="truncate text-xs" style={{ color: "rgb(var(--muted))" }}>
                   <MapPin size={10} className="inline mr-0.5" />
                   {pin.label}
                 </p>
-              )}
+              ) : null}
             </div>
 
             {/* Time */}

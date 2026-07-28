@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useTheme } from "@/providers/theme-provider";
@@ -12,11 +12,15 @@ interface LocationPin {
   coords: { lat: number; lng: number };
   label: string | null;
   checkedInAt: string;
+  bio?: string;
+  interests?: string[];
 }
 
 interface DehradunMapProps {
   pins: LocationPin[];
   currentUserId?: string;
+  myInterests?: string[];
+  revealed?: boolean;
 }
 
 // Free, no-key vector tiles — OSM data via OpenFreeMap (OpenMapTiles schema)
@@ -217,7 +221,7 @@ function addSpotlight(map: maplibregl.Map, p: Palette) {
   });
 }
 
-export default function DehradunMap({ pins, currentUserId }: DehradunMapProps) {
+export default function DehradunMap({ pins, currentUserId, myInterests, revealed = true }: DehradunMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
@@ -225,6 +229,8 @@ export default function DehradunMap({ pins, currentUserId }: DehradunMapProps) {
   const [mapReady, setMapReady] = useState(false);
   const { resolvedTheme } = useTheme();
   const isNight = resolvedTheme === "night";
+  const myInterestsKey = myInterests?.join(",") ?? "";
+  const myInterestSet = useMemo(() => new Set(myInterestsKey ? myInterestsKey.split(",") : []), [myInterestsKey]);
 
   // Init map once
   useEffect(() => {
@@ -300,7 +306,7 @@ export default function DehradunMap({ pins, currentUserId }: DehradunMapProps) {
     });
   }, [isNight, mapReady]);
 
-  // Sync people pins whenever they change
+  // Sync people pins whenever they change (gated behind "revealed")
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !mapReady) return;
@@ -308,15 +314,25 @@ export default function DehradunMap({ pins, currentUserId }: DehradunMapProps) {
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    pins.forEach((pin) => {
+    if (!revealed) return;
+
+    const bounds = new maplibregl.LngLatBounds();
+
+    pins.forEach((pin, index) => {
       const isCurrentUser = pin.userId === currentUserId;
+      const sharedInterest = !isCurrentUser
+        ? pin.interests?.find((i) => myInterestSet.has(i))
+        : undefined;
       const checkedInTime = new Date(pin.checkedInAt).toLocaleTimeString("en-IN", {
         hour: "2-digit",
         minute: "2-digit",
       });
 
       const el = document.createElement("div");
-      el.className = `doon-pin ${isCurrentUser ? "doon-pin--me" : ""}`;
+      el.className = `doon-pin ${isCurrentUser ? "doon-pin--me" : ""} ${
+        sharedInterest ? "doon-pin--match" : ""
+      } doon-pin-reveal`;
+      el.style.animationDelay = `${Math.min(index * 60, 600)}ms`;
       el.innerHTML = `
         ${isCurrentUser ? '<span class="doon-pin-pulse"></span>' : ""}
         <div class="doon-pin-avatar">
@@ -326,9 +342,20 @@ export default function DehradunMap({ pins, currentUserId }: DehradunMapProps) {
               : `<span>${(pin.name?.charAt(0) || "?").toUpperCase()}</span>`
           }
           ${isCurrentUser ? '<i class="doon-pin-dot"></i>' : ""}
+          ${sharedInterest ? '<i class="doon-pin-spark">✨</i>' : ""}
         </div>
         <div class="doon-pin-tail"></div>
       `;
+
+      const interestChips = pin.interests?.length
+        ? `<div class="doon-popup-chips">${pin.interests
+            .slice(0, 4)
+            .map(
+              (i) =>
+                `<span class="doon-chip ${myInterestSet.has(i) ? "doon-chip--match" : ""}">${i}</span>`
+            )
+            .join("")}</div>`
+        : "";
 
       const popupHtml = `
         <div class="doon-popup-inner">
@@ -343,10 +370,25 @@ export default function DehradunMap({ pins, currentUserId }: DehradunMapProps) {
             <div>
               <p class="doon-popup-title">${pin.name}</p>
               ${isCurrentUser ? `<p class="doon-popup-you">You</p>` : ""}
+              ${
+                sharedInterest && !isCurrentUser
+                  ? `<p class="doon-popup-match">✨ You both like ${sharedInterest}</p>`
+                  : ""
+              }
             </div>
           </div>
-          ${pin.label ? `<p class="doon-popup-label">${pin.label}</p>` : ""}
+          ${pin.bio ? `<p class="doon-popup-bio">${pin.bio.slice(0, 90)}</p>` : ""}
+          ${interestChips}
+          ${pin.label ? `<p class="doon-popup-label">📍 ${pin.label}</p>` : ""}
           <p class="doon-popup-sub">⏰ Checked in at ${checkedInTime}</p>
+          ${
+            !isCurrentUser
+              ? `<div class="doon-popup-actions">
+                  <a href="/users/${pin.userId}" class="doon-popup-btn doon-popup-btn--outline">View profile</a>
+                  <a href="/chat?dm=${pin.userId}" class="doon-popup-btn doon-popup-btn--fill">Message</a>
+                </div>`
+              : ""
+          }
         </div>
       `;
 
@@ -356,8 +398,15 @@ export default function DehradunMap({ pins, currentUserId }: DehradunMapProps) {
         .addTo(map);
 
       markersRef.current.push(marker);
+      bounds.extend([pin.coords.lng, pin.coords.lat]);
     });
-  }, [pins, currentUserId, mapReady]);
+
+    if (pins.length > 1) {
+      map.fitBounds(bounds, { padding: 70, maxZoom: 15, duration: 900 });
+    } else if (pins.length === 1) {
+      map.flyTo({ center: [pins[0].coords.lng, pins[0].coords.lat], zoom: 14, duration: 900 });
+    }
+  }, [pins, currentUserId, mapReady, revealed, myInterestSet]);
 
   return (
     <div className="relative h-full w-full">
@@ -429,6 +478,32 @@ export default function DehradunMap({ pins, currentUserId }: DehradunMapProps) {
         }
         .doon-pin--me .doon-pin-tail {
           border-top-color: rgb(var(--primary));
+        }
+        .doon-pin--match .doon-pin-avatar {
+          border-color: rgb(var(--accent));
+        }
+        .doon-pin--match .doon-pin-tail {
+          border-top-color: rgb(var(--accent));
+        }
+        .doon-pin-spark {
+          position: absolute;
+          top: -4px;
+          left: -4px;
+          font-size: 12px;
+          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+        }
+        .doon-pin-reveal {
+          animation: doon-reveal 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+        @keyframes doon-reveal {
+          0% {
+            transform: translateY(-14px) scale(0.4);
+            opacity: 0;
+          }
+          100% {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+          }
         }
         .doon-pin-pulse {
           position: absolute;
@@ -525,6 +600,60 @@ export default function DehradunMap({ pins, currentUserId }: DehradunMapProps) {
           font-size: 11px;
           color: rgb(var(--muted));
           margin: 0;
+        }
+        .doon-popup-bio {
+          font-size: 12px;
+          color: rgb(var(--text));
+          margin: 0 0 6px;
+          line-height: 1.4;
+        }
+        .doon-popup-match {
+          font-size: 10px;
+          font-weight: 600;
+          color: rgb(var(--accent));
+          margin: 0;
+        }
+        .doon-popup-chips {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+          margin-bottom: 6px;
+        }
+        .doon-chip {
+          font-size: 10px;
+          font-weight: 600;
+          padding: 2px 7px;
+          border-radius: 999px;
+          background: rgb(var(--background));
+          color: rgb(var(--muted));
+          text-transform: capitalize;
+        }
+        .doon-chip--match {
+          background: rgb(var(--accent) / 0.15);
+          color: rgb(var(--accent));
+        }
+        .doon-popup-actions {
+          display: flex;
+          gap: 6px;
+          margin-top: 8px;
+        }
+        .doon-popup-btn {
+          flex: 1;
+          text-align: center;
+          font-size: 11px;
+          font-weight: 700;
+          padding: 6px 8px;
+          border-radius: 9px;
+          text-decoration: none;
+          white-space: nowrap;
+        }
+        .doon-popup-btn--outline {
+          border: 1px solid rgb(var(--border));
+          color: rgb(var(--text));
+        }
+        .doon-popup-btn--fill {
+          background: rgb(var(--primary));
+          color: white;
         }
         .maplibregl-ctrl-group {
           background: rgb(var(--surface)) !important;

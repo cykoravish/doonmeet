@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { MapPin, Users, Navigation } from "lucide-react";
+import { MapPin, Users, Navigation, Eye, Sparkles } from "lucide-react";
 import CheckInButton from "./CheckInButton";
 import PeopleOnMap from "./PeopleOnMap";
 import Link from "next/link";
 
-// Dynamic import — Leaflet can't run on server
+// Dynamic import — MapLibre can't run on server
 const DehradunMap = dynamic(() => import("./DehradunMap"), {
   ssr: false,
   loading: () => (
@@ -32,6 +32,8 @@ interface LocationPin {
   coords: { lat: number; lng: number };
   label: string | null;
   checkedInAt: string;
+  bio?: string;
+  interests?: string[];
 }
 
 interface CurrentUser {
@@ -39,6 +41,7 @@ interface CurrentUser {
   name: string;
   avatar: string | null;
   isGuest: boolean;
+  interests?: string[];
 }
 
 interface LocationsClientProps {
@@ -46,22 +49,47 @@ interface LocationsClientProps {
   initialLocations: LocationPin[];
 }
 
-export default function LocationsClient({ currentUser, initialLocations }: LocationsClientProps) {
- // eslint-disable-next-line @typescript-eslint/no-explicit-any
- const formattedLocations: LocationPin[] = (initialLocations as any[]).map((location) => ({
-  userId: location.user._id,
-  name: location.user.name,
-  avatar: location.user.avatar,
-  coords: location.coords,
-  label: location.label,
-  checkedInAt: location.checkedInAt,
-}));
+// Raw shape returned by the API before we flatten it for the UI
+interface RawLocation {
+  user: {
+    _id: string;
+    name: string;
+    avatar: string | null;
+    bio?: string;
+    interests?: string[];
+    privacy?: { showInterests?: boolean };
+  };
+  coords: { lat: number; lng: number };
+  label: string | null;
+  checkedInAt: string;
+}
 
-const [locations, setLocations] = useState<LocationPin[]>(formattedLocations);
-const [hasCheckedIn, setHasCheckedIn] = useState(
-  formattedLocations.some((l) => l.userId === currentUser?._id)
-);
+export default function LocationsClient({ currentUser, initialLocations }: LocationsClientProps) {
+  const formattedLocations: LocationPin[] = useMemo(
+    () =>
+      (initialLocations as unknown as RawLocation[]).map((location) => ({
+        userId: location.user._id,
+        name: location.user.name,
+        avatar: location.user.avatar,
+        coords: location.coords,
+        label: location.label,
+        checkedInAt: location.checkedInAt,
+        bio: location.user.bio,
+        interests: location.user.privacy?.showInterests ? location.user.interests : undefined,
+      })),
+    [initialLocations]
+  );
+
+  const [locations, setLocations] = useState<LocationPin[]>(formattedLocations);
+  const [hasCheckedIn, setHasCheckedIn] = useState(
+    formattedLocations.some((l) => l.userId === currentUser?._id)
+  );
   const [isVisible, setIsVisible] = useState(true);
+  const [revealed, setRevealed] = useState(false);
+
+  const otherPeopleCount = locations.filter((l) => l.userId !== currentUser?._id).length;
+
+  const myInterests = useMemo(() => new Set(currentUser?.interests ?? []), [currentUser]);
 
   async function handleCheckIn(coords: { lat: number; lng: number }, label: string | null) {
     try {
@@ -72,8 +100,6 @@ const [hasCheckedIn, setHasCheckedIn] = useState(
       });
 
       if (!res.ok) return;
-
-      const data = await res.json();
 
       // Update local state
       setLocations((prev) => {
@@ -87,11 +113,14 @@ const [hasCheckedIn, setHasCheckedIn] = useState(
             coords,
             label,
             checkedInAt: new Date().toISOString(),
+            bio: undefined,
+            interests: currentUser?.interests,
           },
         ];
       });
       setHasCheckedIn(true);
       setIsVisible(true);
+      setRevealed(true);
     } catch {
       console.error("Check-in failed");
     }
@@ -110,7 +139,7 @@ const [hasCheckedIn, setHasCheckedIn] = useState(
       if (!visible) {
         setLocations((prev) => prev.filter((l) => l.userId !== currentUser?._id));
       } else {
-        const myPin = initialLocations.find((l) => l.userId === currentUser?._id);
+        const myPin = formattedLocations.find((l) => l.userId === currentUser?._id);
         if (myPin) setLocations((prev) => [...prev, myPin]);
       }
     } catch {
@@ -190,14 +219,35 @@ const [hasCheckedIn, setHasCheckedIn] = useState(
         )}
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
           {/* Map */}
-          <div
-            className="overflow-hidden rounded-2xl border"
-            style={{
-              borderColor: "rgb(var(--border))",
-              height: "clamp(360px, 55vw, 640px)",
-            }}
-          >
-            <DehradunMap pins={locations} currentUserId={currentUser?._id} />
+          <div className="relative">
+            <div
+              className="overflow-hidden rounded-2xl border"
+              style={{
+                borderColor: "rgb(var(--border))",
+                height: "clamp(360px, 55vw, 640px)",
+              }}
+            >
+              <DehradunMap
+                pins={locations}
+                currentUserId={currentUser?._id}
+                myInterests={currentUser?.interests}
+                revealed={revealed}
+              />
+            </div>
+
+            {/* Reveal CTA — floats over the map until clicked */}
+            {!revealed && otherPeopleCount > 0 && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <button
+                  onClick={() => setRevealed(true)}
+                  className="pointer-events-auto flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white shadow-2xl transition-transform hover:scale-105"
+                  style={{ backgroundColor: "rgb(var(--primary))" }}
+                >
+                  <Eye size={16} />
+                  View people on map ({otherPeopleCount})
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -283,9 +333,23 @@ const [hasCheckedIn, setHasCheckedIn] = useState(
                 </span>
               </div>
 
-              <div className="max-h-96 overflow-y-auto">
-                <PeopleOnMap pins={locations} currentUserId={currentUser?._id} />
-              </div>
+              {!revealed && otherPeopleCount > 0 ? (
+                <button
+                  onClick={() => setRevealed(true)}
+                  className="flex w-full flex-col items-center gap-1.5 rounded-xl border border-dashed py-6 text-center transition-colors hover:opacity-80"
+                  style={{ borderColor: "rgb(var(--primary) / 0.35)" }}
+                >
+                  <Sparkles size={18} style={{ color: "rgb(var(--primary))" }} />
+                  <span className="text-xs font-semibold">Tap to reveal everyone</span>
+                  <span className="text-[11px]" style={{ color: "rgb(var(--muted))" }}>
+                    See profiles &amp; shared interests
+                  </span>
+                </button>
+              ) : (
+                <div className="max-h-96 overflow-y-auto">
+                  <PeopleOnMap pins={locations} currentUserId={currentUser?._id} myInterests={myInterests} />
+                </div>
+              )}
             </div>
 
             {/* Popular spots */}
