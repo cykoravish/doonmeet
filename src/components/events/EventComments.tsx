@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Send, Loader2 } from "lucide-react";
+import UserLink from "@/components/shared/UserLink";
 
 interface Comment {
   _id: string;
@@ -116,28 +117,32 @@ export default function EventComments({ eventId, commentCount }: EventCommentsPr
         <div className="space-y-4">
           {comments.map((comment) => (
             <div key={comment._id} className="flex gap-3">
-              {comment.author.avatar ? (
-                <Image
-                  src={comment.author.avatar}
-                  alt={comment.author.name}
-                  width={36}
-                  height={36}
-                  className="rounded-full object-cover shrink-0"
-                />
-              ) : (
-                <div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                  style={{ backgroundColor: "rgb(var(--primary))" }}
-                >
-                  {comment.author.name[0]}
-                </div>
-              )}
+              <UserLink userId={comment.author._id} className="shrink-0">
+                {comment.author.avatar ? (
+                  <Image
+                    src={comment.author.avatar}
+                    alt={comment.author.name}
+                    width={36}
+                    height={36}
+                    className="rounded-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white"
+                    style={{ backgroundColor: "rgb(var(--primary))" }}
+                  >
+                    {comment.author.name[0]}
+                  </div>
+                )}
+              </UserLink>
               <div
                 className="flex-1 rounded-2xl rounded-tl-none px-4 py-3"
                 style={{ backgroundColor: "rgb(var(--surface))" }}
               >
                 <div className="mb-1 flex items-center gap-2">
-                  <span className="text-xs font-semibold">{comment.author.name}</span>
+                  <UserLink userId={comment.author._id} className="text-xs font-semibold">
+                    {comment.author.name}
+                  </UserLink>
                   <span className="text-xs" style={{ color: "rgb(var(--muted))" }}>
                     {new Date(comment.createdAt).toLocaleDateString("en-IN", {
                       day: "numeric",

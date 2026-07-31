@@ -10,7 +10,7 @@ export async function getPublicUser(userId: string) {
     await connectDB();
 
     const user = await User.findById(userId)
-      .select("name avatar bio gender address interests privacy role isGuest createdAt lastSeenAt")
+      .select("name avatar bio gender address interests privacy role isGuest isActive createdAt lastSeenAt")
       .lean();
 
     if (!user || !user.isActive || user.isGuest) return null;
