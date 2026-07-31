@@ -49,6 +49,7 @@ const UserSchema = new Schema<IUser>(
       default: null,
       lowercase: true,
       trim: true,
+      unique: true,
       sparse: true, // allows multiple nulls (guests) but unique non-null emails
     },
     phone: {
@@ -62,6 +63,7 @@ const UserSchema = new Schema<IUser>(
     googleId: {
       type: String,
       default: null,
+      unique: true,
       sparse: true,
     },
 
@@ -134,8 +136,6 @@ const UserSchema = new Schema<IUser>(
 // -------------------------
 // Indexes
 // -------------------------
-UserSchema.index({ email: 1 });
-UserSchema.index({ googleId: 1 });
 UserSchema.index({ isGuest: 1, guestExpiresAt: 1 }); // for guest cleanup
 UserSchema.index({ isActive: 1 });
 

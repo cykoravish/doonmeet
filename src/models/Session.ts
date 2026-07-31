@@ -22,7 +22,6 @@ const SessionSchema = new Schema<ISession>(
 // Auto-delete expired sessions — MongoDB handles cleanup
 SessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 SessionSchema.index({ userId: 1 });
-SessionSchema.index({ token: 1 });
 
 export const Session =
   mongoose.models.Session ?? mongoose.model<ISession>("Session", SessionSchema);

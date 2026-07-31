@@ -10,6 +10,7 @@ export default function HeroSection() {
         alt="Clock Tower Dehradun"
         fill
         priority
+        sizes="100vw"
         className="object-cover object-center"
       />
 
