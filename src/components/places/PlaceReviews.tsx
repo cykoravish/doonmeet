@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Star, MessageSquareOff, Loader2 } from "lucide-react";
 import StarRatingInput from "./StarRatingInput";
+import UserLink from "@/components/shared/UserLink";
 
 interface Review {
   _id: string;
@@ -233,15 +234,19 @@ export default function PlaceReviews({
               style={{ borderColor: "rgb(var(--border))" }}
             >
               <div className="flex items-start gap-3">
-                <div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                  style={{ backgroundColor: "rgb(var(--primary))" }}
-                >
-                  {r.user.name[0]?.toUpperCase()}
-                </div>
+                <UserLink userId={r.user._id} className="shrink-0">
+                  <div
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
+                    style={{ backgroundColor: "rgb(var(--primary))" }}
+                  >
+                    {r.user.name[0]?.toUpperCase()}
+                  </div>
+                </UserLink>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold">{r.user.name}</p>
+                    <UserLink userId={r.user._id} className="text-sm font-semibold">
+                      {r.user.name}
+                    </UserLink>
                     <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
                       {timeAgo(r.createdAt)}
                     </p>

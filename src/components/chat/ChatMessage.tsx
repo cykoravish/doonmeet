@@ -1,7 +1,9 @@
 import Image from "next/image";
+import UserLink from "@/components/shared/UserLink";
 
 interface ChatMessageProps {
   content: string;
+  senderId: string;
   senderName: string;
   senderAvatar: string | null;
   isGuest: boolean;
@@ -14,6 +16,7 @@ interface ChatMessageProps {
 
 export default function ChatMessage({
   content,
+  senderId,
   senderName,
   senderAvatar,
   isGuest,
@@ -34,22 +37,24 @@ export default function ChatMessage({
     >
       {/* Avatar — only on the last message of a consecutive group */}
       {showAvatar ? (
-        senderAvatar ? (
-          <Image
-            src={senderAvatar}
-            alt={senderName}
-            width={32}
-            height={32}
-            className="h-8 w-8 shrink-0 rounded-full object-cover self-end"
-          />
-        ) : (
-          <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center self-end rounded-full text-xs font-bold text-white"
-            style={{ backgroundColor: isGuest ? "rgb(var(--muted))" : "rgb(var(--primary))" }}
-          >
-            {senderName[0]?.toUpperCase()}
-          </div>
-        )
+        <UserLink userId={senderId} isGuest={isGuest} className="self-end shrink-0">
+          {senderAvatar ? (
+            <Image
+              src={senderAvatar}
+              alt={senderName}
+              width={32}
+              height={32}
+              className="h-8 w-8 rounded-full object-cover"
+            />
+          ) : (
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
+              style={{ backgroundColor: isGuest ? "rgb(var(--muted))" : "rgb(var(--primary))" }}
+            >
+              {senderName[0]?.toUpperCase()}
+            </div>
+          )}
+        </UserLink>
       ) : (
         <div className="w-8 shrink-0" />
       )}
@@ -59,7 +64,9 @@ export default function ChatMessage({
         {/* Name + badge */}
         {showName && (
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold">{senderName}</span>
+            <UserLink userId={senderId} isGuest={isGuest} className="text-xs font-semibold">
+              {senderName}
+            </UserLink>
           </div>
         )}
 
