@@ -255,6 +255,7 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
                 )}
                 <ChatMessage
                   content={msg.content}
+                  senderId={msg.sender._id}
                   senderName={msg.sender.name}
                   senderAvatar={msg.sender.avatar}
                   isGuest={msg.sender.isGuest}

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { MessageCircle, Loader2, Send } from "lucide-react";
+import UserLink from "@/components/shared/UserLink";
 
 interface Author {
   _id: string;
@@ -121,13 +122,15 @@ function PostComments({
       ) : (
         comments.map((c) => (
           <div key={c._id} className="flex gap-2">
-            <Avatar name={c.author.name} avatar={c.author.avatar} size={24} />
+            <UserLink userId={c.author._id}>
+              <Avatar name={c.author.name} avatar={c.author.avatar} size={24} />
+            </UserLink>
             <div
               className="flex-1 rounded-xl px-3 py-2 text-sm"
               style={{ backgroundColor: "rgb(var(--background))" }}
             >
               <p className="text-xs font-semibold">
-                {c.author.name}{" "}
+                <UserLink userId={c.author._id}>{c.author.name}</UserLink>{" "}
                 <span className="font-normal" style={{ color: "rgb(var(--muted))" }}>
                   · {timeAgo(c.createdAt)}
                 </span>
@@ -273,10 +276,12 @@ export default function CommunityDiscussion({
               style={{ borderColor: "rgb(var(--border))" }}
             >
               <div className="flex gap-3">
-                <Avatar name={post.author.name} avatar={post.author.avatar} />
+                <UserLink userId={post.author._id}>
+                  <Avatar name={post.author.name} avatar={post.author.avatar} />
+                </UserLink>
                 <div className="flex-1">
                   <p className="text-sm font-semibold">
-                    {post.author.name}{" "}
+                    <UserLink userId={post.author._id}>{post.author.name}</UserLink>{" "}
                     <span className="text-xs font-normal" style={{ color: "rgb(var(--muted))" }}>
                       · {timeAgo(post.createdAt)}
                     </span>
