@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
-import { MapPin, MessageCircle, Calendar, Users, PartyPopper, Star } from "lucide-react";
+import { MapPin, MessageCircle, Calendar, Users, PartyPopper, Star, Mail, UserRound, Pencil } from "lucide-react";
 import type { Metadata } from "next";
 import { getPublicUser } from "@/lib/getPublicUser";
 
@@ -55,16 +55,19 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
     year: "numeric",
   });
 
-  const avatarRingStyle = { boxShadow: "0 0 0 4px rgb(var(--background))" };
+  // Ring trick: the box-shadow "border" matches the page background so the
+  // avatar reads as cleanly punched through the banner, in both themes.
+  const avatarRingStyle = {
+    boxShadow:
+      "0 0 0 4px rgb(var(--background)), 0 12px 28px -10px rgb(0 0 0 / 0.35)",
+  };
 
   return (
     <div className="min-h-screen">
-      {/* Banner — contour lines echo the Doon Valley's ridgelines, tying the
-          profile back to the map/locations identity used across the app. */}
-      <div
-        className="relative h-36 overflow-hidden sm:h-44"
-        style={{ backgroundColor: "rgb(var(--primary))" }}
-      >
+      {/* Banner — fixed height, fully contained. The decorative ridgeline
+          motif and everything inside it is strictly clipped by
+          overflow-hidden, so it can never inflate the page layout. */}
+      <div className="relative h-40 overflow-hidden sm:h-52 md:h-60 bg-gradient-to-br from-primary via-primary to-primary-light">
         <svg
           aria-hidden="true"
           viewBox="0 0 400 160"
@@ -73,85 +76,84 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
         >
           <path
             d="M0,40 C60,10 100,55 160,35 C220,15 260,50 320,30 C350,20 380,35 400,25 V0 H0 Z"
-            fill="rgb(255 255 255 / 0.08)"
+            fill="rgb(255 255 255 / 0.10)"
           />
           <path
             d="M0,80 C50,60 110,95 170,75 C230,55 270,90 330,70 C360,60 385,72 400,65 V0 H0 Z"
-            fill="rgb(255 255 255 / 0.06)"
+            fill="rgb(255 255 255 / 0.07)"
           />
           <path
             d="M0,120 C55,100 115,130 175,112 C235,94 275,125 335,108 C365,99 385,110 400,104 V0 H0 Z"
             fill="rgb(255 255 255 / 0.05)"
           />
         </svg>
+        {/* Soft bottom fade so the avatar ring transitions in cleanly */}
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/10 to-transparent" />
       </div>
 
-      <div className="mx-auto max-w-2xl px-6">
-        {/* Identity block — avatar overlaps the banner like a trail marker
-            planted on the ridgeline. */}
-        <div className="-mt-12 flex flex-col items-center text-center sm:-mt-14 sm:flex-row sm:items-end sm:text-left">
-          {user.avatar ? (
-            <Image
-              src={user.avatar}
-              alt={user.name}
-              width={104}
-              height={104}
-              className="h-24 w-24 shrink-0 rounded-full object-cover sm:h-28 sm:w-28"
-              style={avatarRingStyle}
-            />
-          ) : (
-            <div
-              className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full text-3xl font-black text-white sm:h-28 sm:w-28"
-              style={{ backgroundColor: "rgb(var(--primary))", ...avatarRingStyle }}
-            >
-              {user.name[0]?.toUpperCase()}
-            </div>
-          )}
-
-          <div className="mt-3 flex-1 sm:mb-1 sm:ml-5 sm:mt-0">
-            <h1 className="text-2xl font-black">{user.name}</h1>
-            {user.bio && (
-              <p
-                className="mt-1 text-sm leading-relaxed"
-                style={{ color: "rgb(var(--muted))" }}
+      <div className="mx-auto max-w-2xl px-4 sm:px-6">
+        {/* Avatar — the ONLY element pulled up over the banner. Text below
+            stays in normal flow so it can never be clipped by the banner,
+            no matter how long the name/bio get. */}
+        <div className="-mt-14 flex flex-col items-center sm:-mt-16 sm:flex-row sm:items-end">
+          <div className="relative z-10 shrink-0">
+            {user.avatar ? (
+              <Image
+                src={user.avatar}
+                alt={user.name}
+                width={144}
+                height={144}
+                className="h-28 w-28 rounded-full object-cover sm:h-32 sm:w-32 md:h-36 md:w-36"
+                style={avatarRingStyle}
+              />
+            ) : (
+              <div
+                className="flex h-28 w-28 items-center justify-center rounded-full bg-primary text-4xl font-black text-white sm:h-32 sm:w-32 md:h-36 md:w-36"
+                style={avatarRingStyle}
               >
-                {user.bio}
-              </p>
+                {user.name[0]?.toUpperCase()}
+              </div>
             )}
           </div>
+
+          {/* Edit/Message action — sits beside the avatar on larger screens,
+              stays out of the way on mobile where it appears lower down. */}
+          <div className="mt-4 hidden sm:ml-auto sm:mb-2 sm:block">
+            <ProfileAction isOwnProfile={isOwnProfile} currentUserId={currentUserId} userId={userId} name={user.name} />
+          </div>
+        </div>
+
+        {/* Identity block — always below the avatar, normal flow. */}
+        <div className="mt-4 text-center sm:text-left">
+          <h1 className="break-words text-2xl font-black sm:text-3xl">{user.name}</h1>
+          {user.bio && (
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted sm:mx-0">
+              {user.bio}
+            </p>
+          )}
         </div>
 
         {/* Meta row — location + a stamp-style "joined" badge */}
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
           {user.address && (
-            <div
-              className="flex items-center gap-1 text-xs"
-              style={{ color: "rgb(var(--muted))" }}
-            >
-              <MapPin size={11} />
-              {user.address}
+            <div className="flex items-center gap-1 text-xs text-muted">
+              <MapPin size={12} className="shrink-0" />
+              <span className="break-words">{user.address}</span>
             </div>
           )}
-          <div
-            className="flex items-center gap-1 rounded-full border border-dashed px-2.5 py-1 text-xs font-medium"
-            style={{ borderColor: "rgb(var(--accent) / 0.5)", color: "rgb(var(--accent))" }}
-          >
-            <Calendar size={11} />
+          <div className="flex items-center gap-1.5 rounded-full border border-dashed border-accent/50 px-3 py-1 text-xs font-medium text-accent">
+            <Calendar size={12} />
             Exploring Dehradun since {joinedDate}
           </div>
         </div>
 
         {/* Interests */}
         {user.interests?.length > 0 && (
-          <div className="mt-3 flex flex-wrap justify-center gap-1.5 sm:justify-start">
+          <div className="mt-4 flex flex-wrap justify-center gap-1.5 sm:justify-start">
             {user.interests.map((i: string) => (
               <span
                 key={i}
-                className="rounded-full px-2.5 py-0.5 text-xs font-medium capitalize"
-                style={{
-                  backgroundColor: "rgb(var(--primary) / 0.1)",
-                  color: "rgb(var(--primary))",
-                }}
+                className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium capitalize text-primary"
               >
                 {i}
               </span>
@@ -159,36 +161,13 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
           </div>
         )}
 
-        {/* Actions */}
-        <div className="mt-5 flex flex-wrap justify-center gap-2 sm:justify-start">
-          {isOwnProfile ? (
-            <Link
-              href="/profile"
-              className="flex items-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2"
-              style={{ borderColor: "rgb(var(--border))" }}
-            >
-              Edit Profile
-            </Link>
-          ) : currentUserId ? (
-            <StartDMButton recipientId={userId} recipientName={user.name} />
-          ) : (
-            <Link
-              href="/login"
-              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2"
-              style={{ backgroundColor: "rgb(var(--primary))" }}
-            >
-              <MessageCircle size={13} />
-              Send Message
-            </Link>
-          )}
+        {/* Actions — mobile only (desktop version lives beside the avatar) */}
+        <div className="mt-5 flex justify-center sm:hidden">
+          <ProfileAction isOwnProfile={isOwnProfile} currentUserId={currentUserId} userId={userId} name={user.name} fullWidth />
         </div>
 
-        {/* Activity stats — a real footprint of this person's presence on
-            DoonMeet, not decoration. */}
-        <div
-          className="mt-6 grid grid-cols-3 divide-x rounded-2xl border"
-          style={{ borderColor: "rgb(var(--border))", backgroundColor: "rgb(var(--surface))" }}
-        >
+        {/* Activity stats */}
+        <div className="mt-6 grid grid-cols-3 divide-x divide-border rounded-2xl border border-border bg-surface shadow-sm">
           <StatBlock icon={Users} label="Communities" value={user.stats.communities} />
           <StatBlock icon={PartyPopper} label="Events" value={user.stats.events} />
           <StatBlock icon={Star} label="Reviews" value={user.stats.reviews} />
@@ -196,29 +175,17 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
 
         {/* Public info */}
         {(user.gender || user.email) && (
-          <div
-            className="mb-8 mt-4 rounded-2xl border p-5 space-y-3"
-            style={{
-              borderColor: "rgb(var(--border))",
-              backgroundColor: "rgb(var(--surface))",
-            }}
-          >
-            <h2 className="text-sm font-bold">About</h2>
+          <div className="mb-10 mt-4 space-y-1 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+            <h2 className="mb-2 text-sm font-bold">About</h2>
             {user.gender && (
-              <div className="flex items-center justify-between text-sm">
-                <span style={{ color: "rgb(var(--muted))" }}>Gender</span>
-                <span className="font-medium capitalize">{user.gender.replace("_", " ")}</span>
-              </div>
+              <InfoRow icon={UserRound} label="Gender" value={user.gender.replace("_", " ")} capitalize />
             )}
             {user.email && (
-              <div className="flex items-center justify-between text-sm">
-                <span style={{ color: "rgb(var(--muted))" }}>Email</span>
-                <span className="font-medium">{user.email}</span>
-              </div>
+              <InfoRow icon={Mail} label="Email" value={user.email} />
             )}
           </div>
         )}
-        {!user.gender && !user.email && <div className="pb-8" />}
+        {!user.gender && !user.email && <div className="pb-10" />}
       </div>
     </div>
   );
@@ -234,26 +201,84 @@ function StatBlock({
   value: number;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1 px-2 py-4">
-      <Icon size={16} style={{ color: "rgb(var(--primary))" }} />
+    <div className="flex flex-col items-center gap-1 px-2 py-4 transition-colors hover:bg-primary/5">
+      <Icon size={17} className="text-primary" />
       <span className="text-lg font-black">{value}</span>
-      <span className="text-[11px]" style={{ color: "rgb(var(--muted))" }}>
+      <span className="text-[11px] text-muted">{label}</span>
+    </div>
+  );
+}
+
+function InfoRow({
+  icon: Icon,
+  label,
+  value,
+  capitalize,
+}: {
+  icon: typeof UserRound;
+  label: string;
+  value: string;
+  capitalize?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-border/60 py-2.5 text-sm last:border-b-0">
+      <span className="flex items-center gap-2 text-muted">
+        <Icon size={14} className="shrink-0" />
         {label}
+      </span>
+      <span className={`break-all text-right font-medium ${capitalize ? "capitalize" : ""}`}>
+        {value}
       </span>
     </div>
   );
 }
 
-// Static link — no client interactivity needed yet, so this stays server-rendered.
-function StartDMButton({ recipientId, recipientName }: { recipientId: string; recipientName: string }) {
+function ProfileAction({
+  isOwnProfile,
+  currentUserId,
+  userId,
+  name,
+  fullWidth,
+}: {
+  isOwnProfile: boolean;
+  currentUserId: string | null;
+  userId: string;
+  name: string;
+  fullWidth?: boolean;
+}) {
+  const widthClass = fullWidth ? "w-full max-w-xs justify-center" : "";
+
+  if (isOwnProfile) {
+    return (
+      <Link
+        href="/profile"
+        className={`flex items-center gap-1.5 rounded-xl border border-border px-4 py-2 text-xs font-semibold shadow-sm transition-all hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${widthClass}`}
+      >
+        <Pencil size={13} />
+        Edit Profile
+      </Link>
+    );
+  }
+
+  if (currentUserId) {
+    return (
+      <Link
+        href={`/chat?dm=${userId}`}
+        className={`flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${widthClass}`}
+      >
+        <MessageCircle size={13} />
+        Message {name.split(" ")[0]}
+      </Link>
+    );
+  }
+
   return (
     <Link
-      href={`/chat?dm=${recipientId}`}
-      className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2"
-      style={{ backgroundColor: "rgb(var(--primary))" }}
+      href="/login"
+      className={`flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${widthClass}`}
     >
       <MessageCircle size={13} />
-      Message {recipientName.split(" ")[0]}
+      Send Message
     </Link>
   );
 }
