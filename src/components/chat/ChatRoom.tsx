@@ -167,7 +167,7 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
   const remaining = GUEST_LIMIT - guestCount;
 
   return (
-    <div className="flex h-[calc(100vh-64px-72px)] flex-col md:h-[calc(100vh-64px)]">
+    <div className="flex h-full flex-col">
       {/* Chat header */}
       <div
         className="flex items-center justify-between border-b px-4 py-2 md:px-6 md:py-2.5"
