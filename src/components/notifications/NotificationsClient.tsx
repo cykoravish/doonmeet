@@ -29,7 +29,7 @@ const TYPE_CONFIG = {
     color: "rgb(var(--primary))",
     bg: "rgb(var(--primary) / 0.1)",
     label: "sent you a message",
-    href: "/chat",
+    href: "/chat", // fallback; overridden per-notification with the actor's id below
   },
   event_comment: {
     icon: <CalendarDays size={14} />,
@@ -154,10 +154,14 @@ export default function NotificationsClient({
           <div className="space-y-2">
             {notifications.map((notif) => {
               const config = TYPE_CONFIG[notif.type];
+              const href =
+                notif.type === "new_dm" && notif.actor.userId
+                  ? `/chat?dm=${notif.actor.userId}`
+                  : config.href;
               return (
                 <Link
                   key={notif._id}
-                  href={config.href}
+                  href={href}
                   onClick={() => !notif.isRead && markOneRead(notif._id)}
                   className="flex items-start gap-4 rounded-2xl border p-4 transition-all hover:opacity-80"
                   style={{

@@ -1,27 +1,10 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { jwtVerify } from "jose";
 import { MapPin, MessageCircle, Calendar, Users, PartyPopper, Star, Mail, UserRound, Pencil } from "lucide-react";
 import type { Metadata } from "next";
 import { getPublicUser } from "@/lib/getPublicUser";
-
-const ACCESS_TOKEN_SECRET = new TextEncoder().encode(
-  process.env.ACCESS_TOKEN_SECRET
-);
-
-async function getCurrentUserId() {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("access_token")?.value;
-    if (!token) return null;
-    const { payload } = await jwtVerify(token, ACCESS_TOKEN_SECRET);
-    return (payload.userId as string) ?? null;
-  } catch {
-    return null;
-  }
-}
+import { getSessionUser } from "@/lib/getSessionUser";
 
 interface UserProfilePageProps {
   params: Promise<{ userId: string }>;
@@ -42,13 +25,14 @@ export async function generateMetadata({
 export default async function PublicProfilePage({ params }: UserProfilePageProps) {
   const { userId } = await params;
 
-  const [user, currentUserId] = await Promise.all([
+  const [user, currentUser] = await Promise.all([
     getPublicUser(userId),
-    getCurrentUserId(),
+    getSessionUser(),
   ]);
 
   if (!user) notFound();
 
+  const currentUserId = currentUser?._id ?? null;
   const isOwnProfile = currentUserId === userId;
   const joinedDate = new Date(user.createdAt).toLocaleDateString("en-IN", {
     month: "long",
@@ -119,7 +103,13 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
           {/* Edit/Message action — sits beside the avatar on larger screens,
               stays out of the way on mobile where it appears lower down. */}
           <div className="mt-4 hidden sm:ml-auto sm:mb-2 sm:block">
-            <ProfileAction isOwnProfile={isOwnProfile} currentUserId={currentUserId} userId={userId} name={user.name} />
+            <ProfileAction
+              isOwnProfile={isOwnProfile}
+              currentUserId={currentUserId}
+              isGuest={!!currentUser?.isGuest}
+              userId={userId}
+              name={user.name}
+            />
           </div>
         </div>
 
@@ -163,7 +153,14 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
 
         {/* Actions — mobile only (desktop version lives beside the avatar) */}
         <div className="mt-5 flex justify-center sm:hidden">
-          <ProfileAction isOwnProfile={isOwnProfile} currentUserId={currentUserId} userId={userId} name={user.name} fullWidth />
+          <ProfileAction
+            isOwnProfile={isOwnProfile}
+            currentUserId={currentUserId}
+            isGuest={!!currentUser?.isGuest}
+            userId={userId}
+            name={user.name}
+            fullWidth
+          />
         </div>
 
         {/* Activity stats */}
@@ -236,12 +233,14 @@ function InfoRow({
 function ProfileAction({
   isOwnProfile,
   currentUserId,
+  isGuest,
   userId,
   name,
   fullWidth,
 }: {
   isOwnProfile: boolean;
   currentUserId: string | null;
+  isGuest: boolean;
   userId: string;
   name: string;
   fullWidth?: boolean;
@@ -256,6 +255,20 @@ function ProfileAction({
       >
         <Pencil size={13} />
         Edit Profile
+      </Link>
+    );
+  }
+
+  // Signed-in guest accounts can't start DMs — the API would 403. Send them
+  // to sign up instead of showing a button that silently fails.
+  if (currentUserId && isGuest) {
+    return (
+      <Link
+        href="/signup"
+        className={`flex items-center gap-1.5 rounded-xl border border-dashed border-accent/60 px-4 py-2 text-xs font-semibold text-accent shadow-sm transition-all hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${widthClass}`}
+      >
+        <MessageCircle size={13} />
+        Sign up to message
       </Link>
     );
   }
