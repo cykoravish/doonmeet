@@ -10,6 +10,7 @@ import { withAuth, AuthenticatedRequest } from "@/middleware/auth";
 import { validateBody, validateQuery } from "@/middleware/validate";
 import { dmLimiter, generalLimiter } from "@/middleware/rateLimit";
 import { sendDirectMessageSchema, getMessagesSchema } from "@/validations/directMessage";
+import { getIO, isUserActiveInRoom } from "@/lib/socket";
 
 // GET /api/conversations/[conversationId]/messages
 export const GET = withAuth(
@@ -90,6 +91,32 @@ export const GET = withAuth(
         { _id: conversationId },
         { $set: { [`unreadCount.${userId}`]: 0 } }
       );
+
+      // Keep the notification bell consistent with what's actually been
+      // read: clear unread new_dm notifications from this conversation's
+      // other participant.
+      const otherParticipantId = (conversation.participants as unknown[]).find(
+        (p) => String(p) !== userId
+      );
+      if (otherParticipantId) {
+        const { modifiedCount } = await Notification.updateMany(
+          {
+            recipient: req.user._id,
+            type: "new_dm",
+            "actor.userId": otherParticipantId,
+            isRead: false,
+          },
+          { $set: { isRead: true } }
+        );
+        if (modifiedCount > 0) {
+          try {
+            getIO().to(`user:${userId}`).emit("notification:read_bulk", { count: modifiedCount });
+          } catch {
+            // Socket server not reachable from this process — safe to ignore,
+            // the notification is still correctly marked read in the DB.
+          }
+        }
+      }
 
       return NextResponse.json(
         {
@@ -181,9 +208,34 @@ export const POST = withAuth(
         }
       );
 
-      // Create notification for recipient
-      if (recipientId) {
-        await Notification.create({
+      await message.populate("sender", "name avatar");
+
+      // Broadcast over the socket too — this REST endpoint only runs when a
+      // client's socket connection is down, but the recipient's might still
+      // be up (e.g. their tab is open, only the sender's connection dropped).
+      let recipientActive = false;
+      try {
+        const io = getIO();
+        const dmRoom = `dm:${conversationId}`;
+        io.to(dmRoom).emit("dm:message", {
+          _id: message._id,
+          conversationId,
+          content: message.content,
+          createdAt: message.createdAt,
+          sender: message.sender,
+        });
+        if (recipientId) {
+          recipientActive = isUserActiveInRoom(io, dmRoom, String(recipientId));
+        }
+      } catch {
+        // Socket server not reachable from this process — the message is
+        // still saved; the recipient will see it next time they fetch.
+      }
+
+      // Create notification for recipient — unless they're already looking
+      // at this conversation live (avoids a redundant/noisy notification).
+      if (recipientId && !recipientActive) {
+        const notification = await Notification.create({
           recipient: recipientId,
           type: "new_dm",
           refModel: "DirectMessage",
@@ -195,9 +247,21 @@ export const POST = withAuth(
             avatar: req.user.avatar,
           },
         });
-      }
 
-      await message.populate("sender", "name avatar");
+        try {
+          getIO()
+            .to(`user:${String(recipientId)}`)
+            .emit("notification:new", {
+              _id: notification._id,
+              type: "new_dm",
+              preview: notification.preview,
+              actor: notification.actor,
+              createdAt: notification.createdAt,
+            });
+        } catch {
+          // Ignore — recipient will still see it next time they load notifications.
+        }
+      }
 
       return NextResponse.json({ success: true, message }, { status: 201 });
     } catch (error) {

@@ -21,6 +21,19 @@ interface AuthenticatedSocket extends Socket {
 
 let io: SocketServer;
 
+// Is this user currently connected with the given room joined? Used to
+// avoid spamming a "new message" notification at someone who's already
+// looking at that exact conversation in real time.
+export function isUserActiveInRoom(server: SocketServer, room: string, userId: string): boolean {
+  const socketIds = server.sockets.adapter.rooms.get(room);
+  if (!socketIds) return false;
+  for (const id of socketIds) {
+    const s = server.sockets.sockets.get(id) as AuthenticatedSocket | undefined;
+    if (s?.userId === userId) return true;
+  }
+  return false;
+}
+
 export function initSocket(httpServer: HttpServer): SocketServer {
   if (io) return io; // singleton
 
@@ -181,6 +194,29 @@ export function initSocket(httpServer: HttpServer): SocketServer {
           { $set: { [`unreadCount.${socket.userId}`]: 0 } }
         );
 
+        // Opening this conversation means its unread DM notifications have
+        // effectively been seen — clear them so the bell/notifications page
+        // stay consistent with the conversation's own read state.
+        const otherParticipantId = conversation.participants.find(
+          (p: unknown) => String(p) !== socket.userId
+        );
+        if (otherParticipantId) {
+          const { modifiedCount } = await Notification.updateMany(
+            {
+              recipient: socket.userId,
+              type: "new_dm",
+              "actor.userId": otherParticipantId,
+              isRead: false,
+            },
+            { $set: { isRead: true } }
+          );
+          if (modifiedCount > 0) {
+            io.to(`user:${socket.userId}`).emit("notification:read_bulk", {
+              count: modifiedCount,
+            });
+          }
+        }
+
         socket.to(`dm:${data.conversationId}`).emit("dm:read", {
           conversationId: data.conversationId,
           readBy: socket.userId,
@@ -254,26 +290,39 @@ export function initSocket(httpServer: HttpServer): SocketServer {
 
         io.to(`dm:${data.conversationId}`).emit("dm:message", messagePayload);
 
-        const notification = await Notification.create({
-          recipient: recipientId,
-          type: "new_dm",
-          refModel: "DirectMessage",
-          refId: message._id,
-          preview: content.slice(0, 100),
-          actor: {
-            userId: socket.userId,
-            name: socket.name,
-            avatar: socket.avatar,
-          },
-        });
+        // Skip the notification if the recipient already has this exact
+        // conversation open — they're seeing the message live via
+        // dm:message above, a notification would just be noise (and would
+        // make the bell count drift out of sync with what's actually
+        // unread).
+        const recipientActive = isUserActiveInRoom(
+          io,
+          `dm:${data.conversationId}`,
+          String(recipientId)
+        );
 
-        io.to(`user:${String(recipientId)}`).emit("notification:new", {
-          _id: notification._id,
-          type: "new_dm",
-          preview: notification.preview,
-          actor: notification.actor,
-          createdAt: notification.createdAt,
-        });
+        if (!recipientActive) {
+          const notification = await Notification.create({
+            recipient: recipientId,
+            type: "new_dm",
+            refModel: "DirectMessage",
+            refId: message._id,
+            preview: content.slice(0, 100),
+            actor: {
+              userId: socket.userId,
+              name: socket.name,
+              avatar: socket.avatar,
+            },
+          });
+
+          io.to(`user:${String(recipientId)}`).emit("notification:new", {
+            _id: notification._id,
+            type: "new_dm",
+            preview: notification.preview,
+            actor: notification.actor,
+            createdAt: notification.createdAt,
+          });
+        }
       } catch (error) {
         console.error("[socket dm:message] Error:", error);
         socket.emit("error", { message: "Failed to send message" });
