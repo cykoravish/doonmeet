@@ -180,40 +180,61 @@ export const POST = withAuth(
         );
       }
 
-      // Save message
-      const message = await DirectMessage.create({
-        conversationId,
-        sender: req.user._id,
-        content,
-        readBy: [{ userId: req.user._id, readAt: new Date() }],
-      });
-
       // Get recipient
       const recipientId = conversation.participants.find(
         (p: string) => String(p) !== String(req.user._id)
       );
 
-      // Update conversation snapshot + increment recipient unread count atomically
-      await Conversation.updateOne(
-        { _id: conversationId },
-        {
-          $set: {
-            lastMessage: {
-              content: content.slice(0, 100),
-              sentAt: message.createdAt,
-              senderId: req.user._id,
-            },
-          },
-          $inc: { [`unreadCount.${String(recipientId)}`]: 1 },
+      // Is the recipient already looking at this exact conversation right
+      // now (their own socket has it joined)? If so, treat this message as
+      // instantly read for them, same as the socket dm:message handler
+      // does — otherwise the unread badge/notification would be wrong the
+      // moment they step away.
+      let recipientActive = false;
+      try {
+        if (recipientId) {
+          recipientActive = isUserActiveInRoom(getIO(), `dm:${conversationId}`, String(recipientId));
         }
-      );
+      } catch {
+        // Socket server not reachable from this process — fall back to
+        // treating the recipient as not-active (safe default: they'll get
+        // a normal unread message + notification).
+      }
+
+      const readBy = [{ userId: req.user._id, readAt: new Date() }];
+      if (recipientActive && recipientId) {
+        readBy.push({ userId: recipientId, readAt: new Date() });
+      }
+
+      // Save message
+      const message = await DirectMessage.create({
+        conversationId,
+        sender: req.user._id,
+        content,
+        readBy,
+      });
+
+      // Update conversation snapshot + increment recipient unread count
+      // atomically — but only if they're not already seeing it live.
+      const conversationUpdate: Record<string, unknown> = {
+        $set: {
+          lastMessage: {
+            content: content.slice(0, 100),
+            sentAt: message.createdAt,
+            senderId: req.user._id,
+          },
+        },
+      };
+      if (!recipientActive) {
+        conversationUpdate.$inc = { [`unreadCount.${String(recipientId)}`]: 1 };
+      }
+      await Conversation.updateOne({ _id: conversationId }, conversationUpdate);
 
       await message.populate("sender", "name avatar");
 
       // Broadcast over the socket too — this REST endpoint only runs when a
       // client's socket connection is down, but the recipient's might still
       // be up (e.g. their tab is open, only the sender's connection dropped).
-      let recipientActive = false;
       try {
         const io = getIO();
         const dmRoom = `dm:${conversationId}`;
@@ -224,8 +245,12 @@ export const POST = withAuth(
           createdAt: message.createdAt,
           sender: message.sender,
         });
-        if (recipientId) {
-          recipientActive = isUserActiveInRoom(io, dmRoom, String(recipientId));
+        if (recipientActive && recipientId) {
+          io.to(dmRoom).emit("dm:read", {
+            conversationId,
+            readBy: String(recipientId),
+            readAt: readBy[1].readAt,
+          });
         }
       } catch {
         // Socket server not reachable from this process — the message is
@@ -257,6 +282,7 @@ export const POST = withAuth(
               preview: notification.preview,
               actor: notification.actor,
               createdAt: notification.createdAt,
+              isRead: false,
             });
         } catch {
           // Ignore — recipient will still see it next time they load notifications.

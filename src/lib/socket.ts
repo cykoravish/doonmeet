@@ -249,32 +249,44 @@ export function initSocket(httpServer: HttpServer): SocketServer {
 
         if (!conversation) return;
 
-        const message = await DirectMessage.create({
-          conversationId: data.conversationId,
-          sender: socket.userId,
-          content,
-          readBy: [{ userId: socket.userId, readAt: new Date() }],
-        });
-
         const recipientId = conversation.participants.find(
           (p: unknown) => String(p) !== socket.userId
         );
 
         if (!recipientId) return;
 
-        await Conversation.updateOne(
-          { _id: data.conversationId },
-          {
-            $set: {
-              lastMessage: {
-                content: content.slice(0, 100),
-                sentAt: message.createdAt,
-                senderId: socket.userId,
-              },
+        const dmRoom = `dm:${data.conversationId}`;
+        // Is the recipient already looking at this exact conversation right
+        // now? If so, treat the message as instantly read for them — both
+        // the unread badge and any notification should reflect that they've
+        // already seen it live, not that it's still waiting to be read.
+        const recipientActive = isUserActiveInRoom(io, dmRoom, String(recipientId));
+
+        const readBy = [{ userId: socket.userId, readAt: new Date() }];
+        if (recipientActive) {
+          readBy.push({ userId: recipientId, readAt: new Date() });
+        }
+
+        const message = await DirectMessage.create({
+          conversationId: data.conversationId,
+          sender: socket.userId,
+          content,
+          readBy,
+        });
+
+        const conversationUpdate: Record<string, unknown> = {
+          $set: {
+            lastMessage: {
+              content: content.slice(0, 100),
+              sentAt: message.createdAt,
+              senderId: socket.userId,
             },
-            $inc: { [`unreadCount.${String(recipientId)}`]: 1 },
-          }
-        );
+          },
+        };
+        if (!recipientActive) {
+          conversationUpdate.$inc = { [`unreadCount.${String(recipientId)}`]: 1 };
+        }
+        await Conversation.updateOne({ _id: data.conversationId }, conversationUpdate);
 
         const messagePayload = {
           _id: message._id,
@@ -288,19 +300,22 @@ export function initSocket(httpServer: HttpServer): SocketServer {
           },
         };
 
-        io.to(`dm:${data.conversationId}`).emit("dm:message", messagePayload);
+        io.to(dmRoom).emit("dm:message", messagePayload);
+
+        if (recipientActive) {
+          // Let the sender's UI show an instant "read" state for this message.
+          socket.emit("dm:read", {
+            conversationId: data.conversationId,
+            readBy: String(recipientId),
+            readAt: readBy[1].readAt,
+          });
+        }
 
         // Skip the notification if the recipient already has this exact
         // conversation open — they're seeing the message live via
         // dm:message above, a notification would just be noise (and would
         // make the bell count drift out of sync with what's actually
         // unread).
-        const recipientActive = isUserActiveInRoom(
-          io,
-          `dm:${data.conversationId}`,
-          String(recipientId)
-        );
-
         if (!recipientActive) {
           const notification = await Notification.create({
             recipient: recipientId,
@@ -321,6 +336,7 @@ export function initSocket(httpServer: HttpServer): SocketServer {
             preview: notification.preview,
             actor: notification.actor,
             createdAt: notification.createdAt,
+            isRead: false,
           });
         }
       } catch (error) {

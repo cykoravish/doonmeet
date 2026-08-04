@@ -3,56 +3,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Bell, MessageCircle, CalendarDays, CheckCheck } from "lucide-react";
-
-interface Notification {
-  _id: string;
-  type: "new_dm" | "event_comment" | "comment_reply" | "new_event";
-  preview: string | null;
-  isRead: boolean;
-  createdAt: string;
-  actor: {
-    userId: string;
-    name: string;
-    avatar: string | null;
-  };
-}
+import { Bell, CheckCheck } from "lucide-react";
+import {
+  NOTIFICATION_TYPE_CONFIG,
+  getNotificationHref,
+  timeAgo,
+  type NotificationItem,
+} from "@/lib/notificationTypeConfig";
 
 interface NotificationsClientProps {
-  initialNotifications: Notification[];
+  initialNotifications: NotificationItem[];
   initialUnreadCount: number;
 }
-
-const TYPE_CONFIG = {
-  new_dm: {
-    icon: <MessageCircle size={14} />,
-    color: "rgb(var(--primary))",
-    bg: "rgb(var(--primary) / 0.1)",
-    label: "sent you a message",
-    href: "/chat", // fallback; overridden per-notification with the actor's id below
-  },
-  event_comment: {
-    icon: <CalendarDays size={14} />,
-    color: "rgb(var(--accent))",
-    bg: "rgb(var(--accent) / 0.1)",
-    label: "commented on your event",
-    href: "/events",
-  },
-  comment_reply: {
-    icon: <CalendarDays size={14} />,
-    color: "rgb(100 120 220)",
-    bg: "rgb(100 120 220 / 0.1)",
-    label: "replied to your comment",
-    href: "/events",
-  },
-  new_event: {
-    icon: <CalendarDays size={14} />,
-    color: "rgb(var(--primary-light))",
-    bg: "rgb(var(--primary-light) / 0.1)",
-    label: "created a new event",
-    href: "/events",
-  },
-};
 
 export default function NotificationsClient({
   initialNotifications,
@@ -80,17 +42,6 @@ export default function NotificationsClient({
     );
     setUnreadCount((prev) => Math.max(0, prev - 1));
   }
-
-  const timeAgo = (date: string) => {
-    const diff = Date.now() - new Date(date).getTime();
-    const mins = Math.floor(diff / 60000);
-    const hours = Math.floor(mins / 60);
-    const days = Math.floor(hours / 24);
-    if (days > 0) return `${days}d ago`;
-    if (hours > 0) return `${hours}h ago`;
-    if (mins > 0) return `${mins}m ago`;
-    return "Just now";
-  };
 
   return (
     <div className="min-h-screen">
@@ -153,15 +104,11 @@ export default function NotificationsClient({
         ) : (
           <div className="space-y-2">
             {notifications.map((notif) => {
-              const config = TYPE_CONFIG[notif.type];
-              const href =
-                notif.type === "new_dm" && notif.actor.userId
-                  ? `/chat?dm=${notif.actor.userId}`
-                  : config.href;
+              const config = NOTIFICATION_TYPE_CONFIG[notif.type];
               return (
                 <Link
                   key={notif._id}
-                  href={href}
+                  href={getNotificationHref(notif)}
                   onClick={() => !notif.isRead && markOneRead(notif._id)}
                   className="flex items-start gap-4 rounded-2xl border p-4 transition-all hover:opacity-80"
                   style={{
