@@ -90,25 +90,45 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       return NextResponse.json({ success: false, message: "User not found." }, { status: 404 });
     }
 
-    // Sort participants so [A,B] === [B,A] — ensures unique index works
+    // Sort participants so [A,B] === [B,A] — deterministic pair key
     const participants = [String(req.user._id), recipientId].sort();
+    const participantsKey = participants.join("_");
 
-    // Find existing or create new — upsert pattern
-    const conversation = await Conversation.findOneAndUpdate(
-      { participants },
-      {
-        $setOnInsert: {
-          participants,
-          unreadCount: {},
-          lastMessage: { content: null, sentAt: null, senderId: null },
+    let conversation;
+    try {
+      // Find existing or create new — upsert pattern
+      conversation = await Conversation.findOneAndUpdate(
+        { participantsKey },
+        {
+          $setOnInsert: {
+            participants,
+            participantsKey,
+            unreadCount: {},
+            lastMessage: { content: null, sentAt: null, senderId: null },
+          },
         },
-      },
-      {
-        upsert: true,
-        new: true,
-        setDefaultsOnInsert: true,
+        {
+          upsert: true,
+          new: true,
+          setDefaultsOnInsert: true,
+        }
+      ).populate("participants", "name avatar lastSeenAt");
+    } catch (err: unknown) {
+      // Two simultaneous requests both tried to create this pair's first
+      // conversation — the other one won the race. Just fetch it.
+      if (err && typeof err === "object" && "code" in err && err.code === 11000) {
+        conversation = await Conversation.findOne({ participantsKey }).populate(
+          "participants",
+          "name avatar lastSeenAt"
+        );
+      } else {
+        throw err;
       }
-    ).populate("participants", "name avatar lastSeenAt");
+    }
+
+    if (!conversation) {
+      return NextResponse.json({ success: false, message: "Something went wrong." }, { status: 500 });
+    }
 
     return NextResponse.json(
       {
