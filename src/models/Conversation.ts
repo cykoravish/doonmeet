@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export interface IConversation extends Document {
   participants: mongoose.Types.ObjectId[];
+  participantsKey: string;
   lastMessage: {
     content: string | null;
     sentAt: Date | null;
@@ -13,6 +14,12 @@ export interface IConversation extends Document {
 const ConversationSchema = new Schema<IConversation>(
   {
     participants: [{ type: Schema.Types.ObjectId, ref: "User", required: true }],
+    // Deterministic "sortedId1_sortedId2" string — this is what enforces
+    // "one conversation per pair of users". A unique index directly on
+    // `participants` would be a *multikey* index, which enforces
+    // uniqueness per array ELEMENT across every document, not per pair —
+    // that would let each user appear in at most one conversation, ever.
+    participantsKey: { type: String, required: true, unique: true },
     lastMessage: {
       content: { type: String, default: null },
       sentAt: { type: Date, default: null },
@@ -24,8 +31,6 @@ const ConversationSchema = new Schema<IConversation>(
   { timestamps: true }
 );
 
-// Unique pair — prevents duplicate conversations between same two users
-ConversationSchema.index({ participants: 1 }, { unique: true });
 ConversationSchema.index({ updatedAt: -1 });
 
 export const Conversation =
