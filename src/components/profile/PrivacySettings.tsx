@@ -36,7 +36,7 @@ export default function PrivacySettings({ initialPrivacy }: PrivacySettingsProps
     setError("");
 
     try {
-      const res = await fetch("/api/users/me/privacy", {
+      const res = await fetch("/api/users/privacy", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ [key]: newValue }),
@@ -44,7 +44,8 @@ export default function PrivacySettings({ initialPrivacy }: PrivacySettingsProps
 
       if (!res.ok) {
         setPrivacy((prev) => ({ ...prev, [key]: !newValue }));
-        setError("Failed to update privacy setting.");
+        const data = await res.json().catch(() => null);
+        setError(data?.message || "Failed to update privacy setting.");
       }
     } catch {
       setPrivacy((prev) => ({ ...prev, [key]: !newValue }));

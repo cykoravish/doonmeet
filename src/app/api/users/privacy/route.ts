@@ -44,7 +44,7 @@ export const PATCH = withAuth(async (req: AuthenticatedRequest) => {
       { status: 200 }
     );
   } catch (error) {
-    console.error("[PATCH /users/me/privacy] Error:", error);
+    console.error("[PATCH /users/privacy] Error:", error);
     return NextResponse.json({ success: false, message: "Something went wrong." }, { status: 500 });
   }
 });
