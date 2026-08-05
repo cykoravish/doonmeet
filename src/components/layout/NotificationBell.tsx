@@ -1,70 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Bell, CheckCheck, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { io, Socket } from "socket.io-client";
-import {
-  NOTIFICATION_TYPE_CONFIG,
-  getNotificationHref,
-  timeAgo,
-  type NotificationItem,
-} from "@/lib/notificationTypeConfig";
+import { NOTIFICATION_TYPE_CONFIG, getNotificationHref, timeAgo } from "@/lib/notificationTypeConfig";
+import { useNotifications } from "@/providers/notifications-provider";
 
-export default function NotificationBell({ userId }: { userId: string }) {
+export default function NotificationBell() {
+  const { notifications, unreadCount, loading, markOneRead, markAllRead } = useNotifications();
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [marking, setMarking] = useState(false);
-
   const panelRef = useRef<HTMLDivElement>(null);
-  const socketRef = useRef<Socket | null>(null);
-
-  const loadNotifications = useCallback(() => {
-    fetch("/api/notifications?limit=8")
-      .then((r) => r.json())
-      .then((d) => {
-        setNotifications(d.notifications ?? []);
-        setUnreadCount(d.unreadCount ?? 0);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    loadNotifications();
-
-    // Live updates while the app is open — a new DM/comment adds straight
-    // into the dropdown, and reads from elsewhere (another tab, opening a
-    // DM, "mark all read") clear it — without this the bell only ever
-    // reflected the moment the page loaded.
-    const socket = io({ withCredentials: true });
-    socketRef.current = socket;
-
-    socket.on("notification:new", (notif: NotificationItem) => {
-      setUnreadCount((prev) => prev + 1);
-      setNotifications((prev) => [notif, ...prev].slice(0, 8));
-    });
-
-    socket.on("notification:read_bulk", () => {
-      // We don't know exactly which ones were marked read from wherever
-      // this came from — refetch so the dropdown list itself stays
-      // accurate, not just the count.
-      loadNotifications();
-    });
-
-    function handleFocus() {
-      loadNotifications();
-    }
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      socket.disconnect();
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, [userId, loadNotifications]);
 
   // Close the dropdown on outside click or Escape
   useEffect(() => {
@@ -87,22 +34,10 @@ export default function NotificationBell({ userId }: { userId: string }) {
     };
   }, [open]);
 
-  async function markOneRead(id: string) {
-    setNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));
-    setUnreadCount((prev) => Math.max(0, prev - 1));
-    try {
-      await fetch(`/api/notifications/${id}`, { method: "PATCH" });
-    } catch {
-      // Non-critical — worst case the badge resyncs on next focus/socket event.
-    }
-  }
-
-  async function markAllRead() {
+  async function handleMarkAllRead() {
     setMarking(true);
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    setUnreadCount(0);
     try {
-      await fetch("/api/notifications/read", { method: "PATCH" });
+      await markAllRead();
     } finally {
       setMarking(false);
     }
@@ -130,7 +65,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
             <p className="text-sm font-bold">Notifications</p>
             {unreadCount > 0 && (
               <button
-                onClick={markAllRead}
+                onClick={handleMarkAllRead}
                 disabled={marking}
                 className="flex items-center gap-1 text-xs font-semibold text-primary transition-opacity hover:opacity-70 disabled:opacity-50"
               >
@@ -183,7 +118,9 @@ export default function NotificationBell({ userId }: { userId: string }) {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs leading-snug">
-                        <span className="font-semibold">{notif.actor.name}</span>{" "}
+                        <span className={notif.isRead ? "font-medium" : "font-bold"}>
+                          {notif.actor.name}
+                        </span>{" "}
                         <span className="text-muted">{config.label}</span>
                       </p>
                       {notif.preview && (

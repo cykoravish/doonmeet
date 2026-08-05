@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "../theme/theme-toggle";
 import type { NavUser } from "@/types/user";
+import { useNotifications } from "@/providers/notifications-provider";
 
 interface MobileDrawerProps {
   user: NavUser | null;
@@ -17,6 +18,7 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
   const router = useRouter();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const { unreadCount } = useNotifications();
 
   // Scroll lock + Escape key + focus management
   useEffect(() => {
@@ -75,11 +77,16 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
       <button
         ref={triggerRef}
         onClick={() => setOpen(true)}
-        className="flex h-10 w-10 items-center justify-center rounded-xl border border-border"
-        aria-label="Open menu"
+        className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border"
+        aria-label={unreadCount > 0 ? `Open menu, ${unreadCount} unread notifications` : "Open menu"}
         aria-expanded={open}
       >
         <Menu size={18} />
+        {unreadCount > 0 && (
+          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
       </button>
 
       {open && (
@@ -204,6 +211,7 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
                       href="/notifications"
                       icon={<Bell size={15} />}
                       label="Notifications"
+                      badge={unreadCount > 0 ? unreadCount : undefined}
                       onClick={() => setOpen(false)}
                     />
                   </>
@@ -245,11 +253,13 @@ function DrawerLink({
   href,
   icon,
   label,
+  badge,
   onClick,
 }: {
   href: string;
   icon: React.ReactNode;
   label: string;
+  badge?: number;
   onClick: () => void;
 }) {
   return (
@@ -259,7 +269,12 @@ function DrawerLink({
       className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-text transition-colors hover:opacity-80"
     >
       <span className="text-muted">{icon}</span>
-      {label}
+      <span className="flex-1">{label}</span>
+      {!!badge && (
+        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-white">
+          {badge > 9 ? "9+" : badge}
+        </span>
+      )}
     </Link>
   );
 }
