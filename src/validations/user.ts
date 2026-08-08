@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { objectId, paginationSchema } from "./shared";
 export const updateProfileSchema = z.object({
   name: z
     .string()
@@ -29,5 +28,26 @@ export const updatePrivacySchema = z.object({
   showInterests: z.boolean().optional(),
 });
 
+// "All members" list — page-based (not cursor) because results are sorted
+// online-first then alphabetically; a compound sort like that doesn't map
+// cleanly onto a single opaque cursor, and at this app's scale (a single
+// city's user base) skip/limit is simple, correct, and fast enough.
+export const listUsersSchema = z.object({
+  page: z
+    .string()
+    .optional()
+    .transform((val) => Math.max(parseInt(val ?? "1", 10) || 1, 1)),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => Math.min(Math.max(parseInt(val ?? "20", 10) || 20, 1), 50)),
+  search: z
+    .string()
+    .max(50)
+    .optional()
+    .transform((val) => val?.trim() || undefined),
+});
+
+export type ListUsersInput = z.infer<typeof listUsersSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type UpdatePrivacyInput = z.infer<typeof updatePrivacySchema>;

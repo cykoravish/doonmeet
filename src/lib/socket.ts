@@ -34,6 +34,17 @@ export function isUserActiveInRoom(server: SocketServer, room: string, userId: s
   return false;
 }
 
+// How many live sockets does this user currently have open (multiple tabs/
+// devices count separately)? Used to decide whether a single disconnect
+// should actually flip them to "offline", or if another tab is still up.
+function countUserSockets(server: SocketServer, userId: string): number {
+  let count = 0;
+  for (const s of server.sockets.sockets.values()) {
+    if ((s as AuthenticatedSocket).userId === userId) count += 1;
+  }
+  return count;
+}
+
 export function initSocket(httpServer: HttpServer): SocketServer {
   if (io) return io; // singleton
 
@@ -103,6 +114,22 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     socket.join(`user:${socket.userId}`);
 
     // -------------------------------------------------------
+    // PRESENCE — flip real (non-guest) users online. Guests are excluded
+    // from the members list entirely, so their presence isn't tracked.
+    // -------------------------------------------------------
+    if (!socket.isGuest) {
+      User.updateOne({ _id: socket.userId }, { $set: { isOnline: true } })
+        .then(() => {
+          io.to("presence:room").emit("presence:update", {
+            userId: socket.userId,
+            isOnline: true,
+            lastSeenAt: null,
+          });
+        })
+        .catch((err) => console.error("[socket] Failed to mark user online:", err));
+    }
+
+    // -------------------------------------------------------
     // PUBLIC ROOM — join/leave
     // -------------------------------------------------------
     socket.on("room:join", () => {
@@ -160,6 +187,19 @@ export function initSocket(httpServer: HttpServer): SocketServer {
         console.error("[socket room:message] Error:", error);
         socket.emit("error", { message: "Failed to send message" });
       }
+    });
+
+    // -------------------------------------------------------
+    // PRESENCE — join/leave the shared presence room. Only sockets that
+    // currently have the "All members" panel open subscribe here, so we're
+    // not broadcasting presence churn to every connected client all the time.
+    // -------------------------------------------------------
+    socket.on("presence:join", () => {
+      socket.join("presence:room");
+    });
+
+    socket.on("presence:leave", () => {
+      socket.leave("presence:room");
     });
 
     // -------------------------------------------------------
@@ -368,7 +408,29 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     // -------------------------------------------------------
     socket.on("disconnect", async () => {
       console.log(`[socket] Disconnected: ${socket.name} (${socket.userId})`);
-      await User.updateOne({ _id: socket.userId }, { lastSeenAt: new Date() }).catch(() => {});
+
+      try {
+        // Socket.io hasn't dropped this socket from the adapter yet at the
+        // moment "disconnect" fires, so the count below still includes it —
+        // <= 1 means this was the user's last open tab/device.
+        const remaining = countUserSockets(io, socket.userId);
+        const wasLastSocket = remaining <= 1;
+
+        const update: Record<string, unknown> = { lastSeenAt: new Date() };
+        if (!socket.isGuest && wasLastSocket) update.isOnline = false;
+
+        await User.updateOne({ _id: socket.userId }, update);
+
+        if (!socket.isGuest && wasLastSocket) {
+          io.to("presence:room").emit("presence:update", {
+            userId: socket.userId,
+            isOnline: false,
+            lastSeenAt: update.lastSeenAt,
+          });
+        }
+      } catch (error) {
+        console.error("[socket disconnect] Error updating presence:", error);
+      }
     });
   });
 
