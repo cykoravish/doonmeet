@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,12 +16,28 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://doonmeet.in"),
   title: {
     default: "DoonMeet - Meet People, Events & Communities in Dehradun",
     template: "%s | DoonMeet",
   },
   description:
     "Discover local events, join communities, chat with people, and connect with others in Dehradun through DoonMeet.",
+  openGraph: {
+    title: "DoonMeet - Meet People, Events & Communities in Dehradun",
+    description:
+      "Discover local events, join communities, chat with people, and connect with others in Dehradun through DoonMeet.",
+    url: "https://doonmeet.in",
+    siteName: "DoonMeet",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DoonMeet - Meet People, Events & Communities in Dehradun",
+    description:
+      "Discover local events, join communities, chat with people, and connect with others in Dehradun through DoonMeet.",
+  },
 };
 
 export const viewport: Viewport = {
@@ -79,6 +96,9 @@ export default function RootLayout({
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
           <ThemeProvider>{children}</ThemeProvider>
         </GoogleOAuthProvider>
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+        )}
       </body>
     </html>
   );
