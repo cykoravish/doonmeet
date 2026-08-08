@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { Send, Loader2, Users, Wifi, WifiOff, Sparkles } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import GuestLimitBanner from "./GuestLimitBanner";
 import JoinChatModal from "./JoinChatModal";
+import AllUsersPanel from "./AllUsersPanel";
 
 interface Message {
   _id: string;
@@ -61,16 +62,36 @@ function getDateLabel(dateStr: string) {
 
 export default function ChatRoom({ currentUser }: ChatRoomProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
   const [guestCount, setGuestCount] = useState(currentUser?.guestMessageCount ?? 0);
   const [limitReached, setLimitReached] = useState(
     (currentUser?.guestMessageCount ?? 0) >= GUEST_LIMIT
   );
+
+  // Members panel visibility lives in the URL (?members=1) so the browser
+  // back button — after following a member to their profile — reopens it.
+  const membersOpen = searchParams.get("members") === "1";
+
+  function openMembersPanel() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("members", "1");
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  function closeMembersPanel() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("members");
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
 
   const socketRef = useRef<Socket | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -109,6 +130,7 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
 
     socket.on("connect", () => {
       setConnected(true);
+      setSocketInstance(socket);
       socket.emit("room:join");
     });
 
@@ -129,6 +151,7 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
     return () => {
       socket.emit("room:leave");
       socket.disconnect();
+      setSocketInstance(null);
     };
   }, [currentUser]);
 
@@ -191,21 +214,35 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
+          {/* All members trigger */}
+          <button
+            onClick={openMembersPanel}
+            className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-80"
+            style={{
+              backgroundColor: "rgb(var(--primary) / 0.1)",
+              color: "rgb(var(--primary))",
+            }}
+            aria-haspopup="dialog"
+            aria-expanded={membersOpen}
+          >
+            <Users size={12} />
+            <span className="hidden sm:inline">Members</span>
+          </button>
+
           {onlineCount > 0 && (
             <div
               className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs"
               style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}
             >
               <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-              <Users size={11} style={{ color: "rgb(var(--primary))" }} />
               <span style={{ color: "rgb(var(--primary))" }}>{onlineCount} online</span>
             </div>
           )}
 
           {/* Connection status — only meaningful once the user has joined */}
           {currentUser && (
-            <div className="flex items-center gap-1.5">
+            <div className="hidden items-center gap-1.5 sm:flex">
               {connected ? (
                 <Wifi size={14} style={{ color: "rgb(var(--primary))" }} />
               ) : (
@@ -347,6 +384,8 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
           onGuestSuccess={handleGuestJoined}
         />
       )}
+
+      <AllUsersPanel open={membersOpen} onClose={closeMembersPanel} socket={socketInstance} />
     </div>
   );
 }

@@ -30,6 +30,7 @@ export interface IUser extends Document {
   resetPasswordExpires?: Date;
   isVerified: boolean;
   isActive: boolean;
+  isOnline: boolean;
   lastSeenAt: Date;
   // Methods
   comparePassword(password: string): Promise<boolean>;
@@ -126,6 +127,10 @@ const UserSchema = new Schema<IUser>(
     // --- Account status ---
     isVerified: { type: Boolean, default: false }, // true after email link click or Google signup
     isActive: { type: Boolean, default: true }, // false = soft banned
+    // Live presence — flipped by the socket layer on connect/disconnect
+    // (see src/lib/socket.ts). Kept on the user doc, not just in-memory,
+    // so any process/API route can query "who's online" via a normal find().
+    isOnline: { type: Boolean, default: false },
     lastSeenAt: { type: Date, default: Date.now },
   },
   {
@@ -138,6 +143,8 @@ const UserSchema = new Schema<IUser>(
 // -------------------------
 UserSchema.index({ isGuest: 1, guestExpiresAt: 1 }); // for guest cleanup
 UserSchema.index({ isActive: 1 });
+// Powers the "all members" list — online users first, then alphabetical.
+UserSchema.index({ isGuest: 1, isActive: 1, isOnline: -1, name: 1 });
 
 // -------------------------
 // Instance method — compare password
