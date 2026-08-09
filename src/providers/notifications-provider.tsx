@@ -11,6 +11,7 @@ import {
 } from "react";
 import { io, Socket } from "socket.io-client";
 import type { NotificationItem } from "@/lib/notificationTypeConfig";
+import { playMessageSound } from "@/lib/notificationSound";
 
 interface NotificationsContextValue {
   notifications: NotificationItem[];
@@ -65,6 +66,12 @@ export function NotificationsProvider({
     socket.on("notification:new", (notif: NotificationItem) => {
       setUnreadCount((prev) => prev + 1);
       setNotifications((prev) => [notif, ...prev].slice(0, 8));
+
+      // Sound only for personal DMs, not every notification type (community
+      // replies, event comments, etc.) — those stay silent/visual-only.
+      if (notif.type === "new_dm") {
+        playMessageSound();
+      }
     });
 
     // We don't know exactly which ones were marked read from wherever this
