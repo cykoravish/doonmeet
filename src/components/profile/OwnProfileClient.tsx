@@ -67,27 +67,30 @@ export default function OwnProfileClient({ user }: { user: User }) {
     <div className="min-h-screen">
       {/* Profile hero */}
       <div
-        className="border-b py-12"
+        className="border-b py-8 sm:py-12"
         style={{
           background: "linear-gradient(135deg, rgb(var(--primary) / 0.08) 0%, transparent 60%)",
           borderColor: "rgb(var(--border))",
         }}
       >
-        <div className="mx-auto max-w-3xl px-6">
-          <div className="flex items-start gap-6">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+          <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:gap-6 sm:text-left">
             <ProfileAvatar
               avatar={currentUser.avatar}
               name={currentUser.name}
               editable
-              size={96}
+              className="h-20 w-20 sm:h-24 sm:w-24"
               onUpdate={(url) => setCurrentUser((prev) => ({ ...prev, avatar: url }))}
             />
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl font-black">{currentUser.name}</h1>
-                  <p className="text-sm" style={{ color: "rgb(var(--muted))" }}>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                <div className="min-w-0 max-w-full">
+                  <h1 className="truncate text-xl font-black sm:text-2xl">{currentUser.name}</h1>
+                  <p
+                    className="truncate text-sm"
+                    style={{ color: "rgb(var(--muted))" }}
+                  >
                     {currentUser.email}
                   </p>
                 </div>
@@ -105,29 +108,32 @@ export default function OwnProfileClient({ user }: { user: User }) {
               </div>
 
               {currentUser.bio && (
-                <p className="mt-2 text-sm leading-relaxed" style={{ color: "rgb(var(--muted))" }}>
+                <p
+                  className="mt-2 text-sm leading-relaxed break-words"
+                  style={{ color: "rgb(var(--muted))" }}
+                >
                   {currentUser.bio}
                 </p>
               )}
 
-              <div className="mt-3 flex flex-wrap items-center gap-3">
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
                 {currentUser.address && (
                   <div
-                    className="flex items-center gap-1 text-xs"
+                    className="flex min-w-0 items-center gap-1 text-xs"
                     style={{ color: "rgb(var(--muted))" }}
                   >
-                    <MapPin size={11} />
-                    {currentUser.address}
+                    <MapPin size={11} className="shrink-0" />
+                    <span className="truncate">{currentUser.address}</span>
                   </div>
                 )}
-                <div className="text-xs" style={{ color: "rgb(var(--muted))" }}>
+                <div className="shrink-0 text-xs" style={{ color: "rgb(var(--muted))" }}>
                   Joined {joinedDate}
                 </div>
               </div>
 
               {/* Interests */}
               {currentUser.interests?.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
+                <div className="mt-3 flex flex-wrap justify-center gap-1.5 sm:justify-start">
                   {currentUser.interests.map((interest) => (
                     <span
                       key={interest}
@@ -148,10 +154,10 @@ export default function OwnProfileClient({ user }: { user: User }) {
       </div>
 
       {/* Tabs + content */}
-      <div className="mx-auto max-w-3xl px-6 py-8">
+      <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
         {/* Tab nav */}
         <div
-          className="mb-6 flex gap-1 rounded-xl border p-1"
+          className="mb-5 flex gap-1 rounded-xl border p-1 sm:mb-6"
           style={{
             borderColor: "rgb(var(--border))",
             backgroundColor: "rgb(var(--surface))",
@@ -161,7 +167,7 @@ export default function OwnProfileClient({ user }: { user: User }) {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-semibold transition-all sm:py-2"
               style={{
                 backgroundColor: activeTab === tab.key ? "rgb(var(--primary))" : "transparent",
                 color: activeTab === tab.key ? "white" : "rgb(var(--muted))",
@@ -175,7 +181,7 @@ export default function OwnProfileClient({ user }: { user: User }) {
 
         {/* Tab content */}
         <div
-          className="rounded-2xl border p-6"
+          className="rounded-2xl border p-4 sm:p-6"
           style={{
             borderColor: "rgb(var(--border))",
             backgroundColor: "rgb(var(--surface))",

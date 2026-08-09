@@ -68,15 +68,15 @@ export default function PrivacySettings({ initialPrivacy }: PrivacySettingsProps
         return (
           <div
             key={field.key}
-            className="flex items-center justify-between rounded-xl border p-4"
+            className="flex items-center justify-between gap-3 rounded-xl border p-4"
             style={{
               borderColor: "rgb(var(--border))",
               backgroundColor: "rgb(var(--surface))",
             }}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <div
-                className="flex h-8 w-8 items-center justify-center rounded-lg"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
                 style={{
                   backgroundColor: isOn
                     ? "rgb(var(--primary) / 0.1)"
@@ -89,7 +89,7 @@ export default function PrivacySettings({ initialPrivacy }: PrivacySettingsProps
                   <EyeOff size={14} style={{ color: "rgb(var(--muted))" }} />
                 )}
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-medium">{field.label}</p>
                 <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
                   {field.description}
@@ -101,7 +101,7 @@ export default function PrivacySettings({ initialPrivacy }: PrivacySettingsProps
             <button
               onClick={() => toggle(field.key)}
               disabled={isSaving}
-              className="relative h-6 w-11 rounded-full transition-colors disabled:opacity-50"
+              className="relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50"
               style={{
                 backgroundColor: isOn
                   ? "rgb(var(--primary))"

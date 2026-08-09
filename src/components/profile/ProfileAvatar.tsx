@@ -8,7 +8,10 @@ interface ProfileAvatarProps {
   avatar: string | null;
   name: string;
   editable?: boolean;
+  /** Intrinsic resolution requested from the image source (not the visual size — see `className`). */
   size?: number;
+  /** Tailwind size classes for the wrapper, e.g. "h-20 w-20 sm:h-24 sm:w-24" — lets the avatar shrink on mobile. */
+  className?: string;
   onUpdate?: (url: string) => void;
 }
 
@@ -16,7 +19,8 @@ export default function ProfileAvatar({
   avatar,
   name,
   editable = false,
-  size = 96,
+  size = 160,
+  className = "h-24 w-24",
   onUpdate,
 }: ProfileAvatarProps) {
   const [loading, setLoading] = useState(false);
@@ -53,24 +57,23 @@ export default function ProfileAvatar({
   const displaySrc = preview ?? avatar;
 
   return (
-    <div className="relative" style={{ width: size, height: size }}>
+    <div className={`relative shrink-0 ${className}`}>
       {displaySrc ? (
         <Image
           src={displaySrc}
           alt={name}
           width={size}
           height={size}
-          className="rounded-full object-cover"
-          style={{ width: size, height: size }}
+          className="h-full w-full rounded-full border-4 object-cover shadow-md"
+          style={{ borderColor: "rgb(var(--background))" }}
         />
       ) : (
         <div
-          className="flex items-center justify-center rounded-full text-white font-bold"
+          className="flex h-full w-full items-center justify-center rounded-full border-4 font-bold text-white shadow-md"
           style={{
-            width: size,
-            height: size,
             backgroundColor: "rgb(var(--primary))",
-            fontSize: size * 0.35,
+            borderColor: "rgb(var(--background))",
+            fontSize: "clamp(1.25rem, 7vw, 2rem)",
           }}
         >
           {name[0]?.toUpperCase()}
@@ -83,7 +86,8 @@ export default function ProfileAvatar({
           <button
             onClick={() => inputRef.current?.click()}
             disabled={loading}
-            className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 hover:opacity-100 transition-opacity"
+            aria-label={displaySrc ? "Change profile photo" : "Add a profile photo"}
+            className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100"
           >
             {loading ? (
               <Loader2 size={20} className="animate-spin text-white" />
