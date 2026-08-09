@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import type { Socket } from "socket.io-client";
-import { Globe2, MessageCircle, Lock, Users2 } from "lucide-react";
+import { Globe2, MessageCircle, Lock, Users2, ChevronRight } from "lucide-react";
 import ChatRoom from "./ChatRoom";
 import MessagesPanel from "./MessagesPanel";
 import AllUsersPanel from "./AllUsersPanel";
@@ -102,17 +102,24 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
           Messages
         </button>
 
-        {/* Members — attractive, count-led pill so it reads as a real
-            destination rather than a plain utility button. */}
+        {/* Members — bordered, chevron-led pill so it visibly reads as a
+            tappable destination rather than a static count label. */}
         <button
           onClick={openMembersPanel}
-          className="ml-auto flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-primary transition-opacity hover:opacity-80"
-          style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}
+          className="group ml-auto flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15"
+          style={{
+            backgroundColor: "rgb(var(--primary) / 0.1)",
+            borderColor: "rgb(var(--primary) / 0.35)",
+          }}
           aria-haspopup="dialog"
           aria-expanded={membersOpen}
         >
           <Users2 size={13} />
-          {memberCount !== null ? `${memberCount} Dehradunis` : "Dehradunis"}
+          {memberCount !== null ? `See ${memberCount} Dehradunis` : "See Dehradunis"}
+          <ChevronRight
+            size={13}
+            className="transition-transform group-hover:translate-x-0.5"
+          />
         </button>
       </div>
 
