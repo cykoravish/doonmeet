@@ -158,118 +158,123 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
               </button>
             </div>
 
-            {/* Scrollable middle section — user card + account links. This
-                is the piece that shrinks/scrolls on short screens so the
-                header and footer (Log out) stay pinned and never get
-                clipped off the bottom of the viewport. */}
+            {/* Scrollable section — user card + account links + Log out.
+                Log out sits inside this scroll area (not pinned as a rigid
+                fixed-height footer) with mt-auto: on tall screens it still
+                settles visually toward the bottom, but on short screens or
+                with more menu items it simply flows after the last link and
+                stays reachable via scroll instead of ever being clipped or
+                stranded behind an awkward empty gap. */}
             <div className="min-h-0 flex-1 overflow-y-auto">
-              {/* User card */}
-              {user ? (
-                <div className="mx-4 mt-4 rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/10 to-transparent p-4">
-                  <div className="flex items-center gap-3">
-                    {user.avatar ? (
-                      <Image
-                        src={user.avatar}
-                        alt={user.name}
-                        width={44}
-                        height={44}
-                        className="rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary font-bold text-white">
-                        {user.name[0]?.toUpperCase()}
+              <div className="flex min-h-full flex-col">
+                {/* User card */}
+                {user ? (
+                  <div className="mx-4 mt-4 rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/10 to-transparent p-4">
+                    <div className="flex items-center gap-3">
+                      {user.avatar ? (
+                        <Image
+                          src={user.avatar}
+                          alt={user.name}
+                          width={44}
+                          height={44}
+                          className="rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary font-bold text-white">
+                          {user.name[0]?.toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate font-bold text-sm">{user.name}</p>
+                        {user.email && (
+                          <p className="truncate text-xs text-muted">{user.email}</p>
+                        )}
+                        {user.isGuest && (
+                          <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                            Guest
+                          </span>
+                        )}
                       </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="truncate font-bold text-sm">{user.name}</p>
-                      {user.email && (
-                        <p className="truncate text-xs text-muted">{user.email}</p>
-                      )}
-                      {user.isGuest && (
-                        <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">
-                          Guest
-                        </span>
-                      )}
                     </div>
-                  </div>
 
-                  {!user.isGuest && (
-                    <Link
-                      href="/profile"
-                      onClick={() => setOpen(false)}
-                      className="mt-3 block w-full rounded-xl bg-primary py-2 text-center text-xs font-semibold text-white"
-                    >
-                      View Profile
-                    </Link>
-                  )}
-                </div>
-              ) : (
-                <div className="mx-4 mt-4 space-y-2">
-                  <Link
-                    href="/login"
-                    onClick={() => setOpen(false)}
-                    className="block w-full rounded-xl border border-border py-2.5 text-center text-sm font-medium"
-                  >
-                    Log in
-                  </Link>
-                  <Link
-                    href="/signup"
-                    onClick={() => setOpen(false)}
-                    className="block w-full rounded-xl bg-primary py-2.5 text-center text-sm font-semibold text-white"
-                  >
-                    Sign up free
-                  </Link>
-                </div>
-              )}
-
-              {/* Settings links */}
-              <div className="mt-4 px-4 pb-4">
-                <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-widest text-muted">
-                  Account
-                </p>
-                <div className="space-y-1">
-                  {user && !user.isGuest && (
-                    <>
-                      <DrawerLink
+                    {!user.isGuest && (
+                      <Link
                         href="/profile"
-                        icon={<Settings size={15} />}
-                        label="Settings"
                         onClick={() => setOpen(false)}
-                      />
-                      <DrawerLink
-                        href="/notifications"
-                        icon={<Bell size={15} />}
-                        label="Notifications"
-                        badge={unreadCount > 0 ? unreadCount : undefined}
-                        onClick={() => setOpen(false)}
-                      />
-                    </>
-                  )}
-                  <DrawerLink
-                    href="/privacy"
-                    icon={<Shield size={15} />}
-                    label="Privacy Policy"
-                    onClick={() => setOpen(false)}
-                  />
+                        className="mt-3 block w-full rounded-xl bg-primary py-2 text-center text-xs font-semibold text-white"
+                      >
+                        View Profile
+                      </Link>
+                    )}
+                  </div>
+                ) : (
+                  <div className="mx-4 mt-4 space-y-2">
+                    <Link
+                      href="/login"
+                      onClick={() => setOpen(false)}
+                      className="block w-full rounded-xl border border-border py-2.5 text-center text-sm font-medium"
+                    >
+                      Log in
+                    </Link>
+                    <Link
+                      href="/signup"
+                      onClick={() => setOpen(false)}
+                      className="block w-full rounded-xl bg-primary py-2.5 text-center text-sm font-semibold text-white"
+                    >
+                      Sign up free
+                    </Link>
+                  </div>
+                )}
+
+                {/* Settings links */}
+                <div className="mt-4 px-4 pb-4">
+                  <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-widest text-muted">
+                    Account
+                  </p>
+                  <div className="space-y-1">
+                    {user && !user.isGuest && (
+                      <>
+                        <DrawerLink
+                          href="/profile"
+                          icon={<Settings size={15} />}
+                          label="Settings"
+                          onClick={() => setOpen(false)}
+                        />
+                        <DrawerLink
+                          href="/notifications"
+                          icon={<Bell size={15} />}
+                          label="Notifications"
+                          badge={unreadCount > 0 ? unreadCount : undefined}
+                          onClick={() => setOpen(false)}
+                        />
+                      </>
+                    )}
+                    <DrawerLink
+                      href="/privacy"
+                      icon={<Shield size={15} />}
+                      label="Privacy Policy"
+                      onClick={() => setOpen(false)}
+                    />
+                  </div>
                 </div>
+
+                {/* Log out — visually anchored toward the bottom (mt-auto)
+                    but part of the natural document flow, so it never
+                    detaches from the rest of the menu with a big gap, and
+                    never gets clipped since it's inside the scroll area. */}
+                {user && (
+                  <div className="mt-auto border-t border-border px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4">
+                    <button
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-2 rounded-xl border border-red-600/20 px-3 py-2.5 text-sm font-medium text-red-600 transition-opacity hover:opacity-80"
+                    >
+                      <LogOut size={15} />
+                      Log out
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* Bottom — pinned, safe-area aware so Log out never gets
-                clipped by a device's gesture bar / home indicator. The
-                theme toggle was removed from here since it already lives
-                in the top navbar; showing it in both places was redundant. */}
-            {user && (
-              <div className="shrink-0 border-t border-border px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4">
-                <button
-                  onClick={handleLogout}
-                  className="flex w-full items-center gap-2 rounded-xl border border-red-600/20 px-3 py-2.5 text-sm font-medium text-red-600 transition-opacity hover:opacity-80"
-                >
-                  <LogOut size={15} />
-                  Log out
-                </button>
-              </div>
-            )}
           </div>
         </>
       )}
