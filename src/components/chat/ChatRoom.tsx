@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
-import { Send, Loader2, Users, Wifi, WifiOff, Sparkles } from "lucide-react";
+import { Send, Loader2, Wifi, WifiOff, Sparkles } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import GuestLimitBanner from "./GuestLimitBanner";
 import JoinChatModal from "./JoinChatModal";
-import AllUsersPanel from "./AllUsersPanel";
 
 interface Message {
   _id: string;
@@ -32,6 +31,9 @@ interface CurrentUser {
 
 interface ChatRoomProps {
   currentUser: CurrentUser | null;
+  // The members panel now lives in ChatTabs (so it's reachable from any
+  // tab) but presence updates still need this room's live socket.
+  onSocketChange?: (socket: Socket | null) => void;
 }
 
 const GUEST_LIMIT = 20;
@@ -60,38 +62,18 @@ function getDateLabel(dateStr: string) {
   });
 }
 
-export default function ChatRoom({ currentUser }: ChatRoomProps) {
+export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps) {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
   const [showJoinModal, setShowJoinModal] = useState(false);
-  const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
   const [guestCount, setGuestCount] = useState(currentUser?.guestMessageCount ?? 0);
   const [limitReached, setLimitReached] = useState(
     (currentUser?.guestMessageCount ?? 0) >= GUEST_LIMIT
   );
-
-  // Members panel visibility lives in the URL (?members=1) so the browser
-  // back button — after following a member to their profile — reopens it.
-  const membersOpen = searchParams.get("members") === "1";
-
-  function openMembersPanel() {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("members", "1");
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  }
-
-  function closeMembersPanel() {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("members");
-    const qs = params.toString();
-    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }
 
   const socketRef = useRef<Socket | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -130,7 +112,7 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
 
     socket.on("connect", () => {
       setConnected(true);
-      setSocketInstance(socket);
+      onSocketChange?.(socket);
       socket.emit("room:join");
     });
 
@@ -151,8 +133,9 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
     return () => {
       socket.emit("room:leave");
       socket.disconnect();
-      setSocketInstance(null);
+      onSocketChange?.(null);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
   function handleSend(e: React.FormEvent) {
@@ -191,45 +174,17 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Chat header */}
-      <div
-        className="flex items-center justify-between border-b px-4 py-2 md:px-6 md:py-2.5"
-        style={{
-          backgroundColor: "rgb(var(--surface))",
-          borderColor: "rgb(var(--border))",
-        }}
-      >
-        <div className="flex items-center gap-2.5">
-          <div
-            className="flex h-7 w-7 items-center justify-center rounded-lg"
-            style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}
-          >
-            <span className="text-sm">🏔️</span>
-          </div>
-          <p className="flex items-baseline gap-1.5 text-sm font-bold">
-            Doon Public Chat
-            <span className="text-xs font-normal" style={{ color: "rgb(var(--muted))" }}>
-              · Everyone in Dehradun
-            </span>
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 md:gap-3">
-          {/* All members trigger */}
-          <button
-            onClick={openMembersPanel}
-            className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-80"
-            style={{
-              backgroundColor: "rgb(var(--primary) / 0.1)",
-              color: "rgb(var(--primary))",
-            }}
-            aria-haspopup="dialog"
-            aria-expanded={membersOpen}
-          >
-            <Users size={12} />
-            <span className="hidden sm:inline">Members</span>
-          </button>
-
+      {/* Live status strip — replaces the old static "Doon Public Chat" header.
+          Only rendered once there's something worth showing, so it doesn't
+          just sit there as empty chrome. */}
+      {(onlineCount > 0 || currentUser) && (
+        <div
+          className="flex items-center justify-end gap-3 border-b px-4 py-1.5 md:px-6"
+          style={{
+            backgroundColor: "rgb(var(--surface))",
+            borderColor: "rgb(var(--border))",
+          }}
+        >
           {onlineCount > 0 && (
             <div
               className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs"
@@ -254,7 +209,7 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
             </div>
           )}
         </div>
-      </div>
+      )}
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
@@ -384,8 +339,6 @@ export default function ChatRoom({ currentUser }: ChatRoomProps) {
           onGuestSuccess={handleGuestJoined}
         />
       )}
-
-      <AllUsersPanel open={membersOpen} onClose={closeMembersPanel} socket={socketInstance} />
     </div>
   );
 }

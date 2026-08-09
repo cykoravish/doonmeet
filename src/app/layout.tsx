@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
+import { ToastProvider } from "@/providers/toast-provider";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 
@@ -94,7 +95,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col">
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </ThemeProvider>
         </GoogleOAuthProvider>
         {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />

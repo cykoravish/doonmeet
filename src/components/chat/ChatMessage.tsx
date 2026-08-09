@@ -1,5 +1,5 @@
 import Image from "next/image";
-import UserLink from "@/components/shared/UserLink";
+import ChatUserActions from "./ChatUserActions";
 
 interface ChatMessageProps {
   content: string;
@@ -37,7 +37,13 @@ export default function ChatMessage({
     >
       {/* Avatar — only on the last message of a consecutive group */}
       {showAvatar ? (
-        <UserLink userId={senderId} isGuest={isGuest} className="self-end shrink-0">
+        <ChatUserActions
+          userId={senderId}
+          isGuest={isGuest}
+          isOwn={isOwn}
+          align={isOwn ? "right" : "left"}
+          className="self-end shrink-0 rounded-full"
+        >
           {senderAvatar ? (
             <Image
               src={senderAvatar}
@@ -54,7 +60,7 @@ export default function ChatMessage({
               {senderName[0]?.toUpperCase()}
             </div>
           )}
-        </UserLink>
+        </ChatUserActions>
       ) : (
         <div className="w-8 shrink-0" />
       )}
@@ -64,9 +70,15 @@ export default function ChatMessage({
         {/* Name + badge */}
         {showName && (
           <div className="flex items-center gap-1.5">
-            <UserLink userId={senderId} isGuest={isGuest} className="text-xs font-semibold">
+            <ChatUserActions
+              userId={senderId}
+              isGuest={isGuest}
+              isOwn={isOwn}
+              align={isOwn ? "right" : "left"}
+              className="text-xs font-semibold"
+            >
               {senderName}
-            </UserLink>
+            </ChatUserActions>
           </div>
         )}
 

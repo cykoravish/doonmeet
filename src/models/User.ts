@@ -12,16 +12,29 @@ export interface IUser extends Document {
   guestExpiresAt: Date | null;
   avatar: string | null;
   avatarPublicId: string | null;
+  bannerImage: string | null;
+  bannerPublicId: string | null;
   bio: string;
   gender: "male" | "female" | "other" | "prefer_not_to_say" | null;
   address: string;
   interests: string[];
+  occupation: string;
+  website: string;
+  dob: Date | null;
+  lookingFor:
+    | "student"
+    | "working_professional"
+    | "entrepreneur"
+    | "new_to_dehradun"
+    | "just_exploring"
+    | null;
   privacy: {
     showEmail: boolean;
     showPhone: boolean;
     showGender: boolean;
     showAddress: boolean;
     showInterests: boolean;
+    showDOB: boolean;
   };
   guestMessageCount: number;
   verificationToken?: string;
@@ -86,6 +99,8 @@ const UserSchema = new Schema<IUser>(
     // --- Profile ---
     avatar: { type: String, default: null },
     avatarPublicId: { type: String, default: null }, // for Cloudinary deletion
+    bannerImage: { type: String, default: null },
+    bannerPublicId: { type: String, default: null }, // for Cloudinary deletion
     bio: { type: String, maxlength: [300, "Bio cannot exceed 300 characters"], default: "" },
     gender: {
       type: String,
@@ -105,15 +120,38 @@ const UserSchema = new Schema<IUser>(
       },
       default: [],
     },
+    occupation: {
+      type: String,
+      maxlength: [60, "Occupation cannot exceed 60 characters"],
+      default: "",
+    },
+    website: {
+      type: String,
+      maxlength: [150, "Website cannot exceed 150 characters"],
+      default: "",
+    },
+    dob: { type: Date, default: null },
+    lookingFor: {
+      type: String,
+      enum: [
+        "student",
+        "working_professional",
+        "entrepreneur",
+        "new_to_dehradun",
+        "just_exploring",
+      ],
+      default: null,
+    },
 
     // --- Privacy ---
-    // User controls what others can see. Phone & email always private by default.
+    // User controls what others can see. Phone, email & DOB are private by default.
     privacy: {
       showEmail: { type: Boolean, default: false },
       showPhone: { type: Boolean, default: false },
       showGender: { type: Boolean, default: true },
       showAddress: { type: Boolean, default: true },
       showInterests: { type: Boolean, default: true },
+      showDOB: { type: Boolean, default: false },
     },
 
     // --- Guest limits ---

@@ -1,10 +1,33 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, MessageCircle, Calendar, Users, PartyPopper, Star, Mail, UserRound, Pencil } from "lucide-react";
+import {
+  MapPin,
+  MessageCircle,
+  Calendar,
+  Users,
+  PartyPopper,
+  Star,
+  Mail,
+  UserRound,
+  Pencil,
+  Briefcase,
+  Globe,
+  Cake,
+  Compass,
+} from "lucide-react";
 import type { Metadata } from "next";
 import { getPublicUser } from "@/lib/getPublicUser";
 import { getSessionUser } from "@/lib/getSessionUser";
+import ProfileBanner from "@/components/profile/ProfileBanner";
+
+const LOOKING_FOR_LABELS: Record<string, string> = {
+  student: "Student",
+  working_professional: "Working Professional",
+  entrepreneur: "Entrepreneur",
+  new_to_dehradun: "New to Dehradun",
+  just_exploring: "Just Exploring",
+};
 
 interface UserProfilePageProps {
   params: Promise<{ userId: string }>;
@@ -48,32 +71,9 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
 
   return (
     <div className="min-h-screen">
-      {/* Banner — fixed height, fully contained. The decorative ridgeline
-          motif and everything inside it is strictly clipped by
-          overflow-hidden, so it can never inflate the page layout. */}
-      <div className="relative h-40 overflow-hidden sm:h-52 md:h-60 bg-gradient-to-br from-primary via-primary to-primary-light">
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 400 160"
-          preserveAspectRatio="none"
-          className="absolute inset-0 h-full w-full"
-        >
-          <path
-            d="M0,40 C60,10 100,55 160,35 C220,15 260,50 320,30 C350,20 380,35 400,25 V0 H0 Z"
-            fill="rgb(255 255 255 / 0.10)"
-          />
-          <path
-            d="M0,80 C50,60 110,95 170,75 C230,55 270,90 330,70 C360,60 385,72 400,65 V0 H0 Z"
-            fill="rgb(255 255 255 / 0.07)"
-          />
-          <path
-            d="M0,120 C55,100 115,130 175,112 C235,94 275,125 335,108 C365,99 385,110 400,104 V0 H0 Z"
-            fill="rgb(255 255 255 / 0.05)"
-          />
-        </svg>
-        {/* Soft bottom fade so the avatar ring transitions in cleanly */}
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/10 to-transparent" />
-      </div>
+      {/* Banner — editable by the owner (upload via hover), falls back to a
+          themed decorative gradient when no image has been set. */}
+      <ProfileBanner bannerImage={user.bannerImage} editable={isOwnProfile} />
 
       <div className="mx-auto max-w-2xl px-4 sm:px-6">
         {/* Avatar — the ONLY element pulled up over the banner. Text below
@@ -171,18 +171,45 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
         </div>
 
         {/* Public info */}
-        {(user.gender || user.email) && (
+        {(user.gender || user.email || user.occupation || user.website || user.dob || user.lookingFor) && (
           <div className="mb-10 mt-4 space-y-1 rounded-2xl border border-border bg-surface p-5 shadow-sm">
             <h2 className="mb-2 text-sm font-bold">About</h2>
+            {user.occupation && (
+              <InfoRow icon={Briefcase} label="Occupation" value={user.occupation} />
+            )}
+            {user.lookingFor && LOOKING_FOR_LABELS[user.lookingFor] && (
+              <InfoRow icon={Compass} label="Vibe" value={LOOKING_FOR_LABELS[user.lookingFor]} />
+            )}
             {user.gender && (
               <InfoRow icon={UserRound} label="Gender" value={user.gender.replace("_", " ")} capitalize />
+            )}
+            {user.dob && (
+              <InfoRow
+                icon={Cake}
+                label="Birthday"
+                value={new Date(user.dob).toLocaleDateString("en-IN", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              />
+            )}
+            {user.website && (
+              <InfoRow
+                icon={Globe}
+                label="Website"
+                value={user.website.replace(/^https?:\/\//, "")}
+                href={user.website}
+              />
             )}
             {user.email && (
               <InfoRow icon={Mail} label="Email" value={user.email} />
             )}
           </div>
         )}
-        {!user.gender && !user.email && <div className="pb-10" />}
+        {!user.gender && !user.email && !user.occupation && !user.website && !user.dob && !user.lookingFor && (
+          <div className="pb-10" />
+        )}
       </div>
     </div>
   );
@@ -211,11 +238,13 @@ function InfoRow({
   label,
   value,
   capitalize,
+  href,
 }: {
   icon: typeof UserRound;
   label: string;
   value: string;
   capitalize?: boolean;
+  href?: string;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-border/60 py-2.5 text-sm last:border-b-0">
@@ -223,9 +252,20 @@ function InfoRow({
         <Icon size={14} className="shrink-0" />
         {label}
       </span>
-      <span className={`break-all text-right font-medium ${capitalize ? "capitalize" : ""}`}>
-        {value}
-      </span>
+      {href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer nofollow"
+          className="break-all text-right font-medium text-primary hover:underline"
+        >
+          {value}
+        </a>
+      ) : (
+        <span className={`break-all text-right font-medium ${capitalize ? "capitalize" : ""}`}>
+          {value}
+        </span>
+      )}
     </div>
   );
 }
