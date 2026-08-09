@@ -17,11 +17,16 @@ interface User {
   name: string;
   email: string;
   avatar: string | null;
+  bannerImage: string | null;
   bio: string;
   gender: string;
   address: string;
   interests: string[];
   phone: string;
+  occupation: string;
+  website: string;
+  dob: string | null;
+  lookingFor: string;
   role: string;
   isGuest: boolean;
   privacy: {
@@ -30,6 +35,7 @@ interface User {
     showGender: boolean;
     showAddress: boolean;
     showInterests: boolean;
+    showDOB: boolean;
   };
   createdAt: string;
   hasPassword: boolean;
@@ -184,6 +190,10 @@ export default function OwnProfileClient({ user }: { user: User }) {
                 address: currentUser.address ?? "",
                 interests: currentUser.interests ?? [],
                 phone: currentUser.phone ?? "",
+                occupation: currentUser.occupation ?? "",
+                website: currentUser.website ?? "",
+                dob: currentUser.dob ? currentUser.dob.split("T")[0] : "",
+                lookingFor: currentUser.lookingFor ?? "",
               }}
               onSuccess={(updated) => setCurrentUser((prev) => ({ ...prev, ...updated }))}
             />
@@ -209,7 +219,10 @@ export default function OwnProfileClient({ user }: { user: User }) {
                   Manage your password and account security.
                 </p>
               </div>
-              <ChangePasswordForm hasPassword={currentUser.hasPassword} />
+              <ChangePasswordForm
+                hasPassword={currentUser.hasPassword}
+                onPasswordSet={() => setCurrentUser((prev) => ({ ...prev, hasPassword: true }))}
+              />
             </div>
           )}
         </div>
@@ -219,7 +232,13 @@ export default function OwnProfileClient({ user }: { user: User }) {
 }
 
 // Inline change password form
-function ChangePasswordForm({ hasPassword }: { hasPassword: boolean }) {
+function ChangePasswordForm({
+  hasPassword,
+  onPasswordSet,
+}: {
+  hasPassword: boolean;
+  onPasswordSet: () => void;
+}) {
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -282,6 +301,11 @@ function ChangePasswordForm({ hasPassword }: { hasPassword: boolean }) {
       setSuccess(data.message || "Password saved successfully!");
       setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setTouched(false);
+
+      // First time a Google-only user sets a password — flip the parent's
+      // hasPassword flag so this form immediately switches to "change
+      // password" mode instead of still claiming Google-only until a refresh.
+      if (!hasPassword) onPasswordSet();
     } catch {
       setError("Network error. Please try again.");
     } finally {

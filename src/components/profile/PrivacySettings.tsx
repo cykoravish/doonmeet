@@ -10,6 +10,7 @@ interface Privacy {
   showGender: boolean;
   showAddress: boolean;
   showInterests: boolean;
+  showDOB: boolean;
 }
 
 interface PrivacySettingsProps {
@@ -22,6 +23,7 @@ const FIELDS = [
   { key: "showGender", label: "Gender", description: "Show your gender on your public profile" },
   { key: "showAddress", label: "Address / Area", description: "Show your location on your public profile" },
   { key: "showInterests", label: "Interests", description: "Show your interests on your public profile" },
+  { key: "showDOB", label: "Date of Birth", description: "Show your date of birth on your public profile" },
 ] as const;
 
 export default function PrivacySettings({ initialPrivacy }: PrivacySettingsProps) {

@@ -18,6 +18,25 @@ export const updateProfileSchema = z.object({
     .regex(/^\+?[0-9]{10,15}$/, "Invalid phone number")
     .optional()
     .nullable(),
+  occupation: z.string().max(60, "Occupation cannot exceed 60 characters").optional(),
+  website: z
+    .string()
+    .max(150, "Website cannot exceed 150 characters")
+    .refine(
+      (val) => val === "" || /^https?:\/\/.+\..+/.test(val),
+      "Enter a valid URL (starting with http:// or https://)"
+    )
+    .optional(),
+  dob: z
+    .union([z.string(), z.null()])
+    .optional()
+    .transform((val) => (val ? new Date(val) : null))
+    .refine((val) => val === null || !isNaN(val.getTime()), "Invalid date")
+    .refine((val) => val === null || val <= new Date(), "Date of birth cannot be in the future"),
+  lookingFor: z
+    .enum(["student", "working_professional", "entrepreneur", "new_to_dehradun", "just_exploring"])
+    .optional()
+    .nullable(),
 });
 
 export const updatePrivacySchema = z.object({
@@ -26,6 +45,7 @@ export const updatePrivacySchema = z.object({
   showGender: z.boolean().optional(),
   showAddress: z.boolean().optional(),
   showInterests: z.boolean().optional(),
+  showDOB: z.boolean().optional(),
 });
 
 // "All members" list — page-based (not cursor) because results are sorted

@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { Globe2, MessageCircle, Lock } from "lucide-react";
+import type { Socket } from "socket.io-client";
+import { Globe2, MessageCircle, Lock, Users2 } from "lucide-react";
 import ChatRoom from "./ChatRoom";
 import MessagesPanel from "./MessagesPanel";
+import AllUsersPanel from "./AllUsersPanel";
 
 interface CurrentUser {
   _id: string;
@@ -27,6 +29,36 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
   const dmParam = searchParams.get("dm");
   const [tab, setTab] = useState<"public" | "messages">(dmParam ? "messages" : "public");
   const [pendingDmUserId, setPendingDmUserId] = useState<string | null>(dmParam);
+
+  // Members panel — lives up here (not inside ChatRoom) so the trigger stays
+  // visible and working no matter which tab is active. Visibility rides on
+  // the URL (?members=1) so the back button, after following a member to
+  // their profile, reopens it.
+  const membersOpen = searchParams.get("members") === "1";
+  const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
+  const [memberCount, setMemberCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/users/count")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) setMemberCount(d.total);
+      })
+      .catch(() => {});
+  }, []);
+
+  function openMembersPanel() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("members", "1");
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  function closeMembersPanel() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("members");
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
 
   // If the ?dm= param changes (e.g. clicking "Message" again from another
   // profile while already on this page), pick it up.
@@ -69,10 +101,23 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
           {canUseMessages ? <MessageCircle size={13} /> : <Lock size={11} />}
           Messages
         </button>
+
+        {/* Members — attractive, count-led pill so it reads as a real
+            destination rather than a plain utility button. */}
+        <button
+          onClick={openMembersPanel}
+          className="ml-auto flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-primary transition-opacity hover:opacity-80"
+          style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}
+          aria-haspopup="dialog"
+          aria-expanded={membersOpen}
+        >
+          <Users2 size={13} />
+          {memberCount !== null ? `${memberCount} Dehradunis` : "Dehradunis"}
+        </button>
       </div>
 
       <div className="min-h-0 flex-1">
-        {tab === "public" && <ChatRoom currentUser={currentUser} />}
+        {tab === "public" && <ChatRoom currentUser={currentUser} onSocketChange={setSocketInstance} />}
 
         {tab === "messages" &&
           (canUseMessages ? (
@@ -102,6 +147,8 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
             </div>
           ))}
       </div>
+
+      <AllUsersPanel open={membersOpen} onClose={closeMembersPanel} socket={socketInstance} />
     </div>
   );
 }

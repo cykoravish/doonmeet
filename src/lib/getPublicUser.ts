@@ -13,7 +13,9 @@ export async function getPublicUser(userId: string) {
     await connectDB();
 
     const user = await User.findById(userId)
-      .select("name avatar bio gender address interests privacy role isGuest isActive createdAt lastSeenAt")
+      .select(
+        "name avatar bannerImage bio gender address interests occupation website dob lookingFor privacy role isGuest isActive createdAt lastSeenAt"
+      )
       .lean();
 
     if (!user || !user.isActive || user.isGuest) return null;
@@ -28,8 +30,12 @@ export async function getPublicUser(userId: string) {
       _id: user._id,
       name: user.name,
       avatar: user.avatar,
+      bannerImage: user.bannerImage,
       bio: user.bio,
       role: user.role,
+      occupation: user.occupation,
+      website: user.website,
+      lookingFor: user.lookingFor,
       createdAt: user.createdAt,
       lastSeenAt: user.lastSeenAt,
       stats: {
@@ -43,6 +49,7 @@ export async function getPublicUser(userId: string) {
     if (user.privacy?.showAddress) publicProfile.address = user.address;
     if (user.privacy?.showInterests) publicProfile.interests = user.interests;
     if (user.privacy?.showEmail) publicProfile.email = user.email;
+    if (user.privacy?.showDOB) publicProfile.dob = user.dob;
 
     return JSON.parse(JSON.stringify(publicProfile));
   } catch (error) {
