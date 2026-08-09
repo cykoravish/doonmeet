@@ -7,17 +7,17 @@ export const updateProfileSchema = z.object({
     .regex(/^[a-zA-Z\s]+$/, "Name can only contain letters and spaces")
     .optional(),
   bio: z.string().max(300, "Bio cannot exceed 300 characters").optional(),
-  gender: z.enum(["male", "female", "other", "prefer_not_to_say"]).optional(),
+  gender: z.enum(["male", "female", "other", "prefer_not_to_say"]).optional().nullable(),
   address: z.string().max(100, "Address cannot exceed 100 characters").optional(),
   interests: z
     .array(z.string().max(30, "Each interest cannot exceed 30 characters"))
     .max(10, "Cannot have more than 10 interests")
     .optional(),
   phone: z
-    .string()
-    .regex(/^\+?[0-9]{10,15}$/, "Invalid phone number")
+    .union([z.string(), z.null()])
     .optional()
-    .nullable(),
+    .transform((val) => (val ? val.replace(/[\s-]/g, "") : null))
+    .refine((val) => val === null || /^\+?[0-9]{10,15}$/.test(val), "Invalid phone number"),
   occupation: z.string().max(60, "Occupation cannot exceed 60 characters").optional(),
   website: z
     .string()

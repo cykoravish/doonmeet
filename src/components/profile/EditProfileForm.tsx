@@ -76,7 +76,7 @@ export default function EditProfileForm({
         body: JSON.stringify({
           name: form.name,
           bio: form.bio,
-          gender: form.gender || undefined,
+          gender: form.gender || null,
           address: form.address,
           interests: form.interests,
           phone: form.phone || null,
@@ -89,12 +89,31 @@ export default function EditProfileForm({
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message ?? "Failed to update profile.");
+        // Prefer the specific field-level reason over the generic message
+        const fieldError = data.errors?.[0]?.message;
+        setError(fieldError || data.message || "Failed to update profile.");
         return;
       }
 
+      // Use the server's persisted values (not the optimistic local form
+      // state) so the UI always reflects what actually got saved to the DB.
+      const saved = data.user ?? {};
+      const normalized: ProfileData = {
+        name: saved.name ?? form.name,
+        bio: saved.bio ?? "",
+        gender: saved.gender ?? "",
+        address: saved.address ?? "",
+        interests: saved.interests ?? [],
+        phone: saved.phone ?? "",
+        occupation: saved.occupation ?? "",
+        website: saved.website ?? "",
+        dob: saved.dob ? String(saved.dob).split("T")[0] : "",
+        lookingFor: saved.lookingFor ?? "",
+      };
+
+      setForm(normalized);
       setSuccess("Profile updated!");
-      onSuccess(form);
+      onSuccess(normalized);
     } catch {
       setError("Network error. Please try again.");
     } finally {
