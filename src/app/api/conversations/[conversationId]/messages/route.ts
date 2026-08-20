@@ -12,6 +12,7 @@ import { dmLimiter, generalLimiter } from "@/middleware/rateLimit";
 import { sendDirectMessageSchema, getMessagesSchema } from "@/validations/directMessage";
 import { getIO, isUserActiveInRoom } from "@/lib/socket";
 import { maybeSendDmNotificationEmail } from "@/lib/email";
+import { sendPushToUser } from "@/lib/push";
 
 // GET /api/conversations/[conversationId]/messages
 export const GET = withAuth(
@@ -290,6 +291,15 @@ export const POST = withAuth(
         }
 
         maybeSendDmNotificationEmail(String(recipientId), req.user.name, content).catch(() => {
+          // Errors are already logged inside the helper.
+        });
+
+        sendPushToUser(String(recipientId), {
+          title: req.user.name,
+          body: content.slice(0, 120),
+          url: "/messages",
+          tag: `dm-${conversationId}`,
+        }).catch(() => {
           // Errors are already logged inside the helper.
         });
       }
