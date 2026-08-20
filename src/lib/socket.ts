@@ -7,6 +7,7 @@ import { DirectMessage } from "@/models/DirectMessage";
 import { Conversation } from "@/models/Conversation";
 import { Notification } from "@/models/Notification";
 import { User } from "@/models/User";
+import { maybeSendDmNotificationEmail } from "@/lib/email";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
 const GUEST_MESSAGE_LIMIT = 20;
@@ -377,6 +378,13 @@ export function initSocket(httpServer: HttpServer): SocketServer {
             actor: notification.actor,
             createdAt: notification.createdAt,
             isRead: false,
+          });
+
+          // Fire-and-forget — only actually sends if the recipient is
+          // genuinely offline and not within the cooldown window (see
+          // maybeSendDmNotificationEmail in src/lib/email.ts).
+          maybeSendDmNotificationEmail(String(recipientId), socket.name, content).catch(() => {
+            // Errors are already logged inside the helper.
           });
         }
       } catch (error) {

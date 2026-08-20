@@ -11,6 +11,7 @@ import { validateBody, validateQuery } from "@/middleware/validate";
 import { dmLimiter, generalLimiter } from "@/middleware/rateLimit";
 import { sendDirectMessageSchema, getMessagesSchema } from "@/validations/directMessage";
 import { getIO, isUserActiveInRoom } from "@/lib/socket";
+import { maybeSendDmNotificationEmail } from "@/lib/email";
 
 // GET /api/conversations/[conversationId]/messages
 export const GET = withAuth(
@@ -287,6 +288,10 @@ export const POST = withAuth(
         } catch {
           // Ignore — recipient will still see it next time they load notifications.
         }
+
+        maybeSendDmNotificationEmail(String(recipientId), req.user.name, content).catch(() => {
+          // Errors are already logged inside the helper.
+        });
       }
 
       return NextResponse.json({ success: true, message }, { status: 201 });

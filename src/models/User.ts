@@ -45,6 +45,9 @@ export interface IUser extends Document {
   isActive: boolean;
   isOnline: boolean;
   lastSeenAt: Date;
+  // Cooldown trackers for automated emails — see src/lib/email.ts
+  lastDmEmailAt: Date | null;
+  lastInactivityEmailAt: Date | null;
   // Methods
   comparePassword(password: string): Promise<boolean>;
 }
@@ -170,6 +173,13 @@ const UserSchema = new Schema<IUser>(
     // so any process/API route can query "who's online" via a normal find().
     isOnline: { type: Boolean, default: false },
     lastSeenAt: { type: Date, default: Date.now },
+
+    // --- Automated email cooldowns ---
+    // Last time this user was sent a "new DM" email notification — used to
+    // throttle so an active conversation doesn't spam their inbox.
+    lastDmEmailAt: { type: Date, default: null },
+    // Last time this user was sent an inactivity re-engagement email.
+    lastInactivityEmailAt: { type: Date, default: null },
   },
   {
     timestamps: true, // adds createdAt, updatedAt
@@ -183,6 +193,8 @@ UserSchema.index({ isGuest: 1, guestExpiresAt: 1 }); // for guest cleanup
 UserSchema.index({ isActive: 1 });
 // Powers the "all members" list — online users first, then alphabetical.
 UserSchema.index({ isGuest: 1, isActive: 1, isOnline: -1, name: 1 });
+// Powers the inactivity-reminder cron's scan (see scripts/send-inactivity-emails.ts)
+UserSchema.index({ isGuest: 1, isActive: 1, isOnline: 1, lastSeenAt: 1 });
 
 // -------------------------
 // Instance method — compare password
