@@ -1,13 +1,21 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-export type NotificationType = "new_dm" | "event_comment" | "comment_reply" | "new_event";
+export type NotificationType =
+  | "new_dm"
+  | "event_comment"
+  | "comment_reply"
+  | "new_event"
+  | "announcement";
 
 export interface INotification extends Document {
   recipient: mongoose.Types.ObjectId;
   type: NotificationType;
-  refModel: "DirectMessage" | "EventComment" | "Event" | null;
+  refModel: "DirectMessage" | "EventComment" | "Event" | "Broadcast" | null;
   refId: mongoose.Types.ObjectId | null;
   preview: string | null;
+  // Only set for "announcement" notifications — where the admin's broadcast
+  // link should take the user, if they provided one.
+  url: string | null;
   actor: {
     userId: mongoose.Types.ObjectId;
     name: string;
@@ -21,17 +29,18 @@ const NotificationSchema = new Schema<INotification>(
     recipient: { type: Schema.Types.ObjectId, ref: "User", required: true },
     type: {
       type: String,
-      enum: ["new_dm", "event_comment", "comment_reply", "new_event"],
+      enum: ["new_dm", "event_comment", "comment_reply", "new_event", "announcement"],
       required: true,
     },
     refModel: {
       type: String,
-      enum: ["DirectMessage", "EventComment", "Event"],
+      enum: ["DirectMessage", "EventComment", "Event", "Broadcast"],
       default: null,
     },
     refId: { type: Schema.Types.ObjectId, default: null },
     // Snapshot of message preview — renders notification without extra DB call
     preview: { type: String, maxlength: 100, default: null },
+    url: { type: String, default: null },
     // Snapshot of who triggered — avoids populating User on every notification fetch
     actor: {
       userId: { type: Schema.Types.ObjectId, ref: "User", required: true },

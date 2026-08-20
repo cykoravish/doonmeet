@@ -1,12 +1,18 @@
 import type { ReactNode } from "react";
-import { MessageCircle, CalendarDays } from "lucide-react";
+import { MessageCircle, CalendarDays, Megaphone } from "lucide-react";
 
-export type NotificationType = "new_dm" | "event_comment" | "comment_reply" | "new_event";
+export type NotificationType =
+  | "new_dm"
+  | "event_comment"
+  | "comment_reply"
+  | "new_event"
+  | "announcement";
 
 export interface NotificationItem {
   _id: string;
   type: NotificationType;
   preview: string | null;
+  url: string | null;
   isRead: boolean;
   createdAt: string;
   actor: {
@@ -53,13 +59,26 @@ export const NOTIFICATION_TYPE_CONFIG: Record<NotificationType, TypeConfigEntry>
     label: "created a new event",
     href: "/events",
   },
+  announcement: {
+    icon: <Megaphone size={14} />,
+    color: "rgb(220 150 30)",
+    bg: "rgb(220 150 30 / 0.1)",
+    label: "posted an announcement",
+    href: "/",
+  },
 };
 
-// new_dm notifications deep-link straight into that conversation; everything
-// else falls back to its section's static href.
-export function getNotificationHref(notif: Pick<NotificationItem, "type" | "actor">): string {
+// new_dm notifications deep-link straight into that conversation;
+// announcement notifications use whatever URL the admin attached (if any);
+// everything else falls back to its section's static href.
+export function getNotificationHref(
+  notif: Pick<NotificationItem, "type" | "actor" | "url">
+): string {
   if (notif.type === "new_dm" && notif.actor.userId) {
     return `/chat?dm=${notif.actor.userId}`;
+  }
+  if (notif.type === "announcement" && notif.url) {
+    return notif.url;
   }
   return NOTIFICATION_TYPE_CONFIG[notif.type].href;
 }
