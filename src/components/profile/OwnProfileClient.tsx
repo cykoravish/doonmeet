@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, Settings, Shield, KeyRound, LogOut, Check, X } from "lucide-react";
+import { MapPin, Settings, Shield, Bell, KeyRound, LogOut, Check, X } from "lucide-react";
 import ProfileAvatar from "./ProfileAvatar";
 import EditProfileForm from "./EditProfileForm";
 import PrivacySettings from "./PrivacySettings";
+import NotificationSettings from "./NotificationSettings";
 import { useRouter } from "next/navigation";
 import Alert from "@/components/ui/Alert";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 
-type Tab = "profile" | "privacy" | "security";
+type Tab = "profile" | "privacy" | "notifications" | "security";
 
 interface User {
   _id: string;
@@ -55,6 +56,7 @@ export default function OwnProfileClient({ user }: { user: User }) {
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: "profile", label: "Profile", icon: <Settings size={15} /> },
     { key: "privacy", label: "Privacy", icon: <Shield size={15} /> },
+    { key: "notifications", label: "Notifications", icon: <Bell size={15} /> },
     { key: "security", label: "Security", icon: <KeyRound size={15} /> },
   ];
 
@@ -214,6 +216,18 @@ export default function OwnProfileClient({ user }: { user: User }) {
                 </p>
               </div>
               <PrivacySettings initialPrivacy={currentUser.privacy} />
+            </div>
+          )}
+
+          {activeTab === "notifications" && (
+            <div>
+              <div className="mb-5">
+                <h2 className="font-bold">Notifications</h2>
+                <p className="mt-1 text-xs" style={{ color: "rgb(var(--muted))" }}>
+                  Choose how DoonMeet lets you know about new activity.
+                </p>
+              </div>
+              <NotificationSettings />
             </div>
           )}
 

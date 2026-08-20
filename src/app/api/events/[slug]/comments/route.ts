@@ -10,6 +10,7 @@ import { withGuestAllowed, requireVerified, AuthenticatedRequest } from "@/middl
 import { validateBody, validateQuery } from "@/middleware/validate";
 import { generalLimiter } from "@/middleware/rateLimit";
 import { createCommentSchema, getCommentsSchema } from "@/validations/eventComment";
+import { sendPushToUser } from "@/lib/push";
 
 // GET /api/events/[eventId]/comments
 export const GET = withGuestAllowed(
@@ -132,6 +133,15 @@ export const POST = requireVerified(
             name: req.user.name,
             avatar: req.user.avatar,
           },
+        });
+
+        sendPushToUser(String(event.creator), {
+          title: `${req.user.name} commented on your event`,
+          body: data.content.slice(0, 120),
+          url: `/events/${event.slug}`,
+          tag: `event-comment-${event._id}`,
+        }).catch(() => {
+          // Errors are already logged inside the helper.
         });
       }
 

@@ -8,6 +8,7 @@ import { Conversation } from "@/models/Conversation";
 import { Notification } from "@/models/Notification";
 import { User } from "@/models/User";
 import { maybeSendDmNotificationEmail } from "@/lib/email";
+import { sendPushToUser } from "@/lib/push";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
 const GUEST_MESSAGE_LIMIT = 20;
@@ -384,6 +385,15 @@ export function initSocket(httpServer: HttpServer): SocketServer {
           // genuinely offline and not within the cooldown window (see
           // maybeSendDmNotificationEmail in src/lib/email.ts).
           maybeSendDmNotificationEmail(String(recipientId), socket.name, content).catch(() => {
+            // Errors are already logged inside the helper.
+          });
+
+          sendPushToUser(String(recipientId), {
+            title: socket.name,
+            body: content.slice(0, 120),
+            url: "/messages",
+            tag: `dm-${data.conversationId}`,
+          }).catch(() => {
             // Errors are already logged inside the helper.
           });
         }

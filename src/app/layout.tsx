@@ -18,6 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://doonmeet.in"),
+  manifest: "/manifest.json",
   title: {
     default: "DoonMeet - Meet People, Events & Communities in Dehradun",
     template: "%s | DoonMeet",
