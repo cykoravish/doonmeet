@@ -297,7 +297,7 @@ export const POST = withAuth(
         sendPushToUser(String(recipientId), {
           title: req.user.name,
           body: content.slice(0, 120),
-          url: "/messages",
+          url: "/chat",
           tag: `dm-${conversationId}`,
         }).catch(() => {
           // Errors are already logged inside the helper.

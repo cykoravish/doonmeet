@@ -391,7 +391,7 @@ export function initSocket(httpServer: HttpServer): SocketServer {
           sendPushToUser(String(recipientId), {
             title: socket.name,
             body: content.slice(0, 120),
-            url: "/messages",
+            url: "/chat",
             tag: `dm-${data.conversationId}`,
           }).catch(() => {
             // Errors are already logged inside the helper.

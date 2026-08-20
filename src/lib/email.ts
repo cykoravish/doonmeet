@@ -101,7 +101,7 @@ export async function sendDmNotificationEmail(
   preview: string,
   recipientId: string
 ): Promise<void> {
-  const link = `${APP_URL}/messages`;
+  const link = `${APP_URL}/chat`;
   await sendAndLog({
     to: email,
     type: "new_dm",
