@@ -15,12 +15,15 @@ const VALLEY_OUTLINE =
 // doubling as "you" on the map
 const hub = { x: 197, y: 198 };
 
-// Real landmarks, positioned relative to the hub exactly as they sit on the map
+// Real landmarks — same true bearing/direction from Ghanta Ghar as on the
+// actual map, but distance from the hub is exaggerated (~1.9x) so they read
+// clearly at this small size. This is the same trick transit/metro maps use:
+// stations keep their real relative direction, not their real scale.
 const landmarks = [
-  { x: 160.8, y: 184.7, cx: 172, cy: 218, r: 5, tone: "primary-light", label: "FRI", pulseDelay: "0s" },
-  { x: 174.3, y: 153.3, cx: 160, cy: 158, r: 5, tone: "accent", label: "Robber's Cave", pulseDelay: "0.6s" },
-  { x: 214.5, y: 186.2, cx: 232, cy: 172, r: 6, tone: "primary", label: "Rajpur Road", pulseDelay: "1.1s" },
-  { x: 236.5, y: 152.4, cx: 248, cy: 192, r: 5, tone: "accent", label: "Sahastradhara", pulseDelay: "1.6s" },
+  { x: 128, y: 173, cx: 150, cy: 195, r: 5, tone: "primary-light", label: "FRI", pulseDelay: "0s" },
+  { x: 154, y: 113, cx: 160, cy: 160, r: 5, tone: "accent", label: "Robber's Cave", pulseDelay: "0.6s" },
+  { x: 230, y: 176, cx: 225, cy: 185, r: 6, tone: "primary", label: "Rajpur Road", pulseDelay: "1.1s" },
+  { x: 272, y: 111, cx: 250, cy: 150, r: 5, tone: "accent", label: "Sahastradhara", pulseDelay: "1.6s" },
 ];
 
 const toneFill: Record<string, string> = {
