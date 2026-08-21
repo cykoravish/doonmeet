@@ -61,10 +61,10 @@ export default function HeroSection() {
         {/* Map column */}
         <div className="relative mx-auto w-full max-w-md lg:max-w-none">
           <svg
-            viewBox="0 0 420 320"
+            viewBox="0 0 420 340"
             className="h-auto w-full"
             role="img"
-            aria-label="Stylised map of Dehradun highlighting popular local spots"
+            aria-label="Stylised map of the Doon Valley showing hills on both sides, the Rispana river and popular local spots"
           >
             <defs>
               <linearGradient id="doon-road" x1="0" y1="0" x2="1" y2="1">
@@ -73,20 +73,44 @@ export default function HeroSection() {
               </linearGradient>
             </defs>
 
-            {/* Abstract valley / road network */}
-            <g fill="none" stroke="url(#doon-road)" strokeWidth="2" strokeLinecap="round">
-              <path d="M40 250 Q 120 80 210 190 T 380 90" opacity="0.6" />
-              <path d="M20 150 Q 150 200 210 190 T 400 220" opacity="0.4" />
-              <path d="M210 190 L 90 110" opacity="0.5" />
-              <path d="M210 190 L 330 250" opacity="0.5" />
-              <path d="M210 190 L 320 100" opacity="0.5" />
-            </g>
-
-            {/* Outer hills silhouette, very subtle */}
+            {/* Himalayan foothills — north ridge */}
             <path
-              d="M0 300 Q 60 250 120 285 T 240 270 T 360 290 T 420 275 V320 H0 Z"
+              d="M0 60 Q 45 20 90 55 T 180 45 T 270 60 T 360 40 T 420 55 V0 H0 Z"
+              className="fill-primary/15"
+            />
+            <path
+              d="M0 75 Q 50 45 105 70 T 210 62 T 310 78 T 420 65 V50 Q 340 35 260 55 T 90 50 T 0 60 Z"
               className="fill-primary/10"
             />
+
+            {/* Shivalik range — south ridge */}
+            <path
+              d="M0 340 V300 Q 55 260 115 292 T 235 278 T 345 296 T 420 280 V340 Z"
+              className="fill-primary/15"
+            />
+            <path
+              d="M0 340 V315 Q 60 285 130 308 T 250 298 T 360 312 T 420 300 V340 Z"
+              className="fill-primary/25"
+            />
+
+            {/* Rispana river winding through the valley */}
+            <path
+              d="M0 190 Q 60 175 110 200 T 220 195 T 330 210 T 420 195"
+              fill="none"
+              stroke="rgb(var(--primary-light))"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              opacity="0.35"
+            />
+
+            {/* Road network connecting landmarks */}
+            <g fill="none" stroke="url(#doon-road)" strokeWidth="1.75" strokeLinecap="round">
+              <path d="M50 240 Q 130 120 210 190 T 380 110" opacity="0.55" />
+              <path d="M30 160 Q 150 210 210 190 T 400 230" opacity="0.4" />
+              <path d="M210 190 L 90 130" opacity="0.5" />
+              <path d="M210 190 L 330 250" opacity="0.5" />
+              <path d="M210 190 L 320 120" opacity="0.5" />
+            </g>
 
             {/* Landmark pulse points */}
             {landmarks.map((p) => (
@@ -124,6 +148,17 @@ export default function HeroSection() {
                 </Link>
               </g>
             ))}
+
+            {/* Doon Valley watermark label */}
+            <text
+              x="210"
+              y="325"
+              textAnchor="middle"
+              className="fill-muted text-[10px] font-semibold uppercase tracking-[0.2em]"
+              opacity="0.5"
+            >
+              Doon Valley
+            </text>
           </svg>
         </div>
       </div>
