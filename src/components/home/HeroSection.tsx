@@ -1,16 +1,27 @@
 import Link from "next/link";
 import { ArrowRight, CalendarDays, MapPin } from "lucide-react";
 
-// Real Dehradun landmarks pinned around the hub — "you, on the Doon map"
-const landmarks = [
-  { x: 100, y: 68, cx: 128, cy: 58, r: 5, tone: "primary-light", label: "Clock Tower", pulseDelay: "0s" },
-  { x: 300, y: 64, cx: 272, cy: 50, r: 5, tone: "accent", label: "FRI", pulseDelay: "0.5s" },
-  { x: 336, y: 176, cx: 300, cy: 142, r: 6, tone: "primary", label: "Rajpur Road", pulseDelay: "1s" },
-  { x: 296, y: 270, cx: 280, cy: 250, r: 5, tone: "accent", label: "Sahastradhara", pulseDelay: "1.5s" },
-  { x: 86, y: 260, cx: 112, cy: 240, r: 5, tone: "primary-light", label: "Robber's Cave", pulseDelay: "0.8s" },
-];
+// Every coordinate below is projected from the same real lat/lng data used by
+// the live locations map (see DEHRADUN_OUTLINE and SPOTS in
+// src/components/locations/DehradunMap.tsx) — this isn't a decorative shape,
+// it's the actual Doon valley outline, just drawn small and static for the
+// hero. Landmarks sit at their true position relative to each other.
 
-const hub = { x: 200, y: 165 };
+// Real valley boundary (NW → SE), projected to the 400×380 viewBox
+const VALLEY_OUTLINE =
+  "177.7,55 243.2,79.5 292.3,120.5 325,169.5 341.4,218.6 308.6,267.7 243.2,308.6 161.4,325 95.9,308.6 55,267.7 63.2,202.3 104.1,136.8 145,87.7 177.7,55";
+
+// City centre / Ghanta Ghar (Clock Tower) — the real heart of Dehradun,
+// doubling as "you" on the map
+const hub = { x: 197, y: 198 };
+
+// Real landmarks, positioned relative to the hub exactly as they sit on the map
+const landmarks = [
+  { x: 160.8, y: 184.7, cx: 172, cy: 218, r: 5, tone: "primary-light", label: "FRI", pulseDelay: "0s" },
+  { x: 174.3, y: 153.3, cx: 160, cy: 158, r: 5, tone: "accent", label: "Robber's Cave", pulseDelay: "0.6s" },
+  { x: 214.5, y: 186.2, cx: 232, cy: 172, r: 6, tone: "primary", label: "Rajpur Road", pulseDelay: "1.1s" },
+  { x: 236.5, y: 152.4, cx: 248, cy: 192, r: 5, tone: "accent", label: "Sahastradhara", pulseDelay: "1.6s" },
+];
 
 const toneFill: Record<string, string> = {
   primary: "fill-primary",
@@ -71,36 +82,60 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* "You, on the Doon map" — real landmarks pinned around the hub */}
+        {/* The real Doon valley, drawn small — you at Ghanta Ghar, the city's heart */}
         <div className="relative mx-auto flex w-full max-w-md items-center justify-center lg:max-w-none">
-          {/* Soft ambient glow behind the map — single small blurred orb, cheap */}
+          {/* Soft ambient glow behind the valley — single small blurred orb, cheap */}
           <div className="absolute h-56 w-56 rounded-full bg-primary/20 blur-3xl" />
           <div className="absolute h-40 w-40 translate-x-16 -translate-y-10 rounded-full bg-accent/10 blur-3xl" />
 
           <svg
-            viewBox="0 0 400 340"
+            viewBox="0 0 400 380"
             className="relative h-auto w-full"
             role="img"
-            aria-label="Map illustration of Dehradun landmarks — Clock Tower, FRI, Rajpur Road, Sahastradhara and Robber's Cave — connected to you at the centre"
+            aria-label="Map of the real Doon valley outline with you at Ghanta Ghar, the city centre, connected to Rajpur Road, FRI, Robber's Cave and Sahastradhara"
           >
-            {/* Dashed loop road connecting neighbouring landmarks */}
-            <polygon
-              points={landmarks.map((n) => `${n.x},${n.y}`).join(" ")}
-              fill="none"
-              stroke="rgb(var(--border))"
-              strokeWidth="1"
-              strokeDasharray="3 5"
-              opacity="0.6"
+            {/* Himalayan foothills to the north, Shivalik range to the south —
+                the valley DoonMeet is named for, drawn as simple ridgelines */}
+            <path
+              d="M0,48 L38,22 L72,36 L108,12 L146,32 Q178,8 210,30 L248,10 L284,34 L322,16 L362,36 L400,20 L400,0 L0,0 Z"
+              className="fill-border"
+              opacity="0.55"
+            />
+            <path
+              d="M0,380 L44,352 L88,366 L136,344 Q176,362 216,342 L258,360 L302,338 L348,358 L400,342 L400,380 Z"
+              className="fill-border"
+              opacity="0.4"
             />
 
-            {/* Curved routes from hub to each landmark */}
-            <g stroke="rgb(var(--primary-light))" strokeWidth="1.25" opacity="0.35" fill="none">
+            {/* Valley floor — faint tint so the city footprint reads distinctly */}
+            <polygon points={VALLEY_OUTLINE} className="fill-primary" opacity="0.06" />
+
+            {/* Valley boundary — soft double glow + crisp dashed line, same
+                visual language as the live locations map */}
+            <polygon
+              points={VALLEY_OUTLINE}
+              fill="none"
+              stroke="rgb(var(--primary-light))"
+              strokeWidth="10"
+              opacity="0.15"
+            />
+            <polygon
+              points={VALLEY_OUTLINE}
+              fill="none"
+              stroke="rgb(var(--primary))"
+              strokeWidth="1.5"
+              strokeDasharray="2 3"
+              opacity="0.8"
+            />
+
+            {/* Routes from Ghanta Ghar to each landmark */}
+            <g stroke="rgb(var(--primary-light))" strokeWidth="1.25" opacity="0.4" fill="none">
               {landmarks.map((n, i) => (
                 <path key={i} d={routePath(n)} />
               ))}
             </g>
 
-            {/* Traveling pulses along two routes — suggests people moving across the city */}
+            {/* Traveling pulses — suggests people moving across the city */}
             <circle r="3" className="fill-accent">
               <animateMotion dur="3.6s" repeatCount="indefinite" path={routePath(landmarks[2])} />
               <animate
@@ -116,7 +151,7 @@ export default function HeroSection() {
                 dur="4.4s"
                 begin="1.2s"
                 repeatCount="indefinite"
-                path={routePath(landmarks[4])}
+                path={routePath(landmarks[3])}
               />
               <animate
                 attributeName="opacity"
@@ -144,7 +179,7 @@ export default function HeroSection() {
               </g>
             ))}
 
-            {/* Central hub — "you" */}
+            {/* Ghanta Ghar — the real city centre, and "you" */}
             <circle cx={hub.x} cy={hub.y} r="26" className="fill-primary" opacity="0.15" />
             <circle cx={hub.x} cy={hub.y} r="16" className="fill-primary" opacity="0.25" />
             <circle cx={hub.x} cy={hub.y} r="9" className="fill-primary-light" />
@@ -155,19 +190,22 @@ export default function HeroSection() {
             <span
               key={i}
               className="pointer-events-none absolute hidden -translate-x-1/2 -translate-y-full rounded-full border border-border bg-surface/90 px-2 py-0.5 text-[11px] font-medium text-muted shadow-sm sm:block"
-              style={{ left: `${(n.x / 400) * 100}%`, top: `${(n.y / 340) * 100 - 3}%` }}
+              style={{ left: `${(n.x / 400) * 100}%`, top: `${(n.y / 380) * 100 - 3}%` }}
             >
               {n.label}
             </span>
           ))}
 
-          {/* "You" chip at the hub — kept on all breakpoints, it's short */}
-          <span
-            className="pointer-events-none absolute -translate-x-1/2 translate-y-4 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm"
-            style={{ left: `${(hub.x / 400) * 100}%`, top: `${(hub.y / 340) * 100}%` }}
+          {/* "You" chip at Ghanta Ghar — kept on all breakpoints */}
+          <div
+            className="pointer-events-none absolute flex -translate-x-1/2 translate-y-4 flex-col items-center gap-0.5"
+            style={{ left: `${(hub.x / 400) * 100}%`, top: `${(hub.y / 380) * 100}%` }}
           >
-            You
-          </span>
+            <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
+              You
+            </span>
+            <span className="text-[10px] font-medium text-muted">Ghanta Ghar</span>
+          </div>
         </div>
       </div>
     </section>
