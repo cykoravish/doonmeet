@@ -66,35 +66,17 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* Valley at dusk illustration */}
-        <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-3xl border border-border bg-background lg:max-w-none">
+        {/* Valley at dusk illustration — free-flowing, no frame */}
+        <div className="relative mx-auto w-full max-w-md lg:max-w-none">
           <svg
             viewBox="0 0 400 280"
             className="h-auto w-full"
             role="img"
             aria-label="Illustration of the hills around Dehradun with Mussoorie's lights twinkling at dusk"
           >
-            {/* Sky glow — warm dusk in dark theme, soft haze in light theme */}
-            <defs>
-              <radialGradient id="dusk-glow" cx="50%" cy="15%" r="70%">
-                <stop offset="0%" stopColor="rgb(var(--accent))" stopOpacity="0.18" />
-                <stop offset="100%" stopColor="rgb(var(--accent))" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-            <rect width="400" height="280" fill="url(#dusk-glow)" />
-
-            {/* Moon — night theme only */}
-            <g className="hidden night:block">
-              <circle cx="330" cy="45" r="16" className="fill-accent/25" />
-              <circle cx="330" cy="45" r="9" className="fill-accent/70" />
-            </g>
-
-            {/* Sun haze — light theme only */}
-            <circle cx="330" cy="45" r="22" className="hidden doon:block fill-accent/20" />
-
-            {/* Farthest ridge — Mussoorie */}
+            {/* Farthest ridge — Mussoorie, soft rolling curves */}
             <path
-              d="M0 95 L35 68 L70 88 L100 60 L135 84 L170 58 L205 82 L240 56 L275 80 L310 62 L345 86 L400 70 V0 H0 Z"
+              d="M0 110 C 40 78, 70 100, 100 82 C 130 64, 160 96, 190 78 C 220 60, 250 92, 280 74 C 310 58, 350 88, 400 70 V 0 H 0 Z"
               className="fill-primary/12"
             />
 
@@ -115,19 +97,19 @@ export default function HeroSection() {
 
             {/* Middle ridge */}
             <path
-              d="M0 150 L50 110 L95 140 L150 100 L200 138 L255 105 L310 142 L400 115 V280 H0 Z"
+              d="M0 165 C 45 130, 85 158, 130 128 C 175 98, 215 150, 260 122 C 300 98, 340 140, 400 118 V 280 H 0 Z"
               className="fill-primary/20"
             />
 
             {/* Nearest ridge */}
             <path
-              d="M0 200 L60 165 L120 195 L190 155 L260 198 L330 168 L400 190 V280 H0 Z"
+              d="M0 215 C 50 178, 100 208, 155 176 C 205 148, 255 200, 310 172 C 345 154, 375 188, 400 178 V 280 H 0 Z"
               className="fill-primary/35"
             />
           </svg>
 
           {/* Caption */}
-          <div className="absolute bottom-4 left-4 rounded-full bg-background/70 px-3 py-1.5 text-xs font-medium text-muted backdrop-blur-sm">
+          <div className="absolute bottom-3 left-3 rounded-full bg-background/70 px-3 py-1.5 text-xs font-medium text-muted backdrop-blur-sm">
             Mussoorie lights, seen from the valley
           </div>
         </div>
