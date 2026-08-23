@@ -5,7 +5,7 @@
 
 export type DehradunRoad = {
   name: string;
-  type: "primary" | "secondary" | "tertiary" | "local";
+  type: "primary" | "secondary" | "tertiary";
   path: string;
 };
 
@@ -140,118 +140,10 @@ export const DEHRADUN_ROADS = [
     path: "M 128,214 Q 134,205 140,197 Q 146,189 154,184 Q 162,180 171,177",
   },
 
-  // ─────────────────────────────────────────────────────────────
-  // LOCAL STREETS — subtle urban texture
-  // ─────────────────────────────────────────────────────────────
-
-  {
-    name: "Local West 1",
-    type: "local",
-    path: "M 102,175 Q 108,183 113,192 Q 118,201 128,207",
-  },
-  {
-    name: "Local West 2",
-    type: "local",
-    path: "M 89,190 Q 94,200 99,210 Q 104,219 113,224",
-  },
-  {
-    name: "Local West 3",
-    type: "local",
-    path: "M 76,181 Q 79,191 83,201 Q 88,211 98,218",
-  },
-  {
-    name: "Local West 4",
-    type: "local",
-    path: "M 121,245 Q 110,246 100,243 Q 90,240 82,234",
-  },
-  {
-    name: "Local North 1",
-    type: "local",
-    path: "M 183,160 Q 177,151 178,142 Q 180,133 187,126",
-  },
-  {
-    name: "Local North 2",
-    type: "local",
-    path: "M 201,150 Q 208,143 216,137 Q 224,131 233,133",
-  },
-  {
-    name: "Local North 3",
-    type: "local",
-    path: "M 243,116 Q 250,119 258,122 Q 266,125 272,121",
-  },
-  {
-    name: "Local North 4",
-    type: "local",
-    path: "M 260,105 Q 267,98 275,94 Q 284,90 293,91",
-  },
-  {
-    name: "Local East 1",
-    type: "local",
-    path: "M 257,197 Q 263,188 272,184 Q 281,180 291,182",
-  },
-  {
-    name: "Local East 2",
-    type: "local",
-    path: "M 276,211 Q 280,221 288,228 Q 296,235 305,237",
-  },
-  {
-    name: "Local East 3",
-    type: "local",
-    path: "M 300,224 Q 306,214 315,208 Q 324,202 334,204",
-  },
-  {
-    name: "Local East 4",
-    type: "local",
-    path: "M 314,273 Q 319,263 326,257 Q 333,252 342,254",
-  },
-  {
-    name: "Local South 1",
-    type: "local",
-    path: "M 189,296 Q 185,307 187,318 Q 189,328 196,336",
-  },
-  {
-    name: "Local South 2",
-    type: "local",
-    path: "M 217,316 Q 216,327 221,337 Q 226,346 236,351",
-  },
-  {
-    name: "Local South 3",
-    type: "local",
-    path: "M 251,306 Q 249,317 253,327 Q 257,337 266,343",
-  },
-  {
-    name: "Local South 4",
-    type: "local",
-    path: "M 278,329 Q 285,334 294,335 Q 303,336 311,332",
-  },
-  {
-    name: "Local Southeast 1",
-    type: "local",
-    path: "M 301,302 Q 311,307 320,313 Q 329,319 337,327",
-  },
-  {
-    name: "Local Southeast 2",
-    type: "local",
-    path: "M 327,270 Q 334,278 341,285 Q 348,293 354,301",
-  },
-  {
-    name: "Local Central 1",
-    type: "local",
-    path: "M 172,198 Q 181,205 190,212 Q 199,220 205,230",
-  },
-  {
-    name: "Local Central 2",
-    type: "local",
-    path: "M 211,214 Q 202,216 194,220 Q 186,224 180,231",
-  },
-  {
-    name: "Local Central 3",
-    type: "local",
-    path: "M 225,236 Q 216,241 207,247 Q 198,254 193,263",
-  },
-  {
-    name: "Local Central 4",
-    type: "local",
-    path: "M 234,261 Q 225,262 216,267 Q 207,272 202,280",
-  },
 ] as const;
+
+// NOTE: a "local" road tier (22 hand-drawn streets, rendered at 0.02-0.08
+// opacity) was intentionally removed for the hero. They were near-invisible
+// but doubled the SVG node/path count, which is the single biggest perf cost
+// of this illustration on low-end devices. Primary/secondary/tertiary carry
+// the visual, so the map reads the same without them.

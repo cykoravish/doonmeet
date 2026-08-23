@@ -210,12 +210,6 @@ export default function HeroSection() {
                     width: 0.62,
                     opacity: 0.18,
                   },
-                  local: {
-                    casing: 1.2,
-                    casingOpacity: 0.018,
-                    width: 0.42,
-                    opacity: 0.075,
-                  },
                 } as const;
 
                 const style = styles[road.type];
@@ -248,21 +242,14 @@ export default function HeroSection() {
               <circle r="9" fill="rgb(var(--primary-light))" opacity="0.10" />
 
               <circle
+                className="hero-pulse-ring"
                 r="5"
                 fill="none"
                 stroke="rgb(var(--primary-light))"
                 strokeWidth="1"
-                opacity="0.5"
-              >
-                <animate attributeName="r" from="5" to="14" dur="2.5s" repeatCount="indefinite" />
-                <animate
-                  attributeName="opacity"
-                  from="0.55"
-                  to="0"
-                  dur="2.5s"
-                  repeatCount="indefinite"
-                />
-              </circle>
+                vectorEffect="non-scaling-stroke"
+                opacity="0.55"
+              />
 
               <circle r="3.5" fill="rgb(var(--primary-light))" />
 
@@ -481,6 +468,7 @@ export default function HeroSection() {
             </g>
 
             <path
+              className="hero-boundary-dash"
               d={DEHRADUN_BOUNDARY_PATH}
               fill="none"
               stroke="rgb(var(--primary))"
@@ -488,16 +476,48 @@ export default function HeroSection() {
               strokeDasharray="2 3"
               opacity="0.85"
               strokeLinecap="round"
-            >
-              <animate
-                attributeName="stroke-dashoffset"
-                from="0"
-                to="-50"
-                dur="8s"
-                repeatCount="indefinite"
-              />
-            </path>
+            />
           </svg>
+
+          <style>{`
+            @keyframes heroPulseRing {
+              0% {
+                transform: scale(1);
+                opacity: 0.55;
+              }
+              100% {
+                transform: scale(2.8);
+                opacity: 0;
+              }
+            }
+
+            @keyframes heroBoundaryDash {
+              from {
+                stroke-dashoffset: 0;
+              }
+              to {
+                stroke-dashoffset: -50;
+              }
+            }
+
+            .hero-pulse-ring {
+              transform-box: fill-box;
+              transform-origin: center;
+              animation: heroPulseRing 2.5s ease-out infinite;
+              will-change: transform, opacity;
+            }
+
+            .hero-boundary-dash {
+              animation: heroBoundaryDash 8s linear infinite;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+              .hero-pulse-ring,
+              .hero-boundary-dash {
+                animation: none;
+              }
+            }
+          `}</style>
         </div>
       </div>
     </section>
