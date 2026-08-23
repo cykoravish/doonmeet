@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, CalendarDays, MapPin } from "lucide-react";
+import { DEHRADUN_ROADS } from "@/data/dehradun-roads-data";
 
 // Every coordinate below is projected from the same real lat/lng data used by
 // the live locations map (see DEHRADUN_OUTLINE and SPOTS in
@@ -13,29 +14,73 @@ const VALLEY_OUTLINE =
 
 // City centre / Ghanta Ghar (Clock Tower) — the real heart of Dehradun,
 // doubling as "you" on the map
-const hub = { x: 197, y: 198 };
-
-// Real landmarks — same true bearing/direction from Ghanta Ghar as on the
-// actual map, but distance from the hub is exaggerated (~1.9x) so they read
-// clearly at this small size. This is the same trick transit/metro maps use:
-// stations keep their real relative direction, not their real scale.
-const landmarks = [
-  { x: 128, y: 173, cx: 150, cy: 195, r: 5, tone: "primary-light", label: "FRI", pulseDelay: "0s" },
-  { x: 154, y: 113, cx: 160, cy: 160, r: 5, tone: "accent", label: "Robber's Cave", pulseDelay: "0.6s" },
-  { x: 230, y: 176, cx: 225, cy: 185, r: 6, tone: "primary", label: "Rajpur Road", pulseDelay: "1.1s" },
-  { x: 272, y: 111, cx: 250, cy: 150, r: 5, tone: "accent", label: "Sahastradhara", pulseDelay: "1.6s" },
-];
-
-const toneFill: Record<string, string> = {
-  primary: "fill-primary",
-  "primary-light": "fill-primary-light",
-  accent: "fill-accent",
-};
-
-const routePath = (n: (typeof landmarks)[number]) =>
-  `M${hub.x} ${hub.y} Q${n.cx} ${n.cy} ${n.x} ${n.y}`;
 
 export default function HeroSection() {
+  const DEHRADUN_BOUNDARY_PATH = `
+  M 397.3,27.3
+  L 378.3,23.2
+  L 288.3,33.1
+  L 283.4,40.6
+  L 285.0,53.8
+  L 275.1,82.7
+  L 259.4,95.9
+  L 244.6,96.7
+  L 229.7,92.6
+  L 219.8,97.5
+  L 181.8,152.0
+  L 172.8,155.3
+  L 145.5,154.5
+  L 115.0,166.9
+  L 102.6,163.6
+  L 43.1,175.1
+  L 46.4,209.0
+  L 64.6,240.4
+  L 91.0,240.4
+  L 114.1,261.0
+  L 116.6,268.4
+  L 108.3,290.7
+  L 116.6,313.0
+  L 129.8,317.2
+  L 136.4,314.7
+  L 144.7,317.2
+  L 149.6,323.8
+  L 152.1,345.2
+  L 170.3,360.1
+  L 238.8,382.4
+  L 242.9,381.6
+  L 262.8,355.1
+  L 283.4,346.1
+  L 290.8,348.5
+  L 305.7,361.7
+  L 315.6,343.6
+  L 327.2,337.8
+  L 337.1,341.9
+  L 344.5,351.0
+  L 357.7,357.6
+  L 363.5,364.2
+  L 362.7,350.2
+  L 356.9,337.8
+  L 363.5,305.6
+  L 361.0,289.9
+  L 363.5,275.0
+  L 368.4,268.4
+  L 388.3,262.7
+  L 402.3,249.4
+  L 401.5,245.3
+  L 383.3,241.2
+  L 375.9,235.4
+  L 363.5,217.2
+  L 360.2,204.9
+  L 362.7,196.6
+  L 372.6,184.2
+  L 364.3,161.1
+  L 366.0,140.5
+  L 389.1,119.0
+  L 400.6,94.2
+  L 397.3,71.9
+  Z
+`;
+
   return (
     <section className="relative overflow-hidden">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 pb-14 pt-10 md:px-12 md:pb-20 md:pt-16 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-8">
@@ -85,130 +130,374 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* The real Doon valley, drawn small — you at Ghanta Ghar, the city's heart */}
+        {/* Premium Dehradun city map */}
         <div className="relative mx-auto flex w-full max-w-md items-center justify-center lg:max-w-none">
-          {/* Soft ambient glow behind the valley — single small blurred orb, cheap */}
-          <div className="absolute h-56 w-56 rounded-full bg-primary/20 blur-3xl" />
-          <div className="absolute h-40 w-40 translate-x-16 -translate-y-10 rounded-full bg-accent/10 blur-3xl" />
+          {/* Ambient premium glow */}
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl" />
+            <div className="absolute right-[15%] top-[12%] h-40 w-40 rounded-full bg-accent/10 blur-3xl" />
+          </div>
 
           <svg
             viewBox="0 0 400 380"
-            className="relative h-auto w-full"
+            className="relative h-auto w-full overflow-visible"
             role="img"
-            aria-label="Map of the real Doon valley outline with you at Ghanta Ghar, the city centre, connected to Rajpur Road, FRI, Robber's Cave and Sahastradhara"
+            aria-label="Interactive map of Dehradun with Ghanta Ghar at the city centre and connected landmarks"
           >
-            {/* Himalayan foothills to the north, Shivalik range to the south —
-                the valley DoonMeet is named for, drawn as simple ridgelines */}
-            <path
-              d="M0,48 L38,22 L72,36 L108,12 L146,32 Q178,8 210,30 L248,10 L284,34 L322,16 L362,36 L400,20 L400,0 L0,0 Z"
-              className="fill-border"
-              opacity="0.55"
-            />
-            <path
-              d="M0,380 L44,352 L88,366 L136,344 Q176,362 216,342 L258,360 L302,338 L348,358 L400,342 L400,380 Z"
-              className="fill-border"
-              opacity="0.4"
-            />
+            <defs>
+              {/* Premium map gradient */}
+              <linearGradient id="doonMapGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="rgb(var(--primary))" stopOpacity="0.13" />
+                <stop offset="45%" stopColor="rgb(var(--primary-light))" stopOpacity="0.07" />
+                <stop offset="100%" stopColor="rgb(var(--accent))" stopOpacity="0.12" />
+              </linearGradient>
 
-            {/* Valley floor — faint tint so the city footprint reads distinctly */}
-            <polygon points={VALLEY_OUTLINE} className="fill-primary" opacity="0.06" />
+              {/* Real boundary used as clipping region */}
+              <clipPath id="dehradunBoundaryClip">
+                <path d={DEHRADUN_BOUNDARY_PATH} />
+              </clipPath>
+            </defs>
 
-            {/* Valley boundary — soft double glow + crisp dashed line, same
-                visual language as the live locations map */}
-            <polygon
-              points={VALLEY_OUTLINE}
+            {/* Soft outer glow */}
+            <path
+              d={DEHRADUN_BOUNDARY_PATH}
               fill="none"
               stroke="rgb(var(--primary-light))"
-              strokeWidth="10"
-              opacity="0.15"
-            />
-            <polygon
-              points={VALLEY_OUTLINE}
-              fill="none"
-              stroke="rgb(var(--primary))"
-              strokeWidth="1.5"
-              strokeDasharray="2 3"
-              opacity="0.8"
+              strokeWidth="12"
+              opacity="0.08"
+              strokeLinejoin="round"
+              strokeLinecap="round"
             />
 
-            {/* Routes from Ghanta Ghar to each landmark */}
-            <g stroke="rgb(var(--primary-light))" strokeWidth="1.25" opacity="0.4" fill="none">
-              {landmarks.map((n, i) => (
-                <path key={i} d={routePath(n)} />
-              ))}
+            <path
+              d={DEHRADUN_BOUNDARY_PATH}
+              fill="none"
+              stroke="rgb(var(--primary-light))"
+              strokeWidth="7"
+              opacity="0.12"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+
+            {/* Main city body */}
+            <path d={DEHRADUN_BOUNDARY_PATH} fill="url(#doonMapGradient)" stroke="none" />
+
+            {/* Dehradun road network */}
+            <g
+              clipPath="url(#dehradunBoundaryClip)"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              pointerEvents="none"
+            >
+              {DEHRADUN_ROADS.map((road) => {
+                const styles = {
+                  primary: {
+                    casing: 3.2,
+                    casingOpacity: 0.12,
+                    width: 1.25,
+                    opacity: 0.48,
+                  },
+                  secondary: {
+                    casing: 2.4,
+                    casingOpacity: 0.07,
+                    width: 0.9,
+                    opacity: 0.3,
+                  },
+                  tertiary: {
+                    casing: 1.7,
+                    casingOpacity: 0.035,
+                    width: 0.62,
+                    opacity: 0.18,
+                  },
+                  local: {
+                    casing: 1.2,
+                    casingOpacity: 0.018,
+                    width: 0.42,
+                    opacity: 0.075,
+                  },
+                } as const;
+
+                const style = styles[road.type];
+
+                return (
+                  <g key={road.name}>
+                    {/* Soft road casing */}
+                    <path
+                      d={road.path}
+                      stroke="rgb(var(--primary))"
+                      strokeWidth={style.casing}
+                      opacity={style.casingOpacity}
+                    />
+
+                    {/* Road surface */}
+                    <path
+                      d={road.path}
+                      stroke="rgb(var(--primary-light))"
+                      strokeWidth={style.width}
+                      opacity={style.opacity}
+                    />
+                  </g>
+                );
+              })}
+            </g>
+            {/* Ghanta Ghar — city centre */}
+            <g transform="translate(197 198)" pointerEvents="none">
+              <circle r="16" fill="rgb(var(--primary-light))" opacity="0.06" />
+
+              <circle r="9" fill="rgb(var(--primary-light))" opacity="0.10" />
+
+              <circle
+                r="5"
+                fill="none"
+                stroke="rgb(var(--primary-light))"
+                strokeWidth="1"
+                opacity="0.5"
+              >
+                <animate attributeName="r" from="5" to="14" dur="2.5s" repeatCount="indefinite" />
+                <animate
+                  attributeName="opacity"
+                  from="0.55"
+                  to="0"
+                  dur="2.5s"
+                  repeatCount="indefinite"
+                />
+              </circle>
+
+              <circle r="3.5" fill="rgb(var(--primary-light))" />
+
+              <circle r="1.5" fill="rgb(var(--background))" />
+            </g>
+   
+            {/* FRI Campus */}
+            <g transform="translate(128.2 172.9)" pointerEvents="none">
+              <circle r="3" fill="rgb(var(--primary-light))" opacity="0.85" />
+
+              <circle
+                r="7"
+                fill="none"
+                stroke="rgb(var(--primary-light))"
+                strokeWidth="0.8"
+                opacity="0.22"
+              />
+
+              <circle
+                r="11"
+                fill="none"
+                stroke="rgb(var(--primary-light))"
+                strokeWidth="0.5"
+                opacity="0.08"
+              />
+            </g>
+            {/* Robber's Cave */}
+            <g transform="translate(245 112)" pointerEvents="none">
+              <circle r="3" fill="rgb(var(--accent))" opacity="0.9" />
+
+              <circle
+                r="8"
+                fill="none"
+                stroke="rgb(var(--accent))"
+                strokeWidth="0.8"
+                opacity="0.22"
+              />
+
+              <circle
+                r="13"
+                fill="none"
+                stroke="rgb(var(--accent))"
+                strokeWidth="0.5"
+                opacity="0.08"
+              />
             </g>
 
-            {/* Traveling pulses — suggests people moving across the city */}
-            <circle r="3" className="fill-accent">
-              <animateMotion dur="3.6s" repeatCount="indefinite" path={routePath(landmarks[2])} />
-              <animate
-                attributeName="opacity"
-                values="0;1;1;0"
-                keyTimes="0;0.1;0.85;1"
-                dur="3.6s"
-                repeatCount="indefinite"
-              />
-            </circle>
-            <circle r="3" className="fill-primary-light">
-              <animateMotion
-                dur="4.4s"
-                begin="1.2s"
-                repeatCount="indefinite"
-                path={routePath(landmarks[3])}
-              />
-              <animate
-                attributeName="opacity"
-                values="0;1;1;0"
-                keyTimes="0;0.1;0.85;1"
-                dur="4.4s"
-                begin="1.2s"
-                repeatCount="indefinite"
-              />
-            </circle>
+            <path
+              d={DEHRADUN_BOUNDARY_PATH}
+              fill="none"
+              stroke="rgb(var(--primary-light))"
+              strokeWidth="3.5"
+              opacity="0.12"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
 
-            {/* Landmark pins */}
-            {landmarks.map((n, i) => (
-              <g key={i}>
-                <circle cx={n.x} cy={n.y} r={n.r + 6} className={toneFill[n.tone]} opacity="0.12" />
-                <circle cx={n.x} cy={n.y} r={n.r} className={toneFill[n.tone]}>
-                  <animate
-                    attributeName="opacity"
-                    values="0.6;1;0.6"
-                    dur="2.8s"
-                    begin={n.pulseDelay}
-                    repeatCount="indefinite"
-                  />
-                </circle>
-              </g>
-            ))}
+            {/* Tapkeshwar Mahadev Mandir */}
+            <g transform="translate(210 137)" pointerEvents="none">
+              <circle r="2.8" fill="rgb(var(--accent))" opacity="0.9" />
+              <circle
+                r="7"
+                fill="none"
+                stroke="rgb(var(--accent))"
+                strokeWidth="0.8"
+                opacity="0.22"
+              />
+            </g>
 
-            {/* Ghanta Ghar — the real city centre, and "you" */}
-            <circle cx={hub.x} cy={hub.y} r="26" className="fill-primary" opacity="0.15" />
-            <circle cx={hub.x} cy={hub.y} r="16" className="fill-primary" opacity="0.25" />
-            <circle cx={hub.x} cy={hub.y} r="9" className="fill-primary-light" />
-          </svg>
+            {/* Dehradun Zoo */}
+            <g transform="translate(292 78)" pointerEvents="none">
+              <circle r="3" fill="rgb(var(--primary-light))" opacity="0.9" />
+              <circle
+                r="8"
+                fill="none"
+                stroke="rgb(var(--primary-light))"
+                strokeWidth="0.8"
+                opacity="0.22"
+              />
+            </g>
+            {/* Rajpur Road */}
+            <g transform="translate(230 176)" pointerEvents="none">
+              <circle r="2.8" fill="rgb(var(--accent))" opacity="0.85" />
+              <circle
+                r="7"
+                fill="none"
+                stroke="rgb(var(--accent))"
+                strokeWidth="0.8"
+                opacity="0.20"
+              />
+            </g>
 
-          {/* Landmark name chips — hidden below sm to keep the mobile view clean */}
-          {landmarks.map((n, i) => (
-            <span
-              key={i}
-              className="pointer-events-none absolute hidden -translate-x-1/2 -translate-y-full rounded-full border border-border bg-surface/90 px-2 py-0.5 text-[11px] font-medium text-muted shadow-sm sm:block"
-              style={{ left: `${(n.x / 400) * 100}%`, top: `${(n.y / 380) * 100 - 3}%` }}
+            {/* Landmark labels */}
+            <g
+              fontFamily="inherit"
+              fontSize="7"
+              fill="rgb(var(--primary-light))"
+              pointerEvents="none"
             >
-              {n.label}
-            </span>
-          ))}
+              <text x="203" y="134" opacity="0.65">
+                Tapkeshwar
+              </text>
 
-          {/* "You" chip at Ghanta Ghar — kept on all breakpoints */}
-          <div
-            className="pointer-events-none absolute flex -translate-x-1/2 translate-y-4 flex-col items-center gap-0.5"
-            style={{ left: `${(hub.x / 400) * 100}%`, top: `${(hub.y / 380) * 100}%` }}
-          >
-            <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
-              You
-            </span>
-            <span className="text-[10px] font-medium text-muted">Ghanta Ghar</span>
-          </div>
+              <text x="250" y="108" opacity="0.65">
+                Robber&apos;s Cave
+              </text>
+
+              <text x="297" y="74" opacity="0.65">
+                Dehradun Zoo
+              </text>
+
+              <text x="121" y="170" opacity="0.65">
+                FRI
+              </text>
+
+              <text x="238" y="174" fill="rgb(var(--accent))" opacity="0.7">
+                Rajpur Road
+              </text>
+
+              <text x="199" y="194" fill="rgb(var(--primary-light))" opacity="0.8">
+                Ghanta Ghar
+              </text>
+            </g>
+
+            {/* Southern & Eastern Dehradun locations */}
+            <g pointerEvents="none">
+              {/* ISBT */}
+             <g transform="translate(157 300)">
+                <circle r="2.8" fill="rgb(var(--primary-light))" opacity="0.8" />
+                <circle
+                  r="6"
+                  fill="none"
+                  stroke="rgb(var(--primary-light))"
+                  strokeWidth="0.7"
+                  opacity="0.18"
+                />
+                <text x="7" y="3" fontSize="6.5" fill="rgb(var(--primary-light))" opacity="0.6">
+                  ISBT
+                </text>
+              </g>
+
+              {/* Majra */}
+             <g transform="translate(155 280)">
+                <circle r="2.3" fill="rgb(var(--accent))" opacity="0.7" />
+                <circle
+                  r="5.5"
+                  fill="none"
+                  stroke="rgb(var(--accent))"
+                  strokeWidth="0.7"
+                  opacity="0.14"
+                />
+                <text x="-28" y="3" fontSize="6.5" fill="rgb(var(--accent))" opacity="0.55">
+                  Majra
+                </text>
+              </g>
+
+              {/* Banjara Wala */}
+              <g transform="translate(205 326)">
+                <circle r="2.4" fill="rgb(var(--primary-light))" opacity="0.7" />
+                <circle
+                  r="5.5"
+                  fill="none"
+                  stroke="rgb(var(--primary-light))"
+                  strokeWidth="0.7"
+                  opacity="0.14"
+                />
+                <text x="7" y="3" fontSize="6.5" fill="rgb(var(--primary-light))" opacity="0.55">
+                  Banjara Wala
+                </text>
+              </g>
+
+              {/* Jogiwala */}
+              <g transform="translate(285 295)">
+                <circle r="2.5" fill="rgb(var(--primary-light))" opacity="0.75" />
+                <circle
+                  r="6"
+                  fill="none"
+                  stroke="rgb(var(--primary-light))"
+                  strokeWidth="0.7"
+                  opacity="0.15"
+                />
+                <text x="7" y="3" fontSize="6.5" fill="rgb(var(--primary-light))" opacity="0.58">
+                  Jogiwala
+                </text>
+              </g>
+
+              {/* Raipur */}
+              <g transform="translate(337 270)">
+                <circle r="2.5" fill="rgb(var(--accent))" opacity="0.75" />
+                <circle
+                  r="6"
+                  fill="none"
+                  stroke="rgb(var(--accent))"
+                  strokeWidth="0.7"
+                  opacity="0.15"
+                />
+                <text x="-27" y="-7" fontSize="6.5" fill="rgb(var(--accent))" opacity="0.58">
+                  Raipur
+                </text>
+              </g>
+
+              {/* Harrawala */}
+              <g transform="translate(350 320)">
+                <circle r="2.4" fill="rgb(var(--primary-light))" opacity="0.7" />
+                <circle
+                  r="5.5"
+                  fill="none"
+                  stroke="rgb(var(--primary-light))"
+                  strokeWidth="0.7"
+                  opacity="0.13"
+                />
+                <text x="-38" y="3" fontSize="6.5" fill="rgb(var(--primary-light))" opacity="0.52">
+                  Harrawala
+                </text>
+              </g>
+            </g>
+
+            <path
+              d={DEHRADUN_BOUNDARY_PATH}
+              fill="none"
+              stroke="rgb(var(--primary))"
+              strokeWidth="1.6"
+              strokeDasharray="2 3"
+              opacity="0.85"
+              strokeLinecap="round"
+            >
+              <animate
+                attributeName="stroke-dashoffset"
+                from="0"
+                to="-50"
+                dur="8s"
+                repeatCount="indefinite"
+              />
+            </path>
+          </svg>
         </div>
       </div>
     </section>
