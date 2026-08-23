@@ -8,79 +8,207 @@ import { DEHRADUN_ROADS } from "@/data/dehradun-roads-data";
 // it's the actual Doon valley outline, just drawn small and static for the
 // hero. Landmarks sit at their true position relative to each other.
 
-// Real valley boundary (NW → SE), projected to the 400×380 viewBox
-const VALLEY_OUTLINE =
-  "177.7,55 243.2,79.5 292.3,120.5 325,169.5 341.4,218.6 308.6,267.7 243.2,308.6 161.4,325 95.9,308.6 55,267.7 63.2,202.3 104.1,136.8 145,87.7 177.7,55";
+// Real boundary (NW → SE), projected to the 400×380 viewBox. Hoisted out of
+// the component so it isn't re-allocated on every render.
+const DEHRADUN_BOUNDARY_PATH =
+  "M 397.3,27.3 L 378.3,23.2 L 288.3,33.1 L 283.4,40.6 L 285.0,53.8 L 275.1,82.7 L 259.4,95.9 " +
+  "L 244.6,96.7 L 229.7,92.6 L 219.8,97.5 L 181.8,152.0 L 172.8,155.3 L 145.5,154.5 L 115.0,166.9 " +
+  "L 102.6,163.6 L 43.1,175.1 L 46.4,209.0 L 64.6,240.4 L 91.0,240.4 L 114.1,261.0 L 116.6,268.4 " +
+  "L 108.3,290.7 L 116.6,313.0 L 129.8,317.2 L 136.4,314.7 L 144.7,317.2 L 149.6,323.8 L 152.1,345.2 " +
+  "L 170.3,360.1 L 238.8,382.4 L 242.9,381.6 L 262.8,355.1 L 283.4,346.1 L 290.8,348.5 L 305.7,361.7 " +
+  "L 315.6,343.6 L 327.2,337.8 L 337.1,341.9 L 344.5,351.0 L 357.7,357.6 L 363.5,364.2 L 362.7,350.2 " +
+  "L 356.9,337.8 L 363.5,305.6 L 361.0,289.9 L 363.5,275.0 L 368.4,268.4 L 388.3,262.7 L 402.3,249.4 " +
+  "L 401.5,245.3 L 383.3,241.2 L 375.9,235.4 L 363.5,217.2 L 360.2,204.9 L 362.7,196.6 L 372.6,184.2 " +
+  "L 364.3,161.1 L 366.0,140.5 L 389.1,119.0 L 400.6,94.2 L 397.3,71.9 Z";
 
-// City centre / Ghanta Ghar (Clock Tower) — the real heart of Dehradun,
-// doubling as "you" on the map
+// One data-driven landmark list instead of ~230 lines of hand-repeated
+// dot + ring + text JSX. Ghanta Ghar (city centre / "you are here") stays
+// hardcoded below since it's visually unique (pulse animation, extra core).
+type Landmark = {
+  name: string;
+  x: number;
+  y: number;
+  color: "primary" | "accent";
+  dotR: number;
+  dotOpacity: number;
+  ringR: number;
+  ringOpacity: number;
+  ringWidth: number;
+  labelDx: number;
+  labelDy: number;
+  labelOpacity: number;
+  fontSize: number;
+};
+
+const LANDMARKS: Landmark[] = [
+  {
+    name: "FRI",
+    x: 128.2,
+    y: 172.9,
+    color: "primary",
+    dotR: 3,
+    dotOpacity: 0.85,
+    ringR: 7,
+    ringOpacity: 0.22,
+    ringWidth: 0.8,
+    labelDx: -7.2,
+    labelDy: -2.9,
+    labelOpacity: 0.65,
+    fontSize: 7,
+  },
+  {
+    name: "Robber's Cave",
+    x: 245,
+    y: 112,
+    color: "accent",
+    dotR: 3,
+    dotOpacity: 0.9,
+    ringR: 8,
+    ringOpacity: 0.22,
+    ringWidth: 0.8,
+    labelDx: 5,
+    labelDy: -4,
+    labelOpacity: 0.65,
+    fontSize: 7,
+  },
+  {
+    name: "Tapkeshwar",
+    x: 210,
+    y: 137,
+    color: "accent",
+    dotR: 2.8,
+    dotOpacity: 0.9,
+    ringR: 7,
+    ringOpacity: 0.22,
+    ringWidth: 0.8,
+    labelDx: -7,
+    labelDy: -3,
+    labelOpacity: 0.65,
+    fontSize: 7,
+  },
+  {
+    name: "Dehradun Zoo",
+    x: 292,
+    y: 78,
+    color: "primary",
+    dotR: 3,
+    dotOpacity: 0.9,
+    ringR: 8,
+    ringOpacity: 0.22,
+    ringWidth: 0.8,
+    labelDx: 5,
+    labelDy: -4,
+    labelOpacity: 0.65,
+    fontSize: 7,
+  },
+  {
+    name: "Rajpur Road",
+    x: 230,
+    y: 176,
+    color: "accent",
+    dotR: 2.8,
+    dotOpacity: 0.85,
+    ringR: 7,
+    ringOpacity: 0.2,
+    ringWidth: 0.8,
+    labelDx: 8,
+    labelDy: -2,
+    labelOpacity: 0.7,
+    fontSize: 7,
+  },
+  {
+    name: "ISBT",
+    x: 157,
+    y: 300,
+    color: "primary",
+    dotR: 2.8,
+    dotOpacity: 0.8,
+    ringR: 6,
+    ringOpacity: 0.18,
+    ringWidth: 0.7,
+    labelDx: 7,
+    labelDy: 3,
+    labelOpacity: 0.6,
+    fontSize: 6.5,
+  },
+  {
+    name: "Majra",
+    x: 155,
+    y: 280,
+    color: "accent",
+    dotR: 2.3,
+    dotOpacity: 0.7,
+    ringR: 5.5,
+    ringOpacity: 0.14,
+    ringWidth: 0.7,
+    labelDx: -28,
+    labelDy: 3,
+    labelOpacity: 0.55,
+    fontSize: 6.5,
+  },
+  {
+    name: "Banjara Wala",
+    x: 205,
+    y: 326,
+    color: "primary",
+    dotR: 2.4,
+    dotOpacity: 0.7,
+    ringR: 5.5,
+    ringOpacity: 0.14,
+    ringWidth: 0.7,
+    labelDx: 7,
+    labelDy: 3,
+    labelOpacity: 0.55,
+    fontSize: 6.5,
+  },
+  {
+    name: "Jogiwala",
+    x: 285,
+    y: 295,
+    color: "primary",
+    dotR: 2.5,
+    dotOpacity: 0.75,
+    ringR: 6,
+    ringOpacity: 0.15,
+    ringWidth: 0.7,
+    labelDx: 7,
+    labelDy: 3,
+    labelOpacity: 0.58,
+    fontSize: 6.5,
+  },
+  {
+    name: "Raipur",
+    x: 337,
+    y: 270,
+    color: "accent",
+    dotR: 2.5,
+    dotOpacity: 0.75,
+    ringR: 6,
+    ringOpacity: 0.15,
+    ringWidth: 0.7,
+    labelDx: -27,
+    labelDy: -7,
+    labelOpacity: 0.58,
+    fontSize: 6.5,
+  },
+  {
+    name: "Harrawala",
+    x: 350,
+    y: 320,
+    color: "primary",
+    dotR: 2.4,
+    dotOpacity: 0.7,
+    ringR: 5.5,
+    ringOpacity: 0.13,
+    ringWidth: 0.7,
+    labelDx: -38,
+    labelDy: 3,
+    labelOpacity: 0.52,
+    fontSize: 6.5,
+  },
+];
 
 export default function HeroSection() {
-  const DEHRADUN_BOUNDARY_PATH = `
-  M 397.3,27.3
-  L 378.3,23.2
-  L 288.3,33.1
-  L 283.4,40.6
-  L 285.0,53.8
-  L 275.1,82.7
-  L 259.4,95.9
-  L 244.6,96.7
-  L 229.7,92.6
-  L 219.8,97.5
-  L 181.8,152.0
-  L 172.8,155.3
-  L 145.5,154.5
-  L 115.0,166.9
-  L 102.6,163.6
-  L 43.1,175.1
-  L 46.4,209.0
-  L 64.6,240.4
-  L 91.0,240.4
-  L 114.1,261.0
-  L 116.6,268.4
-  L 108.3,290.7
-  L 116.6,313.0
-  L 129.8,317.2
-  L 136.4,314.7
-  L 144.7,317.2
-  L 149.6,323.8
-  L 152.1,345.2
-  L 170.3,360.1
-  L 238.8,382.4
-  L 242.9,381.6
-  L 262.8,355.1
-  L 283.4,346.1
-  L 290.8,348.5
-  L 305.7,361.7
-  L 315.6,343.6
-  L 327.2,337.8
-  L 337.1,341.9
-  L 344.5,351.0
-  L 357.7,357.6
-  L 363.5,364.2
-  L 362.7,350.2
-  L 356.9,337.8
-  L 363.5,305.6
-  L 361.0,289.9
-  L 363.5,275.0
-  L 368.4,268.4
-  L 388.3,262.7
-  L 402.3,249.4
-  L 401.5,245.3
-  L 383.3,241.2
-  L 375.9,235.4
-  L 363.5,217.2
-  L 360.2,204.9
-  L 362.7,196.6
-  L 372.6,184.2
-  L 364.3,161.1
-  L 366.0,140.5
-  L 389.1,119.0
-  L 400.6,94.2
-  L 397.3,71.9
-  Z
-`;
-
   return (
     <section className="relative overflow-hidden">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 pb-14 pt-10 md:px-12 md:pb-20 md:pt-16 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-8">
@@ -158,23 +286,13 @@ export default function HeroSection() {
               </clipPath>
             </defs>
 
-            {/* Soft outer glow */}
+            {/* Soft outer glow — merged from two overlapping strokes into one */}
             <path
               d={DEHRADUN_BOUNDARY_PATH}
               fill="none"
               stroke="rgb(var(--primary-light))"
-              strokeWidth="12"
-              opacity="0.08"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-
-            <path
-              d={DEHRADUN_BOUNDARY_PATH}
-              fill="none"
-              stroke="rgb(var(--primary-light))"
-              strokeWidth="7"
-              opacity="0.12"
+              strokeWidth="9"
+              opacity="0.1"
               strokeLinejoin="round"
               strokeLinecap="round"
             />
@@ -204,12 +322,6 @@ export default function HeroSection() {
                     width: 0.9,
                     opacity: 0.3,
                   },
-                  tertiary: {
-                    casing: 1.7,
-                    casingOpacity: 0.035,
-                    width: 0.62,
-                    opacity: 0.18,
-                  },
                 } as const;
 
                 const style = styles[road.type];
@@ -235,11 +347,9 @@ export default function HeroSection() {
                 );
               })}
             </g>
-            {/* Ghanta Ghar — city centre */}
+            {/* Ghanta Ghar — city centre, doubles as "you are here" */}
             <g transform="translate(197 198)" pointerEvents="none">
-              <circle r="16" fill="rgb(var(--primary-light))" opacity="0.06" />
-
-              <circle r="9" fill="rgb(var(--primary-light))" opacity="0.10" />
+              <circle r="9" fill="rgb(var(--primary-light))" opacity="0.1" />
 
               <circle
                 className="hero-pulse-ring"
@@ -252,223 +362,55 @@ export default function HeroSection() {
               />
 
               <circle r="3.5" fill="rgb(var(--primary-light))" />
-
               <circle r="1.5" fill="rgb(var(--background))" />
-            </g>
-   
-            {/* FRI Campus */}
-            <g transform="translate(128.2 172.9)" pointerEvents="none">
-              <circle r="3" fill="rgb(var(--primary-light))" opacity="0.85" />
 
-              <circle
-                r="7"
-                fill="none"
-                stroke="rgb(var(--primary-light))"
-                strokeWidth="0.8"
-                opacity="0.22"
-              />
-
-              <circle
-                r="11"
-                fill="none"
-                stroke="rgb(var(--primary-light))"
-                strokeWidth="0.5"
-                opacity="0.08"
-              />
-            </g>
-            {/* Robber's Cave */}
-            <g transform="translate(245 112)" pointerEvents="none">
-              <circle r="3" fill="rgb(var(--accent))" opacity="0.9" />
-
-              <circle
-                r="8"
-                fill="none"
-                stroke="rgb(var(--accent))"
-                strokeWidth="0.8"
-                opacity="0.22"
-              />
-
-              <circle
-                r="13"
-                fill="none"
-                stroke="rgb(var(--accent))"
-                strokeWidth="0.5"
-                opacity="0.08"
-              />
-            </g>
-
-            <path
-              d={DEHRADUN_BOUNDARY_PATH}
-              fill="none"
-              stroke="rgb(var(--primary-light))"
-              strokeWidth="3.5"
-              opacity="0.12"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-
-            {/* Tapkeshwar Mahadev Mandir */}
-            <g transform="translate(210 137)" pointerEvents="none">
-              <circle r="2.8" fill="rgb(var(--accent))" opacity="0.9" />
-              <circle
-                r="7"
-                fill="none"
-                stroke="rgb(var(--accent))"
-                strokeWidth="0.8"
-                opacity="0.22"
-              />
-            </g>
-
-            {/* Dehradun Zoo */}
-            <g transform="translate(292 78)" pointerEvents="none">
-              <circle r="3" fill="rgb(var(--primary-light))" opacity="0.9" />
-              <circle
-                r="8"
-                fill="none"
-                stroke="rgb(var(--primary-light))"
-                strokeWidth="0.8"
-                opacity="0.22"
-              />
-            </g>
-            {/* Rajpur Road */}
-            <g transform="translate(230 176)" pointerEvents="none">
-              <circle r="2.8" fill="rgb(var(--accent))" opacity="0.85" />
-              <circle
-                r="7"
-                fill="none"
-                stroke="rgb(var(--accent))"
-                strokeWidth="0.8"
-                opacity="0.20"
-              />
-            </g>
-
-            {/* Landmark labels */}
-            <g
-              fontFamily="inherit"
-              fontSize="7"
-              fill="rgb(var(--primary-light))"
-              pointerEvents="none"
-            >
-              <text x="203" y="134" opacity="0.65">
-                Tapkeshwar
-              </text>
-
-              <text x="250" y="108" opacity="0.65">
-                Robber&apos;s Cave
-              </text>
-
-              <text x="297" y="74" opacity="0.65">
-                Dehradun Zoo
-              </text>
-
-              <text x="121" y="170" opacity="0.65">
-                FRI
-              </text>
-
-              <text x="238" y="174" fill="rgb(var(--accent))" opacity="0.7">
-                Rajpur Road
-              </text>
-
-              <text x="199" y="194" fill="rgb(var(--primary-light))" opacity="0.8">
+              <text
+                x="2"
+                y="-4"
+                fontSize="7"
+                fill="rgb(var(--primary-light))"
+                opacity="0.8"
+                fontFamily="inherit"
+              >
                 Ghanta Ghar
               </text>
             </g>
 
-            {/* Southern & Eastern Dehradun locations */}
-            <g pointerEvents="none">
-              {/* ISBT */}
-             <g transform="translate(157 300)">
-                <circle r="2.8" fill="rgb(var(--primary-light))" opacity="0.8" />
-                <circle
-                  r="6"
-                  fill="none"
-                  stroke="rgb(var(--primary-light))"
-                  strokeWidth="0.7"
-                  opacity="0.18"
-                />
-                <text x="7" y="3" fontSize="6.5" fill="rgb(var(--primary-light))" opacity="0.6">
-                  ISBT
-                </text>
-              </g>
+            {/* Every other landmark — one data-driven loop instead of
+                repeated dot + ring + text JSX per place */}
+            {LANDMARKS.map((lm) => {
+              const stroke =
+                lm.color === "accent" ? "rgb(var(--accent))" : "rgb(var(--primary-light))";
 
-              {/* Majra */}
-             <g transform="translate(155 280)">
-                <circle r="2.3" fill="rgb(var(--accent))" opacity="0.7" />
-                <circle
-                  r="5.5"
-                  fill="none"
-                  stroke="rgb(var(--accent))"
-                  strokeWidth="0.7"
-                  opacity="0.14"
-                />
-                <text x="-28" y="3" fontSize="6.5" fill="rgb(var(--accent))" opacity="0.55">
-                  Majra
-                </text>
-              </g>
+              return (
+                <g key={lm.name} transform={`translate(${lm.x} ${lm.y})`} pointerEvents="none">
+                  <circle r={lm.dotR} fill={stroke} opacity={lm.dotOpacity} />
+                  <circle
+                    r={lm.ringR}
+                    fill="none"
+                    stroke={stroke}
+                    strokeWidth={lm.ringWidth}
+                    opacity={lm.ringOpacity}
+                  />
+                  <text
+                    x={lm.labelDx}
+                    y={lm.labelDy}
+                    fontSize={lm.fontSize}
+                    fill={stroke}
+                    opacity={lm.labelOpacity}
+                    fontFamily="inherit"
+                  >
+                    {lm.name}
+                  </text>
+                </g>
+              );
+            })}
 
-              {/* Banjara Wala */}
-              <g transform="translate(205 326)">
-                <circle r="2.4" fill="rgb(var(--primary-light))" opacity="0.7" />
-                <circle
-                  r="5.5"
-                  fill="none"
-                  stroke="rgb(var(--primary-light))"
-                  strokeWidth="0.7"
-                  opacity="0.14"
-                />
-                <text x="7" y="3" fontSize="6.5" fill="rgb(var(--primary-light))" opacity="0.55">
-                  Banjara Wala
-                </text>
-              </g>
-
-              {/* Jogiwala */}
-              <g transform="translate(285 295)">
-                <circle r="2.5" fill="rgb(var(--primary-light))" opacity="0.75" />
-                <circle
-                  r="6"
-                  fill="none"
-                  stroke="rgb(var(--primary-light))"
-                  strokeWidth="0.7"
-                  opacity="0.15"
-                />
-                <text x="7" y="3" fontSize="6.5" fill="rgb(var(--primary-light))" opacity="0.58">
-                  Jogiwala
-                </text>
-              </g>
-
-              {/* Raipur */}
-              <g transform="translate(337 270)">
-                <circle r="2.5" fill="rgb(var(--accent))" opacity="0.75" />
-                <circle
-                  r="6"
-                  fill="none"
-                  stroke="rgb(var(--accent))"
-                  strokeWidth="0.7"
-                  opacity="0.15"
-                />
-                <text x="-27" y="-7" fontSize="6.5" fill="rgb(var(--accent))" opacity="0.58">
-                  Raipur
-                </text>
-              </g>
-
-              {/* Harrawala */}
-              <g transform="translate(350 320)">
-                <circle r="2.4" fill="rgb(var(--primary-light))" opacity="0.7" />
-                <circle
-                  r="5.5"
-                  fill="none"
-                  stroke="rgb(var(--primary-light))"
-                  strokeWidth="0.7"
-                  opacity="0.13"
-                />
-                <text x="-38" y="3" fontSize="6.5" fill="rgb(var(--primary-light))" opacity="0.52">
-                  Harrawala
-                </text>
-              </g>
-            </g>
-
+            {/* Boundary — static dashed outline (no longer continuously
+                animated; that was the single most expensive repaint in this
+                illustration, running every frame over the most complex path
+                here) */}
             <path
-              className="hero-boundary-dash"
               d={DEHRADUN_BOUNDARY_PATH}
               fill="none"
               stroke="rgb(var(--primary))"
@@ -491,15 +433,6 @@ export default function HeroSection() {
               }
             }
 
-            @keyframes heroBoundaryDash {
-              from {
-                stroke-dashoffset: 0;
-              }
-              to {
-                stroke-dashoffset: -50;
-              }
-            }
-
             .hero-pulse-ring {
               transform-box: fill-box;
               transform-origin: center;
@@ -507,13 +440,8 @@ export default function HeroSection() {
               will-change: transform, opacity;
             }
 
-            .hero-boundary-dash {
-              animation: heroBoundaryDash 8s linear infinite;
-            }
-
             @media (prefers-reduced-motion: reduce) {
-              .hero-pulse-ring,
-              .hero-boundary-dash {
+              .hero-pulse-ring {
                 animation: none;
               }
             }

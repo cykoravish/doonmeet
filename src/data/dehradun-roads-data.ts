@@ -5,7 +5,7 @@
 
 export type DehradunRoad = {
   name: string;
-  type: "primary" | "secondary" | "tertiary";
+  type: "primary" | "secondary";
   path: string;
 };
 
@@ -80,70 +80,11 @@ export const DEHRADUN_ROADS = [
     path: "M 132,272 Q 146,276 160,281 Q 175,287 189,296 Q 203,305 217,316",
   },
 
-  // ─────────────────────────────────────────────────────────────
-  // TERTIARY CITY STREETS
-  // ─────────────────────────────────────────────────────────────
-
-  {
-    name: "Western City Street",
-    type: "tertiary",
-    path: "M 113,224 Q 116,235 121,245 Q 127,256 137,263 Q 147,270 158,273",
-  },
-  {
-    name: "Clement Town Link",
-    type: "tertiary",
-    path: "M 84,238 Q 88,249 95,258 Q 102,268 113,276 Q 123,284 132,291",
-  },
-  {
-    name: "Southwest Link",
-    type: "tertiary",
-    path: "M 105,300 Q 116,306 128,313 Q 140,320 153,326 Q 166,332 178,335",
-  },
-  {
-    name: "Southern Ring",
-    type: "tertiary",
-    path: "M 158,273 Q 174,268 190,270 Q 207,273 222,282 Q 238,292 251,306 Q 264,320 278,329",
-  },
-  {
-    name: "Banjara Road",
-    type: "tertiary",
-    path: "M 160,281 Q 164,291 171,300 Q 179,309 189,315 Q 199,321 210,325",
-  },
-  {
-    name: "Harrawala Link",
-    type: "tertiary",
-    path: "M 269,279 Q 279,273 290,271 Q 302,269 314,273 Q 325,277 337,285",
-  },
-  {
-    name: "Raipur East Link",
-    type: "tertiary",
-    path: "M 295,249 Q 306,241 316,235 Q 327,229 338,230 Q 348,231 356,237",
-  },
-  {
-    name: "Northern Connector",
-    type: "tertiary",
-    path: "M 237,153 Q 232,143 233,133 Q 235,123 243,116 Q 251,109 260,105",
-  },
-  {
-    name: "Zoo Approach",
-    type: "tertiary",
-    path: "M 268,113 Q 277,107 286,103 Q 297,99 307,101 Q 317,103 326,109",
-  },
-  {
-    name: "Tapkeshwar Link",
-    type: "tertiary",
-    path: "M 172,198 Q 170,187 172,177 Q 175,167 183,160 Q 191,153 201,150",
-  },
-  {
-    name: "FRI East Link",
-    type: "tertiary",
-    path: "M 128,214 Q 134,205 140,197 Q 146,189 154,184 Q 162,180 171,177",
-  },
-
 ] as const;
 
-// NOTE: a "local" road tier (22 hand-drawn streets, rendered at 0.02-0.08
-// opacity) was intentionally removed for the hero. They were near-invisible
-// but doubled the SVG node/path count, which is the single biggest perf cost
-// of this illustration on low-end devices. Primary/secondary/tertiary carry
-// the visual, so the map reads the same without them.
+// NOTE: both the "local" tier (22 streets) and the "tertiary" tier (11
+// streets) were removed for the hero. Only primary (4) + secondary (8) = 12
+// roads remain. This SVG illustration replaced a single hero photo, so the
+// target is to match or beat that photo's render cost — every extra path
+// is DOM/paint weight a static <Image> never had. Primary + secondary
+// corridors alone still read clearly as a city road network.
