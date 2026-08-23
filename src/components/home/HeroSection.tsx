@@ -258,8 +258,11 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* Premium Dehradun city map */}
-        <div className="relative mx-auto flex w-full max-w-md items-center justify-center lg:max-w-none">
+        {/* Premium Dehradun city map — desktop/tablet only. Hidden (not just
+            visually, but display:none) below lg so mobile pays zero paint
+            or animation cost for it; CSS animations don't tick on
+            display:none elements. */}
+        <div className="relative mx-auto hidden w-full max-w-md items-center justify-center lg:flex lg:max-w-none">
           {/* Ambient premium glow */}
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl" />
