@@ -78,22 +78,31 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
   const canUseMessages = !!currentUser && !currentUser.isGuest;
 
   return (
-    <div className="flex h-[calc(100vh-64px-72px)] flex-col md:h-[calc(100vh-64px)]">
-      {/* Tab switcher */}
-      <div className="flex shrink-0 items-center gap-1 border-b border-border bg-surface px-3 py-1.5">
+    // Fills the <main> the chat layout gives it exactly (100% — that main
+    // is already viewport-locked). The fixed mobile bottom nav still
+    // overlays the bottom of this space, so on mobile we reserve room for
+    // it with padding-bottom (border-box keeps our own height unchanged),
+    // safe-area aware for notched/gesture-nav phones. Desktop has no bottom
+    // nav, so no reservation is needed there.
+    <div className="flex h-full flex-col pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
+      {/* Tab switcher — flex-nowrap + shrink-0 on every item + overflow-x-auto
+          as a last-resort escape hatch keep this row from ever wrapping
+          text inside a button on narrow screens; labels shorten instead. */}
+      <div className="flex shrink-0 flex-nowrap items-center gap-1 overflow-x-auto border-b border-border bg-surface px-2 py-1.5 sm:gap-1.5 sm:px-3">
         <button
           onClick={() => setTab("public")}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+          className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors sm:px-3 ${
             tab === "public" ? "bg-primary text-white" : "text-muted hover:bg-primary/10"
           }`}
         >
           <Globe2 size={13} />
-          Public Chat
+          <span className="sm:hidden">Public</span>
+          <span className="hidden sm:inline">Public Chat</span>
         </button>
         <button
           onClick={() => canUseMessages && setTab("messages")}
           disabled={!canUseMessages}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+          className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors sm:px-3 ${
             tab === "messages" ? "bg-primary text-white" : "text-muted hover:bg-primary/10"
           } ${!canUseMessages ? "cursor-not-allowed opacity-50" : ""}`}
           title={!canUseMessages ? "Sign up to send direct messages" : undefined}
@@ -103,10 +112,11 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
         </button>
 
         {/* Members — bordered, chevron-led pill so it visibly reads as a
-            tappable destination rather than a static count label. */}
+            tappable destination rather than a static count label. Collapses
+            to just the count on mobile so it can't force the row to wrap. */}
         <button
           onClick={openMembersPanel}
-          className="group ml-auto flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15"
+          className="group ml-auto flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 sm:gap-1.5 sm:px-3"
           style={{
             backgroundColor: "rgb(var(--primary) / 0.1)",
             borderColor: "rgb(var(--primary) / 0.35)",
@@ -115,10 +125,13 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
           aria-expanded={membersOpen}
         >
           <Users2 size={13} />
-          {memberCount !== null ? `See ${memberCount} Dehradunis` : "See Dehradunis"}
+          <span className="hidden sm:inline">
+            {memberCount !== null ? `See ${memberCount} Dehradunis` : "See Dehradunis"}
+          </span>
+          <span className="sm:hidden">{memberCount !== null ? memberCount : ""}</span>
           <ChevronRight
             size={13}
-            className="transition-transform group-hover:translate-x-0.5"
+            className="hidden transition-transform group-hover:translate-x-0.5 sm:block"
           />
         </button>
       </div>

@@ -55,13 +55,16 @@ export default function DMChatWindow({
   const [sending, setSending] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Scrolls the message list container directly rather than scrollIntoView,
+  // which can otherwise walk up and scroll an unintended ancestor.
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    bottomRef.current?.scrollIntoView({ behavior });
+    const el = scrollAreaRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
   }, []);
 
   // Load message history for this conversation
@@ -268,7 +271,6 @@ export default function DMChatWindow({
             )}
           </>
         )}
-        <div ref={bottomRef} />
       </div>
 
       {/* Input */}
