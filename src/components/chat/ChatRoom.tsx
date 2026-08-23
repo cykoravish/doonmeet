@@ -76,12 +76,16 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
   );
 
   const socketRef = useRef<Socket | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto scroll to bottom
-  const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  // Auto scroll to bottom — scrolls the message list container directly
+  // rather than scrollIntoView, which can otherwise walk up and scroll an
+  // unintended ancestor.
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const el = scrollAreaRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
   }, []);
 
   // Fetch initial messages
@@ -212,7 +216,7 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
       )}
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+      <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
         {loading ? (
           <div className="flex h-full items-center justify-center">
             <Loader2 size={24} className="animate-spin" style={{ color: "rgb(var(--muted))" }} />
@@ -269,7 +273,6 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
             );
           })
         )}
-        <div ref={bottomRef} />
       </div>
 
       {/* Bottom input area */}
