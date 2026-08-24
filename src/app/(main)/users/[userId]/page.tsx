@@ -231,13 +231,13 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
             <div className="space-y-4">
               {posts.map((post) => (
                 <PostCard
-                  key={String(post._id)}
-                  id={String(post._id)}
-                  content={post.content as string}
-                  image={post.image as string | null}
-                  commentCount={post.commentCount as number}
-                  createdAt={String(post.createdAt)}
-                  author={post.author as { _id: string; name: string; avatar: string | null }}
+                  key={post._id}
+                  id={post._id}
+                  content={post.content}
+                  image={post.image}
+                  commentCount={post.commentCount}
+                  createdAt={post.createdAt}
+                  author={post.author}
                 />
               ))}
             </div>

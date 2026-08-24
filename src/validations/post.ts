@@ -15,7 +15,7 @@ export const updatePostSchema = z.object({
     .max(3000, "Post cannot exceed 3000 characters"),
   removeImage: z
     .union([z.boolean(), z.string()])
-    .optional()
+    .nullish()
     .transform((v) => v === true || v === "true"),
 });
 

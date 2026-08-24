@@ -21,8 +21,8 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
   const post = await getPostById(postId);
   if (!post) return { title: "Post Not Found | DoonMeet" };
 
-  const description = buildPostDescription(post.content as string);
-  const authorName = (post.author as { name: string })?.name ?? "Someone";
+  const description = buildPostDescription(post.content);
+  const authorName = post.author?.name ?? "Someone";
   const title = `${authorName} on DoonMeet: ${description.slice(0, 60)}${description.length > 60 ? "..." : ""}`;
 
   return {
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
       title,
       description,
       url: `https://doonmeet.in/posts/${postId}`,
-      images: post.image ? [post.image as string] : [],
+      images: post.image ? [post.image] : [],
       type: "article",
     },
   };
@@ -45,16 +45,16 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
   if (!post) notFound();
 
-  const author = post.author as { _id: string; name: string; avatar: string | null };
+  const author = post.author;
   const isOwner = !!currentUser && String(currentUser._id) === String(author._id);
-  const createdAtStr = new Date(post.createdAt as unknown as string).toISOString();
-  const updatedAtStr = new Date(post.updatedAt as unknown as string).toISOString();
+  const createdAtStr = new Date(post.createdAt).toISOString();
+  const updatedAtStr = new Date(post.updatedAt).toISOString();
   const wasEdited = updatedAtStr !== createdAtStr;
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SocialMediaPosting",
-    headline: buildPostDescription(post.content as string),
+    headline: buildPostDescription(post.content),
     articleBody: post.content,
     datePublished: createdAtStr,
     dateModified: updatedAtStr,
@@ -84,8 +84,8 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
         <PostDetailView
           postId={postId}
-          initialContent={post.content as string}
-          initialImage={post.image as string | null}
+          initialContent={post.content}
+          initialImage={post.image}
           createdAt={createdAtStr}
           wasEdited={wasEdited}
           author={author}
@@ -94,7 +94,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
         <PostComments
           postId={postId}
-          initialCommentCount={post.commentCount as number}
+          initialCommentCount={post.commentCount}
           isLoggedIn={!!currentUser}
         />
       </div>
