@@ -5,12 +5,13 @@ export type NotificationType =
   | "event_comment"
   | "comment_reply"
   | "new_event"
-  | "announcement";
+  | "announcement"
+  | "post_comment";
 
 export interface INotification extends Document {
   recipient: mongoose.Types.ObjectId;
   type: NotificationType;
-  refModel: "DirectMessage" | "EventComment" | "Event" | "Broadcast" | null;
+  refModel: "DirectMessage" | "EventComment" | "Event" | "Broadcast" | "PostComment" | null;
   refId: mongoose.Types.ObjectId | null;
   preview: string | null;
   // Only set for "announcement" notifications — where the admin's broadcast
@@ -29,12 +30,12 @@ const NotificationSchema = new Schema<INotification>(
     recipient: { type: Schema.Types.ObjectId, ref: "User", required: true },
     type: {
       type: String,
-      enum: ["new_dm", "event_comment", "comment_reply", "new_event", "announcement"],
+      enum: ["new_dm", "event_comment", "comment_reply", "new_event", "announcement", "post_comment"],
       required: true,
     },
     refModel: {
       type: String,
-      enum: ["DirectMessage", "EventComment", "Event", "Broadcast"],
+      enum: ["DirectMessage", "EventComment", "Event", "Broadcast", "PostComment"],
       default: null,
     },
     refId: { type: Schema.Types.ObjectId, default: null },

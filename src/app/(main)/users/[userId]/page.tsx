@@ -19,7 +19,9 @@ import {
 import type { Metadata } from "next";
 import { getPublicUser } from "@/lib/getPublicUser";
 import { getSessionUser } from "@/lib/getSessionUser";
+import { getPosts } from "@/lib/posts";
 import ProfileBanner from "@/components/profile/ProfileBanner";
+import PostCard from "@/components/posts/PostCard";
 
 const LOOKING_FOR_LABELS: Record<string, string> = {
   student: "Student",
@@ -54,6 +56,8 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
   ]);
 
   if (!user) notFound();
+
+  const posts = await getPosts({ author: userId, limit: 6 });
 
   const currentUserId = currentUser?._id ?? null;
   const isOwnProfile = currentUserId === userId;
@@ -207,7 +211,27 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
             )}
           </div>
         )}
-        {!user.gender && !user.email && !user.occupation && !user.website && !user.dob && !user.lookingFor && (
+        {/* Posts */}
+        {posts.length > 0 && (
+          <div className="mb-10">
+            <h2 className="mb-4 text-sm font-bold">Posts</h2>
+            <div className="space-y-4">
+              {posts.map((post) => (
+                <PostCard
+                  key={String(post._id)}
+                  id={String(post._id)}
+                  content={post.content as string}
+                  image={post.image as string | null}
+                  commentCount={post.commentCount as number}
+                  createdAt={String(post.createdAt)}
+                  author={post.author as { _id: string; name: string; avatar: string | null }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!user.gender && !user.email && !user.occupation && !user.website && !user.dob && !user.lookingFor && posts.length === 0 && (
           <div className="pb-10" />
         )}
       </div>

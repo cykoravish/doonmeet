@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { MapPin, MessageCircle, CalendarDays, Users } from "lucide-react";
+import { Newspaper, MessageCircle, CalendarDays, Users } from "lucide-react";
 
 const actions = [
   {
-    title: "Explore Locations",
-    description: "Discover popular places and see who's around you on the live map.",
-    icon: MapPin,
-    href: "/locations",
+    title: "Browse Posts",
+    description: "See what people are sharing right now — jobs, events, questions and more.",
+    icon: Newspaper,
+    href: "/posts",
     accent: "rgb(var(--primary))",
   },
   {

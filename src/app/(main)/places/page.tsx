@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getAllPlacesWithRatings } from "@/lib/places";
 import PlacesExplorer from "@/components/places/PlacesExplorer";
@@ -27,7 +28,9 @@ export default async function PlacesPage() {
           Dehradun.
         </p>
 
-        <PlacesExplorer places={places} />
+        <Suspense fallback={null}>
+          <PlacesExplorer places={places} />
+        </Suspense>
       </section>
     </div>
   );

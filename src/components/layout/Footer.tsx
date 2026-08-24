@@ -3,7 +3,7 @@ import Logo from "./get-logo/Logo";
 
 const links = {
   Explore: [
-    { label: "Locations", href: "/locations" },
+    { label: "Posts", href: "/posts" },
     { label: "Events", href: "/events" },
     { label: "Communities", href: "/communities" },
     { label: "Chat", href: "/chat" },

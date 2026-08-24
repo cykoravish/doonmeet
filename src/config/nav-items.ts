@@ -1,4 +1,4 @@
-import { House, MapPinned, MessageCircle, Users, CalendarDays, type LucideIcon } from "lucide-react";
+import { House, Newspaper, MessageCircle, Users, CalendarDays, type LucideIcon } from "lucide-react";
 
 export interface NavItem {
   label: string;
@@ -8,7 +8,7 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { label: "Home", href: "/", icon: House },
-  { label: "Map", href: "/locations", icon: MapPinned },
+  { label: "Posts", href: "/posts", icon: Newspaper },
   { label: "Chat", href: "/chat", icon: MessageCircle },
   { label: "Communities", href: "/communities", icon: Users },
   { label: "Events", href: "/events", icon: CalendarDays },

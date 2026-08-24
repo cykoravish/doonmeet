@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Search, Star, ArrowRight, MapPinOff } from "lucide-react";
@@ -21,7 +22,8 @@ interface PlacesExplorerProps {
 }
 
 export default function PlacesExplorer({ places }: PlacesExplorerProps) {
-  const [query, setQuery] = useState("");
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [category, setCategory] = useState<string>("All");
 
   const categories = useMemo(

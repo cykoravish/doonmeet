@@ -102,6 +102,13 @@ export const eventLimiter = rateLimit({
   max: 5,
 });
 
+// Post creation — prevents spam posts
+export const postLimiter = rateLimit({
+  keyPrefix: "post",
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 15,
+});
+
 // General API reads
 export const generalLimiter = rateLimit({
   keyPrefix: "general",
