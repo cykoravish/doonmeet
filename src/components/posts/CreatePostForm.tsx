@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Image from "next/image";
 import { ImagePlus, X, Loader2, Send } from "lucide-react";
 import { Avatar } from "./PostCard";
+import { compressImage } from "@/lib/imageCompression";
 
 interface CreatePostFormProps {
   currentUser: { _id: string; name: string; avatar: string | null };
@@ -21,7 +22,9 @@ export default function CreatePostForm({ currentUser, onPosted }: CreatePostForm
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  const [compressing, setCompressing] = useState(false);
+
+  async function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -35,8 +38,12 @@ export default function CreatePostForm({ currentUser, onPosted }: CreatePostForm
     }
 
     setError("");
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+    setCompressing(true);
+    const compressed = await compressImage(file);
+    setCompressing(false);
+
+    setImageFile(compressed);
+    setImagePreview(URL.createObjectURL(compressed));
   }
 
   function removeImage() {
@@ -94,20 +101,26 @@ export default function CreatePostForm({ currentUser, onPosted }: CreatePostForm
             placeholder="What's on your mind? Share a job, an event, something fun..."
             rows={3}
             maxLength={3000}
-            className="w-full resize-none rounded-xl border px-4 py-3 text-sm outline-none"
+            className="w-full resize-none rounded-xl border px-4 py-3 text-base outline-none sm:text-sm"
             style={{ backgroundColor: "rgb(var(--background))", borderColor: "rgb(var(--border))" }}
           />
 
-          {imagePreview && (
-            <div className="relative mt-2 h-48 w-full overflow-hidden rounded-xl">
+          {compressing && (
+            <p className="mt-1.5 flex items-center gap-1.5 text-xs" style={{ color: "rgb(var(--muted))" }}>
+              <Loader2 size={12} className="animate-spin" /> Optimizing image...
+            </p>
+          )}
+
+          {imagePreview && !compressing && (
+            <div className="relative mt-2 h-48 w-full overflow-hidden rounded-xl sm:h-56">
               <Image src={imagePreview} alt="Selected image preview" fill className="object-cover" />
               <button
                 type="button"
                 onClick={removeImage}
                 aria-label="Remove image"
-                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white transition-opacity hover:opacity-80"
+                className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white transition-opacity active:opacity-70"
               >
-                <X size={14} />
+                <X size={16} />
               </button>
             </div>
           )}
@@ -118,7 +131,7 @@ export default function CreatePostForm({ currentUser, onPosted }: CreatePostForm
             </p>
           )}
 
-          <div className="mt-3 flex items-center justify-between">
+          <div className="mt-3 flex items-center justify-between gap-2">
             <input
               ref={fileInputRef}
               type="file"
@@ -129,17 +142,17 @@ export default function CreatePostForm({ currentUser, onPosted }: CreatePostForm
             />
             <label
               htmlFor="post-image-input"
-              className="flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors hover:opacity-80"
+              className="flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium transition-colors active:opacity-70"
               style={{ backgroundColor: "rgb(var(--primary) / 0.1)", color: "rgb(var(--primary))" }}
             >
               <ImagePlus size={15} />
-              {imageFile ? "Change image" : "Add image"}
+              {imageFile ? "Change" : "Add image"}
             </label>
 
             <button
               type="submit"
-              disabled={posting || !content.trim()}
-              className="flex items-center gap-1.5 rounded-xl px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              disabled={posting || compressing || !content.trim()}
+              className="flex min-h-[40px] items-center gap-1.5 rounded-xl px-5 py-2 text-sm font-semibold text-white transition-opacity active:opacity-80 disabled:opacity-50"
               style={{ backgroundColor: "rgb(var(--primary))" }}
             >
               {posting ? <Loader2 size={15} className="animate-spin" /> : <Send size={14} />}
