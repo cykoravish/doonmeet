@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, Settings, Shield, Bell, KeyRound, LogOut, Check, X } from "lucide-react";
+import { MapPin, Settings, Shield, Bell, KeyRound, LogOut, Check, X, Newspaper } from "lucide-react";
 import ProfileAvatar from "./ProfileAvatar";
 import EditProfileForm from "./EditProfileForm";
 import PrivacySettings from "./PrivacySettings";
 import NotificationSettings from "./NotificationSettings";
+import MyPostsTab from "./MyPostsTab";
 import { useRouter } from "next/navigation";
 import Alert from "@/components/ui/Alert";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 
-type Tab = "profile" | "privacy" | "notifications" | "security";
+type Tab = "profile" | "posts" | "privacy" | "notifications" | "security";
 
 interface User {
   _id: string;
@@ -55,6 +56,7 @@ export default function OwnProfileClient({ user }: { user: User }) {
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: "profile", label: "Profile", icon: <Settings size={15} /> },
+    { key: "posts", label: "Posts", icon: <Newspaper size={15} /> },
     { key: "privacy", label: "Privacy", icon: <Shield size={15} /> },
     { key: "notifications", label: "Notifications", icon: <Bell size={15} /> },
     { key: "security", label: "Security", icon: <KeyRound size={15} /> },
@@ -157,9 +159,9 @@ export default function OwnProfileClient({ user }: { user: User }) {
 
       {/* Tabs + content */}
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
-        {/* Tab nav */}
+        {/* Tab nav — scrolls horizontally on narrow screens instead of squeezing 5 tabs */}
         <div
-          className="mb-5 flex gap-1 rounded-xl border p-1 sm:mb-6"
+          className="mb-5 flex gap-1 overflow-x-auto rounded-xl border p-1 sm:mb-6 sm:overflow-visible"
           style={{
             borderColor: "rgb(var(--border))",
             backgroundColor: "rgb(var(--surface))",
@@ -169,7 +171,7 @@ export default function OwnProfileClient({ user }: { user: User }) {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-semibold transition-all sm:py-2"
+              className="flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 py-2.5 text-xs font-semibold transition-all sm:flex-1 sm:py-2"
               style={{
                 backgroundColor: activeTab === tab.key ? "rgb(var(--primary))" : "transparent",
                 color: activeTab === tab.key ? "white" : "rgb(var(--muted))",
@@ -206,6 +208,8 @@ export default function OwnProfileClient({ user }: { user: User }) {
               onSuccess={(updated) => setCurrentUser((prev) => ({ ...prev, ...updated }))}
             />
           )}
+
+          {activeTab === "posts" && <MyPostsTab userId={currentUser._id} />}
 
           {activeTab === "privacy" && (
             <div>
