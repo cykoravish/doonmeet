@@ -87,14 +87,26 @@ export default function ProfileAvatar({
             onClick={() => inputRef.current?.click()}
             disabled={loading}
             aria-label={displaySrc ? "Change profile photo" : "Add a profile photo"}
-            className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100"
+            className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 active:opacity-100"
           >
-            {loading ? (
-              <Loader2 size={20} className="animate-spin text-white" />
-            ) : (
-              <Camera size={20} className="text-white" />
-            )}
+            {loading && <Loader2 size={20} className="animate-spin text-white" />}
           </button>
+
+          {/* Always-visible camera badge — hover-only affordances don't
+              exist on touch devices, so this is how mobile users discover
+              the avatar is tappable to change. */}
+          {!loading && (
+            <div
+              className="pointer-events-none absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full border-2 shadow-sm"
+              style={{
+                backgroundColor: "rgb(var(--primary))",
+                borderColor: "rgb(var(--background))",
+              }}
+            >
+              <Camera size={13} className="text-white" />
+            </div>
+          )}
+
           <input
             ref={inputRef}
             type="file"

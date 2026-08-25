@@ -100,7 +100,7 @@ export default function OwnProfileClient({ user }: { user: User }) {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition-opacity hover:opacity-80"
+                  className="flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-medium transition-opacity active:opacity-70"
                   style={{
                     borderColor: "rgb(220 38 38 / 0.3)",
                     color: "rgb(220 38 38)",
@@ -159,9 +159,10 @@ export default function OwnProfileClient({ user }: { user: User }) {
 
       {/* Tabs + content */}
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
-        {/* Tab nav — scrolls horizontally on narrow screens instead of squeezing 5 tabs */}
+        {/* Tab nav — icon-only on mobile (5 tabs won't comfortably fit with
+            labels on small screens), icon + label from sm breakpoint up */}
         <div
-          className="mb-5 flex gap-1 overflow-x-auto rounded-xl border p-1 sm:mb-6 sm:overflow-visible"
+          className="mb-5 flex gap-1 rounded-xl border p-1 sm:mb-6"
           style={{
             borderColor: "rgb(var(--border))",
             backgroundColor: "rgb(var(--surface))",
@@ -171,14 +172,16 @@ export default function OwnProfileClient({ user }: { user: User }) {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className="flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 py-2.5 text-xs font-semibold transition-all sm:flex-1 sm:py-2"
+              aria-label={tab.label}
+              title={tab.label}
+              className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-semibold transition-all active:opacity-80"
               style={{
                 backgroundColor: activeTab === tab.key ? "rgb(var(--primary))" : "transparent",
                 color: activeTab === tab.key ? "white" : "rgb(var(--muted))",
               }}
             >
               {tab.icon}
-              {tab.label}
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </div>

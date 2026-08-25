@@ -59,7 +59,7 @@ export default function MyPostsTab({ userId }: { userId: string }) {
 
   return (
     <div>
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-bold">My Posts</h2>
           <p className="mt-1 text-xs" style={{ color: "rgb(var(--muted))" }}>
@@ -68,7 +68,7 @@ export default function MyPostsTab({ userId }: { userId: string }) {
         </div>
         <Link
           href="/posts"
-          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold"
+          className="flex min-h-[40px] w-fit shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold active:opacity-70"
           style={{ backgroundColor: "rgb(var(--primary) / 0.1)", color: "rgb(var(--primary))" }}
         >
           <Newspaper size={13} /> New post
