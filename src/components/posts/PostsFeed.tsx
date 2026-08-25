@@ -141,6 +141,8 @@ export default function PostsFeed({
               commentCount={post.commentCount}
               createdAt={post.createdAt}
               author={post.author}
+              isOwner={!!currentUser && currentUser._id === post.author._id}
+              onDeleted={() => setPosts((prev) => prev.filter((p) => p._id !== post._id))}
             />
           ))}
         </div>

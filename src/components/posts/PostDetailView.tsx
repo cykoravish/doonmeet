@@ -23,6 +23,7 @@ interface PostDetailViewProps {
   wasEdited: boolean;
   author: Author;
   isOwner: boolean;
+  startInEditMode?: boolean;
 }
 
 export default function PostDetailView({
@@ -33,10 +34,11 @@ export default function PostDetailView({
   wasEdited,
   author,
   isOwner,
+  startInEditMode = false,
 }: PostDetailViewProps) {
   const [content, setContent] = useState(initialContent);
   const [image, setImage] = useState(initialImage);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(startInEditMode);
   const [edited, setEdited] = useState(wasEdited);
 
   if (editing) {
@@ -103,7 +105,7 @@ export default function PostDetailView({
             >
               <Pencil size={13} /> Edit
             </button>
-            <DeletePostButton postId={postId} />
+            <DeletePostButton postId={postId} redirectTo="/posts" />
           </>
         )}
       </div>

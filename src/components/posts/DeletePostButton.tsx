@@ -4,7 +4,22 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Loader2 } from "lucide-react";
 
-export default function DeletePostButton({ postId }: { postId: string }) {
+interface DeletePostButtonProps {
+  postId: string;
+  /** Post detail page: navigate away since the post no longer exists there. */
+  redirectTo?: string;
+  /** Feed/profile lists: remove the card locally instead of navigating. */
+  onDeleted?: () => void;
+  /** Compact icon-only variant for use inside a PostCard footer. */
+  compact?: boolean;
+}
+
+export default function DeletePostButton({
+  postId,
+  redirectTo,
+  onDeleted,
+  compact = false,
+}: DeletePostButtonProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -18,8 +33,14 @@ export default function DeletePostButton({ postId }: { postId: string }) {
     try {
       const res = await fetch(`/api/posts/${postId}`, { method: "DELETE" });
       if (res.ok) {
-        router.push("/posts");
-        router.refresh();
+        if (onDeleted) {
+          onDeleted();
+        } else if (redirectTo) {
+          router.push(redirectTo);
+          router.refresh();
+        } else {
+          router.refresh();
+        }
       } else {
         setDeleting(false);
         setConfirming(false);
@@ -28,6 +49,26 @@ export default function DeletePostButton({ postId }: { postId: string }) {
       setDeleting(false);
       setConfirming(false);
     }
+  }
+
+  if (compact) {
+    return (
+      <button
+        onClick={handleDelete}
+        onBlur={() => setConfirming(false)}
+        disabled={deleting}
+        aria-label={confirming ? "Confirm delete post" : "Delete post"}
+        title={confirming ? "Confirm delete?" : "Delete post"}
+        className="flex min-h-[36px] min-w-[36px] items-center justify-center gap-1 rounded-lg px-2 text-xs font-semibold transition-colors active:opacity-70"
+        style={{
+          color: confirming ? "rgb(220 38 38)" : "rgb(var(--muted))",
+          backgroundColor: confirming ? "rgb(220 38 38 / 0.1)" : "transparent",
+        }}
+      >
+        {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+        {confirming && <span>Confirm?</span>}
+      </button>
+    );
   }
 
   return (

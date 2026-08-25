@@ -238,6 +238,7 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
                   commentCount={post.commentCount}
                   createdAt={post.createdAt}
                   author={post.author}
+                  isOwner={isOwnProfile}
                 />
               ))}
             </div>

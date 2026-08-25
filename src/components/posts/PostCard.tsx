@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Pencil } from "lucide-react";
 import UserLink from "@/components/shared/UserLink";
+import DeletePostButton from "./DeletePostButton";
 
 interface Author {
   _id: string;
@@ -16,6 +17,10 @@ interface PostCardProps {
   commentCount: number;
   createdAt: string;
   author: Author;
+  /** Show Edit/Delete controls — pass true when this is the logged-in user's own post. */
+  isOwner?: boolean;
+  /** Called after a successful delete so the parent list can drop this card locally. */
+  onDeleted?: () => void;
 }
 
 export function timeAgo(dateStr: string) {
@@ -66,7 +71,16 @@ export function Avatar({
   );
 }
 
-export default function PostCard({ id, content, image, commentCount, createdAt, author }: PostCardProps) {
+export default function PostCard({
+  id,
+  content,
+  image,
+  commentCount,
+  createdAt,
+  author,
+  isOwner = false,
+  onDeleted,
+}: PostCardProps) {
   return (
     <article
       className="overflow-hidden rounded-2xl border transition-all duration-200 hover:shadow-md"
@@ -98,13 +112,27 @@ export default function PostCard({ id, content, image, commentCount, createdAt, 
       )}
 
       <div
-        className="flex items-center gap-1.5 border-t px-4 py-3 text-xs font-medium sm:px-5"
+        className="flex items-center justify-between gap-1.5 border-t px-4 py-2.5 text-xs font-medium sm:px-5"
         style={{ borderColor: "rgb(var(--border))", color: "rgb(var(--muted))" }}
       >
-        <Link href={`/posts/${id}`} className="flex items-center gap-1.5 transition-opacity hover:opacity-70">
+        <Link href={`/posts/${id}`} className="flex items-center gap-1.5 py-1.5 transition-opacity hover:opacity-70">
           <MessageCircle size={14} />
           {commentCount} {commentCount === 1 ? "comment" : "comments"}
         </Link>
+
+        {isOwner && (
+          <div className="flex items-center gap-1">
+            <Link
+              href={`/posts/${id}?edit=1`}
+              aria-label="Edit post"
+              title="Edit post"
+              className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg transition-colors active:opacity-70"
+            >
+              <Pencil size={14} />
+            </Link>
+            <DeletePostButton postId={id} compact onDeleted={onDeleted} />
+          </div>
+        )}
       </div>
     </article>
   );

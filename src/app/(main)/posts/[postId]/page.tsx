@@ -9,6 +9,7 @@ import PostDetailView from "@/components/posts/PostDetailView";
 
 interface PostDetailPageProps {
   params: Promise<{ postId: string }>;
+  searchParams: Promise<{ edit?: string }>;
 }
 
 function buildPostDescription(content: string): string {
@@ -39,14 +40,16 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
   };
 }
 
-export default async function PostDetailPage({ params }: PostDetailPageProps) {
+export default async function PostDetailPage({ params, searchParams }: PostDetailPageProps) {
   const { postId } = await params;
+  const { edit } = await searchParams;
   const [post, currentUser] = await Promise.all([getPostById(postId), getSessionUser()]);
 
   if (!post) notFound();
 
   const author = post.author;
   const isOwner = !!currentUser && String(currentUser._id) === String(author._id);
+  const startInEditMode = isOwner && edit === "1";
   const createdAtStr = new Date(post.createdAt).toISOString();
   const updatedAtStr = new Date(post.updatedAt).toISOString();
   const wasEdited = updatedAtStr !== createdAtStr;
@@ -90,6 +93,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
           wasEdited={wasEdited}
           author={author}
           isOwner={isOwner}
+          startInEditMode={startInEditMode}
         />
 
         <PostComments
