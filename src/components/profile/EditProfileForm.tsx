@@ -145,7 +145,7 @@ export default function EditProfileForm({
           placeholder="Tell people about yourself..."
           rows={3}
           maxLength={300}
-          className="w-full resize-none rounded-xl border px-4 py-3 text-sm outline-none transition-all"
+          className="w-full resize-none rounded-xl border px-4 py-3 text-base outline-none sm:text-sm transition-all"
           style={{
             backgroundColor: "rgb(var(--surface))",
             borderColor: "rgb(var(--border))",
@@ -166,7 +166,7 @@ export default function EditProfileForm({
           <select
             value={form.gender}
             onChange={(e) => setForm({ ...form, gender: e.target.value })}
-            className="w-full rounded-xl border px-4 py-3 text-sm outline-none"
+            className="w-full rounded-xl border px-4 py-3 text-base outline-none sm:text-sm"
             style={{
               backgroundColor: "rgb(var(--surface))",
               borderColor: "rgb(var(--border))",
@@ -232,7 +232,7 @@ export default function EditProfileForm({
         <select
           value={form.lookingFor}
           onChange={(e) => setForm({ ...form, lookingFor: e.target.value })}
-          className="w-full rounded-xl border px-4 py-3 text-sm outline-none"
+          className="w-full rounded-xl border px-4 py-3 text-base outline-none sm:text-sm"
           style={{
             backgroundColor: "rgb(var(--surface))",
             borderColor: "rgb(var(--border))",
@@ -261,7 +261,7 @@ export default function EditProfileForm({
                 key={interest}
                 type="button"
                 onClick={() => toggleInterest(interest)}
-                className="rounded-full border px-3 py-1 text-xs font-medium capitalize transition-all"
+                className="min-h-[36px] rounded-full border px-3.5 py-1.5 text-xs font-medium capitalize transition-all active:opacity-80"
                 style={{
                   backgroundColor: active ? "rgb(var(--primary))" : "transparent",
                   borderColor: active ? "rgb(var(--primary))" : "rgb(var(--border))",

@@ -19,7 +19,9 @@ import {
 import type { Metadata } from "next";
 import { getPublicUser } from "@/lib/getPublicUser";
 import { getSessionUser } from "@/lib/getSessionUser";
+import { getPosts } from "@/lib/posts";
 import ProfileBanner from "@/components/profile/ProfileBanner";
+import PostCard from "@/components/posts/PostCard";
 
 const LOOKING_FOR_LABELS: Record<string, string> = {
   student: "Student",
@@ -28,6 +30,8 @@ const LOOKING_FOR_LABELS: Record<string, string> = {
   new_to_dehradun: "New to Dehradun",
   just_exploring: "Just Exploring",
 };
+
+const POSTS_PREVIEW_LIMIT = 6;
 
 interface UserProfilePageProps {
   params: Promise<{ userId: string }>;
@@ -54,6 +58,8 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
   ]);
 
   if (!user) notFound();
+
+  const posts = await getPosts({ author: userId, limit: POSTS_PREVIEW_LIMIT });
 
   const currentUserId = currentUser?._id ?? null;
   const isOwnProfile = currentUserId === userId;
@@ -207,7 +213,39 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
             )}
           </div>
         )}
-        {!user.gender && !user.email && !user.occupation && !user.website && !user.dob && !user.lookingFor && (
+        {/* Posts */}
+        {posts.length > 0 && (
+          <div className="mb-10">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-sm font-bold">Posts</h2>
+              {posts.length === POSTS_PREVIEW_LIMIT && (
+                <Link
+                  href={`/posts?author=${userId}`}
+                  className="text-xs font-semibold"
+                  style={{ color: "rgb(var(--primary))" }}
+                >
+                  View all
+                </Link>
+              )}
+            </div>
+            <div className="space-y-4">
+              {posts.map((post) => (
+                <PostCard
+                  key={post._id}
+                  id={post._id}
+                  content={post.content}
+                  image={post.image}
+                  commentCount={post.commentCount}
+                  createdAt={post.createdAt}
+                  author={post.author}
+                  isOwner={isOwnProfile}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!user.gender && !user.email && !user.occupation && !user.website && !user.dob && !user.lookingFor && posts.length === 0 && (
           <div className="pb-10" />
         )}
       </div>

@@ -2,11 +2,10 @@ import Link from "next/link";
 import { ArrowRight, CalendarDays, MapPin } from "lucide-react";
 import { DEHRADUN_ROADS } from "@/data/dehradun-roads-data";
 
-// Every coordinate below is projected from the same real lat/lng data used by
-// the live locations map (see DEHRADUN_OUTLINE and SPOTS in
-// src/components/locations/DehradunMap.tsx) — this isn't a decorative shape,
-// it's the actual Doon valley outline, just drawn small and static for the
-// hero. Landmarks sit at their true position relative to each other.
+// Every coordinate below is projected from real lat/lng data of Dehradun —
+// this isn't a decorative shape, it's the actual Doon valley outline, just
+// drawn small and static for the hero. Landmarks sit at their true position
+// relative to each other.
 
 // Real boundary (NW → SE), projected to the 400×380 viewBox. Hoisted out of
 // the component so it isn't re-allocated on every render.

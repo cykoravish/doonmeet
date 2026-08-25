@@ -168,6 +168,75 @@ export async function maybeSendDmNotificationEmail(
   }
 }
 
+// Sent when someone comments on a user's post — but only if that user is
+// currently offline, mirroring the DM email behaviour so active users
+// aren't spammed with an email for something they'll see in-app instantly.
+export async function sendPostCommentNotificationEmail(
+  email: string,
+  recipientName: string,
+  commenterName: string,
+  preview: string,
+  postId: string,
+  recipientId: string
+): Promise<void> {
+  const link = `${APP_URL}/posts/${postId}`;
+  await sendAndLog({
+    to: email,
+    type: "post_comment",
+    subject: `${commenterName} commented on your post`,
+    recipientId,
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#2d6a4f">New comment on your post 📝</h2>
+        <p>Hi ${recipientName}, <strong>${commenterName}</strong> just commented on your post on DoonMeet:</p>
+        <p style="background:#f5f5f5;border-radius:8px;padding:12px 16px;color:#333;font-style:italic">
+          "${preview}"
+        </p>
+        <a href="${link}"
+          style="display:inline-block;background:#2d6a4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">
+          View Post
+        </a>
+        <p style="color:#888;margin-top:24px;font-size:13px">You're getting this because you were offline when the comment came in.</p>
+      </div>
+    `,
+  });
+}
+
+// Decides whether a "post comment" email should go out, and sends it if so.
+// Only fires for genuinely offline post owners (no live socket connection),
+// same spirit as maybeSendDmNotificationEmail but without a cooldown since
+// post comments are naturally much less frequent than DMs.
+export async function maybeSendPostCommentEmail(
+  recipientId: string,
+  commenterName: string,
+  preview: string,
+  postId: string
+): Promise<void> {
+  try {
+    await connectDB();
+    const recipient = await User.findOne({
+      _id: recipientId,
+      isOnline: false,
+      email: { $ne: null },
+    })
+      .select("name email")
+      .lean();
+
+    if (!recipient?.email) return; // online, or no email on file
+
+    await sendPostCommentNotificationEmail(
+      recipient.email,
+      recipient.name,
+      commenterName,
+      preview,
+      postId,
+      recipientId
+    );
+  } catch (err) {
+    console.error("[email] maybeSendPostCommentEmail failed:", err);
+  }
+}
+
 // Sent to users who've been inactive for a while, to bring them back.
 export async function sendInactivityReminderEmail(
   email: string,

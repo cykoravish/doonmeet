@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
-import { MessageCircle, CalendarDays, Megaphone } from "lucide-react";
+import { MessageCircle, CalendarDays, Megaphone, Newspaper } from "lucide-react";
 
 export type NotificationType =
   | "new_dm"
   | "event_comment"
   | "comment_reply"
   | "new_event"
-  | "announcement";
+  | "announcement"
+  | "post_comment";
 
 export interface NotificationItem {
   _id: string;
@@ -66,6 +67,13 @@ export const NOTIFICATION_TYPE_CONFIG: Record<NotificationType, TypeConfigEntry>
     label: "posted an announcement",
     href: "/",
   },
+  post_comment: {
+    icon: <Newspaper size={14} />,
+    color: "rgb(194 140 74)",
+    bg: "rgb(194 140 74 / 0.1)",
+    label: "commented on your post",
+    href: "/posts",
+  },
 };
 
 // new_dm notifications deep-link straight into that conversation;
@@ -77,7 +85,7 @@ export function getNotificationHref(
   if (notif.type === "new_dm" && notif.actor.userId) {
     return `/chat?dm=${notif.actor.userId}`;
   }
-  if (notif.type === "announcement" && notif.url) {
+  if ((notif.type === "announcement" || notif.type === "post_comment") && notif.url) {
     return notif.url;
   }
   return NOTIFICATION_TYPE_CONFIG[notif.type].href;
