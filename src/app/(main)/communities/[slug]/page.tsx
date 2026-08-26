@@ -26,9 +26,26 @@ export async function generateMetadata({ params }: CommunityPageProps): Promise<
   const community = await getCommunityBySlug(slug);
   if (!community) return { title: "Community Not Found | DoonMeet" };
 
+  const description = (community.description as string)?.slice(0, 155);
+  const title = `${community.name} | DoonMeet Communities`;
+  const url = `https://doonmeet.in/communities/${slug}`;
+
   return {
-    title: `${community.name} | DoonMeet Communities`,
-    description: (community.description as string)?.slice(0, 155),
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      url,
+      images: community.icon ? [community.icon as string] : [],
+      type: "website",
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
   };
 }
 

@@ -24,11 +24,11 @@ export const metadata: Metadata = {
     template: "%s | DoonMeet",
   },
   description:
-    "Discover local events, join communities, chat with people, and connect with others in Dehradun through DoonMeet.",
+    "DoonMeet is where Dehradun hangs out online — find events worth showing up for, join communities that match your interests, and chat with people nearby.",
   openGraph: {
     title: "DoonMeet - Meet People, Events & Communities in Dehradun",
     description:
-      "Discover local events, join communities, chat with people, and connect with others in Dehradun through DoonMeet.",
+      "Find events worth showing up for, join communities that match your interests, and chat with people nearby — all in one place for Dehradun.",
     url: "https://doonmeet.in",
     siteName: "DoonMeet",
     locale: "en_IN",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "DoonMeet - Meet People, Events & Communities in Dehradun",
     description:
-      "Discover local events, join communities, chat with people, and connect with others in Dehradun through DoonMeet.",
+      "Find events worth showing up for, join communities that match your interests, and chat with people nearby — all in one place for Dehradun.",
   },
 };
 

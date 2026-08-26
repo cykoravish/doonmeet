@@ -9,8 +9,9 @@ import { getEvents, getEventStats } from "@/lib/events";
 export const metadata: Metadata = {
   title: "Events in Dehradun | DoonMeet",
   description:
-    "Discover local meetups, tech events, nature walks and community gatherings happening across Dehradun.",
+    "From tech meetups to nature walks, see what's happening around Dehradun this week — and RSVP in a couple of taps.",
   keywords: ["Dehradun events", "local meetups", "Doon Valley events", "things to do in Dehradun"],
+  alternates: { canonical: "https://doonmeet.in/events" },
 };
 
 const TAGS = [
@@ -43,7 +44,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
           <PageHeader
             eyebrow="What's happening"
             title="Events in Dehradun"
-            description="Discover local meetups, nature walks, tech events and community gatherings across the Doon Valley."
+            description="See what's happening around Dehradun this week, and RSVP in a couple of taps."
             action={
               <Link
                 href="/events/create"

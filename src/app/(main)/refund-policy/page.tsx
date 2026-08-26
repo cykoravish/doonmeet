@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Refund & Cancellation Policy | DoonMeet",
   description:
     "DoonMeet's refund and cancellation policy for current and upcoming paid features.",
+  alternates: { canonical: "https://doonmeet.in/refund-policy" },
 };
 
 const LAST_UPDATED = "17 July 2026";

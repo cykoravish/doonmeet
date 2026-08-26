@@ -3,8 +3,7 @@ import { connectDB } from "@/lib/db";
 import { Community } from "@/models/Community";
 import { Event } from "@/models/Event";
 import { Post } from "@/models/Post";
-
-const PLACE_SLUGS = ["clock-tower", "rajpur-road", "fri", "robbers-cave"];
+import { Place } from "@/models/Place";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = "https://doonmeet.in";
@@ -25,19 +24,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.3,
   }));
 
-  const placeRoutes = PLACE_SLUGS.map((slug) => ({
-    url: `${base}/places/${slug}`,
-    lastModified: new Date(),
-    changeFrequency: "weekly" as const,
-    priority: 0.6,
-  }));
-
   let communityRoutes: MetadataRoute.Sitemap = [];
   let eventRoutes: MetadataRoute.Sitemap = [];
   let postRoutes: MetadataRoute.Sitemap = [];
+  // Pulled live from the DB below (was a hardcoded slug list before, so new
+  // places never made it into the sitemap until someone remembered to add
+  // them here). Falls back to an empty list if the query fails.
+  let placeRoutes: MetadataRoute.Sitemap = [];
 
   try {
     await connectDB();
+
+    const places = await Place.find({}).select("slug updatedAt").lean();
+    placeRoutes = places.map((p) => ({
+      url: `${base}/places/${p.slug}`,
+      lastModified: p.updatedAt ?? new Date(),
+      changeFrequency: "weekly",
+      priority: 0.6,
+    }));
 
     const communities = await Community.find({ isActive: true }).select("slug updatedAt").lean();
     communityRoutes = communities.map((c) => ({

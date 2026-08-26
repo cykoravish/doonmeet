@@ -46,6 +46,7 @@ export async function generateMetadata({
   return {
     title: `${user.name} | DoonMeet`,
     description: user.bio || `${user.name}'s profile on DoonMeet`,
+    alternates: { canonical: `https://doonmeet.in/users/${userId}` },
   };
 }
 

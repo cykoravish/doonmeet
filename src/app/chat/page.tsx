@@ -6,6 +6,7 @@ import { getSessionUser } from "@/lib/getSessionUser";
 export const metadata: Metadata = {
   title: "Chat | DoonMeet",
   description: "Join the public chat and message people one-on-one, across Dehradun in real time.",
+  alternates: { canonical: "https://doonmeet.in/chat" },
 };
 
 export default async function ChatPage() {

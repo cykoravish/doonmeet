@@ -8,7 +8,8 @@ import { getAllCommunities } from "@/lib/communities";
 export const metadata: Metadata = {
   title: "Communities in Dehradun | DoonMeet",
   description:
-    "Join local communities in Dehradun. Connect with tech enthusiasts, photographers, foodies, trekkers and more.",
+    "Whether you're into tech, photography, food or weekend treks, there's a Dehradun community on DoonMeet for it — or start your own.",
+  alternates: { canonical: "https://doonmeet.in/communities" },
 };
 
 const CATEGORIES = [
@@ -43,7 +44,7 @@ export default async function CommunitiesPage({ searchParams }: CommunitiesPageP
           <PageHeader
             eyebrow="Find your tribe"
             title="Communities in Dehradun"
-            description="Join groups built around your interests and connect with like-minded people across the Doon Valley."
+            description="Tech, food, photography, trekking — pick a group that matches your vibe, or start one if it doesn't exist yet."
           />
           <div className="flex items-center gap-6">
             {[

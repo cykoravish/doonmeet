@@ -6,7 +6,8 @@ import PlacesExplorer from "@/components/places/PlacesExplorer";
 export const metadata: Metadata = {
   title: "Explore Places in Dehradun | DoonMeet",
   description:
-    "Discover landmarks, attractions, cafes, nature spots and local experiences across Dehradun.",
+    "Clock Tower, Robber's Cave, hidden cafes, weekend nature spots — real reviews from people who've actually been, not just a list of coordinates.",
+  alternates: { canonical: "https://doonmeet.in/places" },
 };
 export const dynamic = "force-dynamic";
 
@@ -24,8 +25,8 @@ export default async function PlacesPage() {
         </p>
         <h1 className="text-4xl font-black md:text-5xl">Explore Places in Dehradun</h1>
         <p className="mt-3 max-w-2xl" style={{ color: "rgb(var(--muted))" }}>
-          Discover landmarks, attractions, cafes, nature spots and local experiences across
-          Dehradun.
+          Clock Tower, Robber&apos;s Cave, hidden cafes, weekend nature spots — rated and reviewed
+          by people who&apos;ve actually been there.
         </p>
 
         <Suspense fallback={null}>
