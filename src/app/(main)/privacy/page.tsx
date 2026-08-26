@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Privacy Policy | DoonMeet",
   description:
     "Learn how DoonMeet collects, uses and protects your personal data, including location, chat and profile information.",
+  alternates: { canonical: "https://doonmeet.in/privacy" },
 };
 
 const LAST_UPDATED = "17 July 2026";

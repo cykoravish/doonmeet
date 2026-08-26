@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Terms of Service | DoonMeet",
   description:
     "The terms that govern your use of DoonMeet — Dehradun's local social platform for events, communities, chat and the live map.",
+  alternates: { canonical: "https://doonmeet.in/terms" },
 };
 
 const LAST_UPDATED = "17 July 2026";

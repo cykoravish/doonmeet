@@ -20,6 +20,7 @@ export async function generateMetadata({
   return {
     title: `${place.title} — Dehradun | DoonMeet`,
     description: place.shortDescription,
+    alternates: { canonical: `https://doonmeet.in/places/${slug}` },
     openGraph: {
       title: `${place.title} | DoonMeet`,
       description: place.shortDescription,

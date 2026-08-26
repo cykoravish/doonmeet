@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "DoonMeet — Connect with Dehradun",
   description:
-    "DoonMeet is Dehradun's social platform. Discover events, join communities, explore popular places and connect with locals across the Doon Valley.",
+    "New in Dehradun or just tired of the same five people in your contacts? DoonMeet helps you find local events, join communities built around your interests, and meet people across the Doon Valley.",
   keywords: [
     "Dehradun",
     "DoonMeet",
@@ -16,9 +16,10 @@ export const metadata: Metadata = {
     "Dehradun communities",
     "meet people Dehradun",
   ],
+  alternates: { canonical: "https://doonmeet.in" },
   openGraph: {
     title: "DoonMeet — Connect with Dehradun",
-    description: "Discover events, join communities and meet locals in Dehradun.",
+    description: "Local events, real communities, and people worth meeting — right here in Dehradun.",
     url: "https://doonmeet.in",
     siteName: "DoonMeet",
     locale: "en_IN",

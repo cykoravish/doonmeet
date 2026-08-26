@@ -60,6 +60,10 @@ export default function PostDetailView({
 
   return (
     <>
+      {/* Visually hidden — gives the page a real H1 for SEO/accessibility
+          without changing the card's visual layout, which has no title slot. */}
+      <h1 className="sr-only">{`Post by ${author.name} on DoonMeet`}</h1>
+
       <article
         className="overflow-hidden rounded-2xl border"
         style={{ borderColor: "rgb(var(--border))", backgroundColor: "rgb(var(--surface))" }}

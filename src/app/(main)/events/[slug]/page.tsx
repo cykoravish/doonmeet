@@ -20,13 +20,24 @@ export async function generateMetadata({ params }: EventDetailPageProps): Promis
   const event = await getEventBySlug(slug);
   if (!event) return { title: "Event Not Found | DoonMeet" };
 
+  const description = (event.description as string)?.slice(0, 155);
+  const url = `https://doonmeet.in/events/${slug}`;
+
   return {
     title: `${event.title} | DoonMeet Events`,
-    description: (event.description as string)?.slice(0, 155),
+    description,
+    alternates: { canonical: url },
     openGraph: {
       title: event.title as string,
-      description: (event.description as string)?.slice(0, 155),
+      description,
+      url,
       images: event.banner ? [event.banner as string] : [],
+      type: "website",
+    },
+    twitter: {
+      card: event.banner ? "summary_large_image" : "summary",
+      title: event.title as string,
+      description,
     },
   };
 }
@@ -120,7 +131,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               </span>
             </div>
             <div>
-              <p className="text-lg font-black leading-tight text-white line-clamp-2">{event.title as string}</p>
+              <h1 className="text-lg font-black leading-tight text-white line-clamp-2">{event.title as string}</h1>
               <p className="mt-1 text-sm text-white/70">
                 {eventDate.toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
               </p>
