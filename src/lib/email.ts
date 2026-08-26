@@ -6,11 +6,22 @@ import { EmailLog, EmailType } from "@/models/EmailLog";
 import { User } from "@/models/User";
 
 const DM_EMAIL_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+const GLOBAL_CHAT_EMAIL_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://doonmeet.in";
 const FROM = "DoonMeet <ravish@doonmeet.in>";
+// Where "someone messaged the global chat" alerts go. Overridable via env
+// without a code change if the inbox to watch ever changes.
+const ADMIN_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL ?? "ravish@doonmeet.in";
+
+// In-memory cooldown gate for the global-chat alert (see
+// maybeSendGlobalChatNotificationEmail below). Deliberately not persisted
+// to the DB — this app runs as a single long-lived Node process (server.ts),
+// so a module-level timestamp is enough and avoids a DB write on every
+// single chat message just to check a throttle.
+let lastGlobalChatEmailAt = 0;
 
 // Wraps resend.emails.send with an EmailLog entry (sent or failed) so every
 // automated email is auditable from the admin dashboard. Never throws —
@@ -260,4 +271,56 @@ export async function sendInactivityReminderEmail(
       </div>
     `,
   });
+}
+
+// Admin alert — fires when *anyone* (including guests) posts in the public
+// global chat room. Unlike the DM/comment emails above, this isn't gated on
+// the recipient being offline (the admin isn't a chat participant); it's
+// purely throttled — see maybeSendGlobalChatNotificationEmail.
+async function sendGlobalChatNotificationEmail(
+  senderName: string,
+  isGuest: boolean,
+  preview: string
+): Promise<void> {
+  const link = `${APP_URL}/chat`;
+  await sendAndLog({
+    to: ADMIN_EMAIL,
+    type: "global_chat_message",
+    subject: `New global chat message from ${senderName}${isGuest ? " (guest)" : ""}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#2d6a4f">New message in global chat 💬</h2>
+        <p><strong>${senderName}</strong>${isGuest ? " <span style=\"color:#c28c4a\">(guest)</span>" : ""} just posted:</p>
+        <p style="background:#f5f5f5;border-radius:8px;padding:12px 16px;color:#333;font-style:italic">
+          "${preview}"
+        </p>
+        <a href="${link}"
+          style="display:inline-block;background:#2d6a4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">
+          Open Global Chat
+        </a>
+        <p style="color:#888;margin-top:24px;font-size:13px">You're getting this because you're subscribed to global chat alerts. To cut down on volume, you'll get at most one of these every few minutes even if multiple messages come in.</p>
+      </div>
+    `,
+  });
+}
+
+// Throttled entry point — call this on every global chat message. Sends at
+// most one admin email per GLOBAL_CHAT_EMAIL_COOLDOWN_MS window, regardless
+// of how many messages/senders come in during that window. Never throws —
+// this is fire-and-forget from the socket handler.
+export async function maybeSendGlobalChatNotificationEmail(
+  senderName: string,
+  isGuest: boolean,
+  content: string
+): Promise<void> {
+  try {
+    const now = Date.now();
+    if (now - lastGlobalChatEmailAt < GLOBAL_CHAT_EMAIL_COOLDOWN_MS) return;
+    lastGlobalChatEmailAt = now;
+
+    const preview = content.length > 200 ? `${content.slice(0, 197)}...` : content;
+    await sendGlobalChatNotificationEmail(senderName, isGuest, preview);
+  } catch (err) {
+    console.error("[email] maybeSendGlobalChatNotificationEmail failed:", err);
+  }
 }

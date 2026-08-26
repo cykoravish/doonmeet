@@ -7,7 +7,7 @@ import { DirectMessage } from "@/models/DirectMessage";
 import { Conversation } from "@/models/Conversation";
 import { Notification } from "@/models/Notification";
 import { User } from "@/models/User";
-import { maybeSendDmNotificationEmail } from "@/lib/email";
+import { maybeSendDmNotificationEmail, maybeSendGlobalChatNotificationEmail } from "@/lib/email";
 import { sendPushToUser } from "@/lib/push";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
@@ -185,6 +185,13 @@ export function initSocket(httpServer: HttpServer): SocketServer {
             isGuest: socket.isGuest,
           },
         });
+
+        // Fire-and-forget admin alert — internally throttled (see
+        // maybeSendGlobalChatNotificationEmail), so this is safe to call on
+        // every message without spamming the admin inbox.
+        maybeSendGlobalChatNotificationEmail(socket.name, socket.isGuest, content).catch((err) =>
+          console.error("[socket room:message] Admin notification email failed:", err)
+        );
       } catch (error) {
         console.error("[socket room:message] Error:", error);
         socket.emit("error", { message: "Failed to send message" });
