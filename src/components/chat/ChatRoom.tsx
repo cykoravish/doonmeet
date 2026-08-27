@@ -7,6 +7,7 @@ import { Send, Loader2, Wifi, WifiOff, Sparkles } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import GuestLimitBanner from "./GuestLimitBanner";
 import JoinChatModal from "./JoinChatModal";
+import { useToast } from "@/providers/toast-provider";
 
 interface Message {
   _id: string;
@@ -64,12 +65,14 @@ function getDateLabel(dateStr: string) {
 
 export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [sending, setSending] = useState(false);
   const [guestCount, setGuestCount] = useState(currentUser?.guestMessageCount ?? 0);
   const [limitReached, setLimitReached] = useState(
     (currentUser?.guestMessageCount ?? 0) >= GUEST_LIMIT
@@ -122,6 +125,14 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
 
     socket.on("disconnect", () => setConnected(false));
 
+    // Defensive fallback — the ack callback on room:message/dm:message is
+    // now the primary way failures are reported, but this catches any
+    // server-side error emitted outside that flow instead of failing
+    // silently with no feedback to the person typing.
+    socket.on("error", (err: { message?: string }) => {
+      showToast(err?.message || "Something went wrong. Please try again.", "error");
+    });
+
     socket.on("room:message", (message: Message) => {
       setMessages((prev) => [...prev, message]);
     });
@@ -144,7 +155,8 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
 
   function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!content.trim()) return;
+    const trimmed = content.trim();
+    if (!trimmed) return;
 
     // Not logged in — show the join modal instead of sending
     if (!currentUser) {
@@ -152,16 +164,42 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
       return;
     }
 
-    if (!socketRef.current || limitReached) return;
+    if (!socketRef.current || limitReached || sending) return;
 
-    socketRef.current.emit("room:message", { content: content.trim() });
+    setSending(true);
     setContent("");
 
-    if (currentUser?.isGuest) {
-      const newCount = guestCount + 1;
-      setGuestCount(newCount);
-      if (newCount >= GUEST_LIMIT) setLimitReached(true);
-    }
+    socketRef.current.emit(
+      "room:message",
+      { content: trimmed },
+      (res?: { success: boolean; code?: string; message?: string }) => {
+        setSending(false);
+
+        // No ack ever arrived (very old server, or the socket dropped
+        // mid-request) — treat it the same as a reported failure rather
+        // than silently trusting it went through.
+        if (!res || !res.success) {
+          setContent(trimmed);
+          if (res?.code === "GUEST_LIMIT_REACHED") {
+            setLimitReached(true);
+          } else {
+            showToast(res?.message ?? "Couldn't send your message. Please try again.", "error");
+          }
+          return;
+        }
+
+        // Confirmed persisted by the server — only now is it safe to count
+        // it against the guest's limit, so the UI can never show a lower
+        // "remaining" count than what actually went through.
+        if (currentUser?.isGuest) {
+          setGuestCount((prev) => {
+            const next = prev + 1;
+            if (next >= GUEST_LIMIT) setLimitReached(true);
+            return next;
+          });
+        }
+      }
+    );
 
     inputRef.current?.focus();
   }
@@ -329,11 +367,15 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
           />
           <button
             type="submit"
-            disabled={limitReached || !content.trim()}
+            disabled={limitReached || !content.trim() || sending}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-opacity disabled:opacity-40 hover:opacity-85"
             style={{ backgroundColor: "rgb(var(--primary))" }}
           >
-            <Send size={16} className="text-white" />
+            {sending ? (
+              <Loader2 size={16} className="animate-spin text-white" />
+            ) : (
+              <Send size={16} className="text-white" />
+            )}
           </button>
         </form>
       </div>

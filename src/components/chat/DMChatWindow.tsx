@@ -5,6 +5,7 @@ import { io, Socket } from "socket.io-client";
 import { ArrowLeft, Send, Loader2, ChevronUp } from "lucide-react";
 import Image from "next/image";
 import ChatMessage from "./ChatMessage";
+import { useToast } from "@/providers/toast-provider";
 
 interface DMMessage {
   _id: string;
@@ -45,6 +46,7 @@ export default function DMChatWindow({
   onBack,
   onMessageSent,
 }: DMChatWindowProps) {
+  const { showToast } = useToast();
   const [messages, setMessages] = useState<DMMessage[]>([]);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
@@ -108,6 +110,13 @@ export default function DMChatWindow({
     socket.on("typing:start", () => setOtherTyping(true));
     socket.on("typing:stop", () => setOtherTyping(false));
 
+    // Defensive fallback — the ack callback on dm:message is the primary
+    // way failures are reported (see handleSend), but this catches any
+    // server-side error emitted outside that flow.
+    socket.on("error", (err: { message?: string }) => {
+      showToast(err?.message || "Something went wrong. Please try again.", "error");
+    });
+
     return () => {
       socket.disconnect();
     };
@@ -164,19 +173,43 @@ export default function DMChatWindow({
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     socketRef.current?.emit("typing:stop", { conversationId });
 
+    if (socketRef.current?.connected) {
+      socketRef.current.emit(
+        "dm:message",
+        { conversationId, content: trimmed },
+        (res?: { success: boolean; code?: string; message?: string }) => {
+          setSending(false);
+
+          if (!res || !res.success) {
+            // Restore what was typed so nothing gets lost, and say why.
+            setContent(trimmed);
+            showToast(res?.message ?? "Couldn't send your message. Please try again.", "error");
+          }
+          // Success — the message itself arrives via the "dm:message"
+          // broadcast and gets appended there, same as before.
+        }
+      );
+      inputRef.current?.focus();
+      return;
+    }
+
+    // REST fallback if the socket connection is down
     try {
-      if (socketRef.current?.connected) {
-        socketRef.current.emit("dm:message", { conversationId, content: trimmed });
+      const res = await fetch(`/api/conversations/${conversationId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: trimmed }),
+      });
+      const d = await res.json();
+      if (d.success) {
+        setMessages((prev) => [...prev, d.message]);
       } else {
-        // REST fallback if the socket connection is down
-        const res = await fetch(`/api/conversations/${conversationId}/messages`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: trimmed }),
-        });
-        const d = await res.json();
-        if (d.success) setMessages((prev) => [...prev, d.message]);
+        setContent(trimmed);
+        showToast(d.message ?? "Couldn't send your message. Please try again.", "error");
       }
+    } catch {
+      setContent(trimmed);
+      showToast("Network error — couldn't send your message. Please try again.", "error");
     } finally {
       setSending(false);
       inputRef.current?.focus();
@@ -244,9 +277,7 @@ export default function DMChatWindow({
               <div className="flex h-full flex-col items-center justify-center text-center">
                 <span className="mb-3 text-5xl">💬</span>
                 <p className="font-bold">Say hi to {otherParticipant.name.split(" ")[0]}!</p>
-                <p className="mt-1 text-sm text-muted">
-                  This is the start of your conversation.
-                </p>
+                <p className="mt-1 text-sm text-muted">This is the start of your conversation.</p>
               </div>
             ) : (
               messages.map((msg, i) => (

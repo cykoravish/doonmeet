@@ -146,57 +146,104 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     // -------------------------------------------------------
     // PUBLIC ROOM — send message
     // -------------------------------------------------------
-    socket.on("room:message", async (data: { content: string }) => {
-      try {
-        if (!data?.content || typeof data.content !== "string") return;
+    // Accepts an optional ack callback as the 2nd arg (socket.io convention).
+    // The client relies on this to know for certain whether the message was
+    // actually persisted — no more guessing client-side state from the act
+    // of emitting alone, which is what let a rejected/failed send silently
+    // decrement a guest's remaining count without ever sending a message.
+    socket.on(
+      "room:message",
+      async (
+        data: { content: string },
+        callback?: (res: { success: boolean; code?: string; message?: string }) => void
+      ) => {
+        const ack = typeof callback === "function" ? callback : () => {};
 
-        const content = data.content.replace(/<[^>]*>/g, "").trim();
-        if (!content || content.length > 500) return;
-
-        if (socket.isGuest) {
-          const user = await User.findById(socket.userId).select("guestMessageCount").lean();
-
-          if (!user || user.guestMessageCount >= GUEST_MESSAGE_LIMIT) {
-            socket.emit("room:limit_reached", {
-              message: `You've reached the ${GUEST_MESSAGE_LIMIT} message limit. Sign up to keep chatting!`,
-              code: "GUEST_LIMIT_REACHED",
+        try {
+          if (!data?.content || typeof data.content !== "string") {
+            ack({
+              success: false,
+              code: "INVALID_CONTENT",
+              message: "Message content is invalid.",
             });
             return;
           }
 
-          await User.updateOne({ _id: socket.userId }, { $inc: { guestMessageCount: 1 } });
-        }
+          const content = data.content.replace(/<[^>]*>/g, "").trim();
 
-        const message = await RoomMessage.create({
-          sender: socket.userId,
-          content,
-          isGuest: socket.isGuest,
-        });
+          if (!content) {
+            ack({ success: false, code: "EMPTY_CONTENT", message: "Message can't be empty." });
+            return;
+          }
 
-        io.to("room:global").emit("room:message", {
-          _id: message._id,
-          content: message.content,
-          isGuest: message.isGuest,
-          createdAt: message.createdAt,
-          sender: {
-            _id: socket.userId,
-            name: socket.name,
-            avatar: socket.avatar,
+          if (content.length > 500) {
+            ack({
+              success: false,
+              code: "TOO_LONG",
+              message: "Message is too long (max 500 characters).",
+            });
+            return;
+          }
+
+          if (socket.isGuest) {
+            const user = await User.findById(socket.userId).select("guestMessageCount").lean();
+
+            if (!user || user.guestMessageCount >= GUEST_MESSAGE_LIMIT) {
+              socket.emit("room:limit_reached", {
+                message: `You've reached the ${GUEST_MESSAGE_LIMIT} message limit. Sign up to keep chatting!`,
+                code: "GUEST_LIMIT_REACHED",
+              });
+              ack({
+                success: false,
+                code: "GUEST_LIMIT_REACHED",
+                message: "Guest message limit reached.",
+              });
+              return;
+            }
+          }
+
+          // Persist the message FIRST, only count it against the guest's
+          // limit once we know it actually saved — previously the guest
+          // count was incremented before this call, so a failed save here
+          // would still cost the guest a message they never actually sent.
+          const message = await RoomMessage.create({
+            sender: socket.userId,
+            content,
             isGuest: socket.isGuest,
-          },
-        });
+          });
 
-        // Fire-and-forget admin alert — internally throttled (see
-        // maybeSendGlobalChatNotificationEmail), so this is safe to call on
-        // every message without spamming the admin inbox.
-        maybeSendGlobalChatNotificationEmail(socket.name, socket.isGuest, content).catch((err) =>
-          console.error("[socket room:message] Admin notification email failed:", err)
-        );
-      } catch (error) {
-        console.error("[socket room:message] Error:", error);
-        socket.emit("error", { message: "Failed to send message" });
+          if (socket.isGuest) {
+            await User.updateOne({ _id: socket.userId }, { $inc: { guestMessageCount: 1 } });
+          }
+
+          io.to("room:global").emit("room:message", {
+            _id: message._id,
+            content: message.content,
+            isGuest: message.isGuest,
+            createdAt: message.createdAt,
+            sender: {
+              _id: socket.userId,
+              name: socket.name,
+              avatar: socket.avatar,
+              isGuest: socket.isGuest,
+            },
+          });
+
+          ack({ success: true });
+
+          // Fire-and-forget admin alert — internally throttled (see
+          // maybeSendGlobalChatNotificationEmail), so this is safe to call on
+          // every message without spamming the admin inbox.
+          maybeSendGlobalChatNotificationEmail(socket.name, socket.isGuest, content).catch((err) =>
+            console.error("[socket room:message] Admin notification email failed:", err)
+          );
+        } catch (error) {
+          console.error("[socket room:message] Error:", error);
+          socket.emit("error", { message: "Failed to send message" });
+          ack({ success: false, code: "SERVER_ERROR", message: "Failed to send your message." });
+        }
       }
-    });
+    );
 
     // -------------------------------------------------------
     // PRESENCE — join/leave the shared presence room. Only sockets that
@@ -279,136 +326,177 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     // -------------------------------------------------------
     // DMs — send message
     // -------------------------------------------------------
-    socket.on("dm:message", async (data: { conversationId: string; content: string }) => {
-      if (socket.isGuest) {
-        socket.emit("error", { message: "Guests cannot send direct messages." });
-        return;
-      }
+    // Same ack-callback pattern as room:message — every early return now
+    // reports back why, instead of leaving the client to assume success.
+    socket.on(
+      "dm:message",
+      async (
+        data: { conversationId: string; content: string },
+        callback?: (res: { success: boolean; code?: string; message?: string }) => void
+      ) => {
+        const ack = typeof callback === "function" ? callback : () => {};
 
-      if (!/^[a-f\d]{24}$/i.test(data?.conversationId)) return;
-
-      const content = data?.content?.replace(/<[^>]*>/g, "").trim();
-      if (!content || content.length > 1000) return;
-
-      try {
-        const conversation = await Conversation.findOne({
-          _id: data.conversationId,
-          participants: socket.userId,
-        });
-
-        if (!conversation) return;
-
-        const recipientId = conversation.participants.find(
-          (p: unknown) => String(p) !== socket.userId
-        );
-
-        if (!recipientId) return;
-
-        const dmRoom = `dm:${data.conversationId}`;
-        // Is the recipient already looking at this exact conversation right
-        // now? If so, treat the message as instantly read for them — both
-        // the unread badge and any notification should reflect that they've
-        // already seen it live, not that it's still waiting to be read.
-        const recipientActive = isUserActiveInRoom(io, dmRoom, String(recipientId));
-
-        const readBy = [{ userId: socket.userId, readAt: new Date() }];
-        if (recipientActive) {
-          readBy.push({ userId: recipientId, readAt: new Date() });
-        }
-
-        const message = await DirectMessage.create({
-          conversationId: data.conversationId,
-          sender: socket.userId,
-          content,
-          readBy,
-        });
-
-        const conversationUpdate: Record<string, unknown> = {
-          $set: {
-            lastMessage: {
-              content: content.slice(0, 100),
-              sentAt: message.createdAt,
-              senderId: socket.userId,
-            },
-          },
-        };
-        if (!recipientActive) {
-          conversationUpdate.$inc = { [`unreadCount.${String(recipientId)}`]: 1 };
-        }
-        await Conversation.updateOne({ _id: data.conversationId }, conversationUpdate);
-
-        const messagePayload = {
-          _id: message._id,
-          conversationId: data.conversationId,
-          content: message.content,
-          createdAt: message.createdAt,
-          sender: {
-            _id: socket.userId,
-            name: socket.name,
-            avatar: socket.avatar,
-          },
-        };
-
-        io.to(dmRoom).emit("dm:message", messagePayload);
-
-        if (recipientActive) {
-          // Let the sender's UI show an instant "read" state for this message.
-          socket.emit("dm:read", {
-            conversationId: data.conversationId,
-            readBy: String(recipientId),
-            readAt: readBy[1].readAt,
+        if (socket.isGuest) {
+          socket.emit("error", { message: "Guests cannot send direct messages." });
+          ack({
+            success: false,
+            code: "GUEST_FORBIDDEN",
+            message: "Guests can't send direct messages.",
           });
+          return;
         }
 
-        // Skip the notification if the recipient already has this exact
-        // conversation open — they're seeing the message live via
-        // dm:message above, a notification would just be noise (and would
-        // make the bell count drift out of sync with what's actually
-        // unread).
-        if (!recipientActive) {
-          const notification = await Notification.create({
-            recipient: recipientId,
-            type: "new_dm",
-            refModel: "DirectMessage",
-            refId: message._id,
-            preview: content.slice(0, 100),
-            actor: {
-              userId: socket.userId,
+        if (!/^[a-f\d]{24}$/i.test(data?.conversationId)) {
+          ack({ success: false, code: "INVALID_CONVERSATION", message: "Invalid conversation." });
+          return;
+        }
+
+        const content = data?.content?.replace(/<[^>]*>/g, "").trim();
+        if (!content) {
+          ack({ success: false, code: "EMPTY_CONTENT", message: "Message can't be empty." });
+          return;
+        }
+        if (content.length > 1000) {
+          ack({
+            success: false,
+            code: "TOO_LONG",
+            message: "Message is too long (max 1000 characters).",
+          });
+          return;
+        }
+
+        try {
+          const conversation = await Conversation.findOne({
+            _id: data.conversationId,
+            participants: socket.userId,
+          });
+
+          if (!conversation) {
+            ack({
+              success: false,
+              code: "CONVERSATION_NOT_FOUND",
+              message: "Conversation not found.",
+            });
+            return;
+          }
+
+          const recipientId = conversation.participants.find(
+            (p: unknown) => String(p) !== socket.userId
+          );
+
+          if (!recipientId) {
+            ack({ success: false, code: "NO_RECIPIENT", message: "Recipient not found." });
+            return;
+          }
+
+          const dmRoom = `dm:${data.conversationId}`;
+          // Is the recipient already looking at this exact conversation right
+          // now? If so, treat the message as instantly read for them — both
+          // the unread badge and any notification should reflect that they've
+          // already seen it live, not that it's still waiting to be read.
+          const recipientActive = isUserActiveInRoom(io, dmRoom, String(recipientId));
+
+          const readBy = [{ userId: socket.userId, readAt: new Date() }];
+          if (recipientActive) {
+            readBy.push({ userId: recipientId, readAt: new Date() });
+          }
+
+          const message = await DirectMessage.create({
+            conversationId: data.conversationId,
+            sender: socket.userId,
+            content,
+            readBy,
+          });
+
+          const conversationUpdate: Record<string, unknown> = {
+            $set: {
+              lastMessage: {
+                content: content.slice(0, 100),
+                sentAt: message.createdAt,
+                senderId: socket.userId,
+              },
+            },
+          };
+          if (!recipientActive) {
+            conversationUpdate.$inc = { [`unreadCount.${String(recipientId)}`]: 1 };
+          }
+          await Conversation.updateOne({ _id: data.conversationId }, conversationUpdate);
+
+          const messagePayload = {
+            _id: message._id,
+            conversationId: data.conversationId,
+            content: message.content,
+            createdAt: message.createdAt,
+            sender: {
+              _id: socket.userId,
               name: socket.name,
               avatar: socket.avatar,
             },
-          });
+          };
 
-          io.to(`user:${String(recipientId)}`).emit("notification:new", {
-            _id: notification._id,
-            type: "new_dm",
-            preview: notification.preview,
-            actor: notification.actor,
-            createdAt: notification.createdAt,
-            isRead: false,
-          });
+          io.to(dmRoom).emit("dm:message", messagePayload);
+          ack({ success: true });
 
-          // Fire-and-forget — only actually sends if the recipient is
-          // genuinely offline and not within the cooldown window (see
-          // maybeSendDmNotificationEmail in src/lib/email.ts).
-          maybeSendDmNotificationEmail(String(recipientId), socket.name, content).catch(() => {
-            // Errors are already logged inside the helper.
-          });
+          if (recipientActive) {
+            // Let the sender's UI show an instant "read" state for this message.
+            socket.emit("dm:read", {
+              conversationId: data.conversationId,
+              readBy: String(recipientId),
+              readAt: readBy[1].readAt,
+            });
+          }
 
-          sendPushToUser(String(recipientId), {
-            title: socket.name,
-            body: content.slice(0, 120),
-            url: "/chat",
-            tag: `dm-${data.conversationId}`,
-          }).catch(() => {
-            // Errors are already logged inside the helper.
-          });
+          // Skip the notification if the recipient already has this exact
+          // conversation open — they're seeing the message live via
+          // dm:message above, a notification would just be noise (and would
+          // make the bell count drift out of sync with what's actually
+          // unread).
+          if (!recipientActive) {
+            const notification = await Notification.create({
+              recipient: recipientId,
+              type: "new_dm",
+              refModel: "DirectMessage",
+              refId: message._id,
+              preview: content.slice(0, 100),
+              actor: {
+                userId: socket.userId,
+                name: socket.name,
+                avatar: socket.avatar,
+              },
+            });
+
+            io.to(`user:${String(recipientId)}`).emit("notification:new", {
+              _id: notification._id,
+              type: "new_dm",
+              preview: notification.preview,
+              actor: notification.actor,
+              createdAt: notification.createdAt,
+              isRead: false,
+            });
+
+            // Fire-and-forget — only actually sends if the recipient is
+            // genuinely offline and not within the cooldown window (see
+            // maybeSendDmNotificationEmail in src/lib/email.ts).
+            maybeSendDmNotificationEmail(String(recipientId), socket.name, content).catch(() => {
+              // Errors are already logged inside the helper.
+            });
+
+            sendPushToUser(String(recipientId), {
+              title: socket.name,
+              body: content.slice(0, 120),
+              url: "/chat",
+              tag: `dm-${data.conversationId}`,
+            }).catch(() => {
+              // Errors are already logged inside the helper.
+            });
+          }
+        } catch (error) {
+          console.error("[socket dm:message] Error:", error);
+          socket.emit("error", { message: "Failed to send message" });
+          ack({ success: false, code: "SERVER_ERROR", message: "Failed to send your message." });
         }
-      } catch (error) {
-        console.error("[socket dm:message] Error:", error);
-        socket.emit("error", { message: "Failed to send message" });
       }
-    });
+    );
 
     // -------------------------------------------------------
     // Typing indicators
