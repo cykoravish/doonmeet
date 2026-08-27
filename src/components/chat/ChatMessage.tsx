@@ -7,6 +7,11 @@ interface ChatMessageProps {
   senderName: string;
   senderAvatar: string | null;
   isGuest: boolean;
+  // Whether the person viewing this message (not the sender) is a guest —
+  // guests can't start DMs, so their "Message" action needs different
+  // handling than a signed-up viewer's. Defaults to false for callers
+  // (e.g. DMChatWindow) where the viewer is guaranteed not to be a guest.
+  viewerIsGuest?: boolean;
   isOwn: boolean;
   createdAt: string;
   showAvatar: boolean;
@@ -20,6 +25,7 @@ export default function ChatMessage({
   senderName,
   senderAvatar,
   isGuest,
+  viewerIsGuest = false,
   isOwn,
   createdAt,
   showAvatar,
@@ -40,6 +46,7 @@ export default function ChatMessage({
         <ChatUserActions
           userId={senderId}
           isGuest={isGuest}
+          viewerIsGuest={viewerIsGuest}
           isOwn={isOwn}
           align={isOwn ? "right" : "left"}
           className="self-end shrink-0 rounded-full"
@@ -73,6 +80,7 @@ export default function ChatMessage({
             <ChatUserActions
               userId={senderId}
               isGuest={isGuest}
+              viewerIsGuest={viewerIsGuest}
               isOwn={isOwn}
               align={isOwn ? "right" : "left"}
               className="text-xs font-semibold"

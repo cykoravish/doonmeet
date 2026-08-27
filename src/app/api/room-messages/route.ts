@@ -8,7 +8,7 @@ import { validateBody, validateQuery } from "@/middleware/validate";
 import { roomChatLimiter, generalLimiter } from "@/middleware/rateLimit";
 import { sendRoomMessageSchema, getRoomMessagesSchema } from "@/validations/roomMessage";
 
-const GUEST_MESSAGE_LIMIT = 20;
+const GUEST_MESSAGE_LIMIT = 5;
 
 // -------------------------------------------------------
 // GET /api/room-messages

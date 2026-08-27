@@ -2,12 +2,16 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { MessageCircle, UserRound } from "lucide-react";
+import { MessageCircle, UserRound, Lock } from "lucide-react";
 import { useToast } from "@/providers/toast-provider";
 
 interface ChatUserActionsProps {
   userId: string;
   isGuest?: boolean;
+  // Whether the person viewing this menu (not the sender) is a guest.
+  // Guests can look, but can't start a DM — the "Message" item reflects
+  // that instead of leading to a dead end after a page navigation.
+  viewerIsGuest?: boolean;
   isOwn?: boolean;
   align?: "left" | "right";
   className?: string;
@@ -20,6 +24,7 @@ interface ChatUserActionsProps {
 export default function ChatUserActions({
   userId,
   isGuest,
+  viewerIsGuest,
   isOwn,
   align = "left",
   className,
@@ -60,6 +65,15 @@ export default function ChatUserActions({
 
   function goToMessage() {
     setOpen(false);
+
+    // Guests can't start DMs. Rather than navigate to /chat?dm=... only to
+    // land on a locked screen there, tell them right here — same
+    // lightweight pattern as the "no public profile" toast above.
+    if (viewerIsGuest) {
+      showToast("Guests can't send personal messages. Sign up free to chat 1:1.", "info");
+      return;
+    }
+
     router.push(`/chat?dm=${userId}`);
   }
 
@@ -97,10 +111,14 @@ export default function ChatUserActions({
               type="button"
               onClick={goToMessage}
               className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-xs font-medium transition-colors hover:bg-primary/10"
-              style={{ color: "rgb(var(--text))" }}
+              style={{ color: viewerIsGuest ? "rgb(var(--accent))" : "rgb(var(--text))" }}
             >
-              <MessageCircle size={13} style={{ color: "rgb(var(--primary))" }} />
-              Message
+              {viewerIsGuest ? (
+                <Lock size={13} style={{ color: "rgb(var(--accent))" }} />
+              ) : (
+                <MessageCircle size={13} style={{ color: "rgb(var(--primary))" }} />
+              )}
+              {viewerIsGuest ? "Sign up to message" : "Message"}
             </button>
           )}
           <button

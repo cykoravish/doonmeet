@@ -110,7 +110,7 @@ export default function JoinChatModal({
                     Continue as guest
                   </p>
                   <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-                    Jump in instantly · 20 free messages
+                    Jump in instantly · 5 free messages
                   </p>
                 </div>
                 <Sparkles size={16} style={{ color: "rgb(var(--primary))" }} />
@@ -144,7 +144,7 @@ export default function JoinChatModal({
               What should we call you?
             </h2>
             <p className="mt-1 text-sm" style={{ color: "rgb(var(--muted))" }}>
-              Guests get 20 free messages. No email or password needed — sign up
+              Guests get 5 free messages. No email or password needed — sign up
               anytime for unlimited chat.
             </p>
 

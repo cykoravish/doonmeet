@@ -11,7 +11,7 @@ import { maybeSendDmNotificationEmail, maybeSendGlobalChatNotificationEmail } fr
 import { sendPushToUser } from "@/lib/push";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
-const GUEST_MESSAGE_LIMIT = 20;
+const GUEST_MESSAGE_LIMIT = 5;
 
 interface AuthenticatedSocket extends Socket {
   userId: string;

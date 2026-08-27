@@ -36,7 +36,7 @@ interface ChatRoomProps {
   onSocketChange?: (socket: Socket | null) => void;
 }
 
-const GUEST_LIMIT = 20;
+const GUEST_LIMIT = 5;
 
 function isSameDay(a: Date, b: Date) {
   return (
@@ -255,6 +255,7 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
                   senderName={msg.sender.name}
                   senderAvatar={msg.sender.avatar}
                   isGuest={msg.sender.isGuest}
+                  viewerIsGuest={!!currentUser?.isGuest}
                   isOwn={msg.sender._id === currentUser?._id}
                   createdAt={msg.createdAt}
                   showName={showDivider || messages[i - 1]?.sender._id !== msg.sender._id}
@@ -284,7 +285,9 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
         }}
       >
         {/* Guest limit banner */}
-        {currentUser?.isGuest && <GuestLimitBanner remaining={remaining} reached={limitReached} />}
+        {currentUser?.isGuest && (
+          <GuestLimitBanner remaining={remaining} total={GUEST_LIMIT} reached={limitReached} />
+        )}
 
         {/* Not logged in — subtle pill hint instead of a plain sentence */}
         {!currentUser && (
