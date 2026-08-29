@@ -197,7 +197,6 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
                 slug={slug}
                 isMember={memberStatus}
                 isLoggedIn={!!currentUser}
-                isGuest={!!currentUser?.isGuest}
                 color={color}
               />
             </div>

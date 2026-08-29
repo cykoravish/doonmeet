@@ -20,13 +20,6 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
   const limited = generalLimiter(req, String(req.user._id));
   if (limited) return limited;
 
-  if (req.user.isGuest) {
-    return NextResponse.json(
-      { success: false, message: "Guests cannot upload a banner. Please sign up." },
-      { status: 403 }
-    );
-  }
-
   try {
     const formData = await req.formData();
     const file = formData.get("banner") as File | null;

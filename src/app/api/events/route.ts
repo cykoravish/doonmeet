@@ -1,5 +1,5 @@
 // GET  — list published events (paginated, filterable)
-// POST — create a new event (logged in users only, not guests)
+// POST — create a new event (logged in users only)
 // ============================================================
 import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
@@ -78,7 +78,7 @@ export const GET = withGuestAllowed(async (req: AuthenticatedRequest) => {
 });
 
 // POST /api/events
-// requireVerified = withAuth + blocks guests
+// requireVerified = withAuth (verified, logged-in users only)
 export const POST = requireVerified(async (req: AuthenticatedRequest) => {
   const limited = eventLimiter(req, String(req.user._id));
   if (limited) return limited;

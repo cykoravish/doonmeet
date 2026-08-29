@@ -12,13 +12,6 @@ export const PATCH = withAuth(async (req: AuthenticatedRequest) => {
   const limited: NextResponse | null = generalLimiter(req, String(req.user._id));
   if (limited) return limited;
 
-  if (req.user.isGuest) {
-    return NextResponse.json(
-      { success: false, message: "Guests cannot update privacy settings." },
-      { status: 403 }
-    );
-  }
-
   const result = await validateBody(req, updatePrivacySchema);
   if (result instanceof NextResponse) return result;
 

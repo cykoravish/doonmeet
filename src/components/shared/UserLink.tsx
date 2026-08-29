@@ -3,16 +3,13 @@ import type { ReactNode } from "react";
 
 interface UserLinkProps {
   userId: string;
-  isGuest?: boolean;
   className?: string;
   children: ReactNode;
 }
 
 // Wraps a user's name/avatar so clicking it opens their public profile.
-// Guests have no public profile (see getPublicUser), so guest content is
-// rendered as plain, non-interactive text instead of a dead link.
-export default function UserLink({ userId, isGuest, className, children }: UserLinkProps) {
-  if (isGuest || !userId) {
+export default function UserLink({ userId, className, children }: UserLinkProps) {
+  if (!userId) {
     return <span className={className}>{children}</span>;
   }
 

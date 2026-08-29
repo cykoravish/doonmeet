@@ -307,7 +307,6 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               isGoing={!!isGoing}
               isFull={isFull}
               isLoggedIn={!!currentUser}
-              isGuest={!!currentUser?.isGuest}
             />
             <ShareButton title={event.title as string} url={`https://doonmeet.in/events/${slug}`} />
           </div>

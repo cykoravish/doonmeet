@@ -11,12 +11,10 @@ import { maybeSendDmNotificationEmail, maybeSendGlobalChatNotificationEmail } fr
 import { sendPushToUser } from "@/lib/push";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
-const GUEST_MESSAGE_LIMIT = 20;
 
 interface AuthenticatedSocket extends Socket {
   userId: string;
   role: string;
-  isGuest: boolean;
   name: string;
   avatar: string | null;
 }
@@ -80,21 +78,14 @@ export function initSocket(httpServer: HttpServer): SocketServer {
       };
 
       await connectDB();
-      const user = await User.findById(payload.userId)
-        .select("name avatar role isGuest isActive guestExpiresAt guestMessageCount")
-        .lean();
+      const user = await User.findById(payload.userId).select("name avatar role isActive").lean();
 
       if (!user) return next(new Error("User not found"));
       if (!user.isActive) return next(new Error("Account suspended"));
 
-      if (user.isGuest && user.guestExpiresAt && new Date() > user.guestExpiresAt) {
-        return next(new Error("Guest session expired"));
-      }
-
       const s = socket as AuthenticatedSocket;
       s.userId = String(user._id);
       s.role = user.role;
-      s.isGuest = user.isGuest ?? false;
       s.name = user.name;
       s.avatar = user.avatar ?? null;
 
@@ -116,20 +107,17 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     socket.join(`user:${socket.userId}`);
 
     // -------------------------------------------------------
-    // PRESENCE — flip real (non-guest) users online. Guests are excluded
-    // from the members list entirely, so their presence isn't tracked.
+    // PRESENCE — flip user online
     // -------------------------------------------------------
-    if (!socket.isGuest) {
-      User.updateOne({ _id: socket.userId }, { $set: { isOnline: true } })
-        .then(() => {
-          io.to("presence:room").emit("presence:update", {
-            userId: socket.userId,
-            isOnline: true,
-            lastSeenAt: null,
-          });
-        })
-        .catch((err) => console.error("[socket] Failed to mark user online:", err));
-    }
+    User.updateOne({ _id: socket.userId }, { $set: { isOnline: true } })
+      .then(() => {
+        io.to("presence:room").emit("presence:update", {
+          userId: socket.userId,
+          isOnline: true,
+          lastSeenAt: null,
+        });
+      })
+      .catch((err) => console.error("[socket] Failed to mark user online:", err));
 
     // -------------------------------------------------------
     // PUBLIC ROOM — join/leave
@@ -153,43 +141,26 @@ export function initSocket(httpServer: HttpServer): SocketServer {
         const content = data.content.replace(/<[^>]*>/g, "").trim();
         if (!content || content.length > 500) return;
 
-        if (socket.isGuest) {
-          const user = await User.findById(socket.userId).select("guestMessageCount").lean();
-
-          if (!user || user.guestMessageCount >= GUEST_MESSAGE_LIMIT) {
-            socket.emit("room:limit_reached", {
-              message: `You've reached the ${GUEST_MESSAGE_LIMIT} message limit. Sign up to keep chatting!`,
-              code: "GUEST_LIMIT_REACHED",
-            });
-            return;
-          }
-
-          await User.updateOne({ _id: socket.userId }, { $inc: { guestMessageCount: 1 } });
-        }
-
         const message = await RoomMessage.create({
           sender: socket.userId,
           content,
-          isGuest: socket.isGuest,
         });
 
         io.to("room:global").emit("room:message", {
           _id: message._id,
           content: message.content,
-          isGuest: message.isGuest,
           createdAt: message.createdAt,
           sender: {
             _id: socket.userId,
             name: socket.name,
             avatar: socket.avatar,
-            isGuest: socket.isGuest,
           },
         });
 
         // Fire-and-forget admin alert — internally throttled (see
         // maybeSendGlobalChatNotificationEmail), so this is safe to call on
         // every message without spamming the admin inbox.
-        maybeSendGlobalChatNotificationEmail(socket.name, socket.isGuest, content).catch((err) =>
+        maybeSendGlobalChatNotificationEmail(socket.name, content).catch((err) =>
           console.error("[socket room:message] Admin notification email failed:", err)
         );
       } catch (error) {
@@ -215,7 +186,6 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     // DMs — join conversation room
     // -------------------------------------------------------
     socket.on("dm:join", async (data: { conversationId: string }) => {
-      if (socket.isGuest) return;
       if (!/^[a-f\d]{24}$/i.test(data?.conversationId)) return;
 
       try {
@@ -280,11 +250,6 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     // DMs — send message
     // -------------------------------------------------------
     socket.on("dm:message", async (data: { conversationId: string; content: string }) => {
-      if (socket.isGuest) {
-        socket.emit("error", { message: "Guests cannot send direct messages." });
-        return;
-      }
-
       if (!/^[a-f\d]{24}$/i.test(data?.conversationId)) return;
 
       const content = data?.content?.replace(/<[^>]*>/g, "").trim();
@@ -414,7 +379,7 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     // Typing indicators
     // -------------------------------------------------------
     socket.on("typing:start", (data: { conversationId: string }) => {
-      if (socket.isGuest || !/^[a-f\d]{24}$/i.test(data?.conversationId)) return;
+      if (!/^[a-f\d]{24}$/i.test(data?.conversationId)) return;
       socket.to(`dm:${data.conversationId}`).emit("typing:start", {
         userId: socket.userId,
         name: socket.name,
@@ -422,7 +387,7 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     });
 
     socket.on("typing:stop", (data: { conversationId: string }) => {
-      if (socket.isGuest || !/^[a-f\d]{24}$/i.test(data?.conversationId)) return;
+      if (!/^[a-f\d]{24}$/i.test(data?.conversationId)) return;
       socket.to(`dm:${data.conversationId}`).emit("typing:stop", {
         userId: socket.userId,
       });
@@ -442,11 +407,11 @@ export function initSocket(httpServer: HttpServer): SocketServer {
         const wasLastSocket = remaining <= 1;
 
         const update: Record<string, unknown> = { lastSeenAt: new Date() };
-        if (!socket.isGuest && wasLastSocket) update.isOnline = false;
+        if (wasLastSocket) update.isOnline = false;
 
         await User.updateOne({ _id: socket.userId }, update);
 
-        if (!socket.isGuest && wasLastSocket) {
+        if (wasLastSocket) {
           io.to("presence:room").emit("presence:update", {
             userId: socket.userId,
             isOnline: false,

@@ -94,7 +94,6 @@ export async function POST(req: NextRequest) {
           email: user.email,
           avatar: user.avatar,
           role: user.role,
-          isGuest: user.isGuest,
           isVerified: user.isVerified,
         },
       },

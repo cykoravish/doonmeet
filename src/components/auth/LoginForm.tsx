@@ -9,7 +9,6 @@ import Input from "@/components/ui/Input";
 import Alert from "@/components/ui/Alert";
 import Divider from "@/components/ui/Divider";
 import GoogleButton from "./GoogleButton";
-import GuestLoginButton from "./GuestLoginButton";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -129,9 +128,6 @@ export default function LoginForm() {
           Log in
         </Button>
       </form>
-
-      <Divider label="or" />
-      <GuestLoginButton />
 
       <p className="text-center text-sm" style={{ color: "rgb(var(--muted))" }}>
         Don&apos;t have an account?{" "}

@@ -189,23 +189,16 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
                         {user.email && (
                           <p className="truncate text-xs text-muted">{user.email}</p>
                         )}
-                        {user.isGuest && (
-                          <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">
-                            Guest
-                          </span>
-                        )}
                       </div>
                     </div>
 
-                    {!user.isGuest && (
-                      <Link
-                        href="/profile"
-                        onClick={() => setOpen(false)}
-                        className="mt-3 block w-full rounded-xl bg-primary py-2 text-center text-xs font-semibold text-white"
-                      >
-                        View Profile
-                      </Link>
-                    )}
+                    <Link
+                      href="/profile"
+                      onClick={() => setOpen(false)}
+                      className="mt-3 block w-full rounded-xl bg-primary py-2 text-center text-xs font-semibold text-white"
+                    >
+                      View Profile
+                    </Link>
                   </div>
                 ) : (
                   <div className="mx-4 mt-4 space-y-2">
@@ -232,7 +225,7 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
                     Account
                   </p>
                   <div className="space-y-1">
-                    {user && !user.isGuest && (
+                    {user && (
                       <>
                         <DrawerLink
                           href="/profile"

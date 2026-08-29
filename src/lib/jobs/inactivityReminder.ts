@@ -25,7 +25,6 @@ export async function runInactivityReminderJob(): Promise<void> {
     const cooldownCutoff = new Date(now - RESEND_COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
 
     const candidates = await User.find({
-      isGuest: false,
       isActive: true,
       isVerified: true,
       email: { $ne: null },

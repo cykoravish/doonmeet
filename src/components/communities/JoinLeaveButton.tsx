@@ -8,7 +8,6 @@ interface JoinLeaveButtonProps {
   slug: string;
   isMember: boolean;
   isLoggedIn: boolean;
-  isGuest: boolean;
   color: string;
 }
 
@@ -16,7 +15,6 @@ export default function JoinLeaveButton({
   slug,
   isMember: initialIsMember,
   isLoggedIn,
-  isGuest,
   color,
 }: JoinLeaveButtonProps) {
   const router = useRouter();
@@ -31,18 +29,6 @@ export default function JoinLeaveButton({
         style={{ backgroundColor: color }}
       >
         Log in to join
-      </a>
-    );
-  }
-
-  if (isGuest) {
-    return (
-      
-       <a href="/signup"
-        className="block w-full rounded-xl py-2.5 text-center text-sm font-semibold text-white transition-opacity hover:opacity-90"
-        style={{ backgroundColor: color }}
-      >
-        Sign up to join
       </a>
     );
   }

@@ -4,7 +4,6 @@ export interface IRoomMessage extends Document {
   sender: mongoose.Types.ObjectId;
   content: string;
   type: "text";
-  isGuest: boolean;
 }
 
 const RoomMessageSchema = new Schema<IRoomMessage>(
@@ -17,7 +16,6 @@ const RoomMessageSchema = new Schema<IRoomMessage>(
       maxlength: [500, "Message cannot exceed 500 characters"],
     },
     type: { type: String, enum: ["text"], default: "text" },
-    isGuest: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

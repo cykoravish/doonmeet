@@ -1,23 +1,19 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { Send, Loader2, Wifi, WifiOff, Sparkles } from "lucide-react";
 import ChatMessage from "./ChatMessage";
-import GuestLimitBanner from "./GuestLimitBanner";
 import JoinChatModal from "./JoinChatModal";
 
 interface Message {
   _id: string;
   content: string;
-  isGuest: boolean;
   createdAt: string;
   sender: {
     _id: string;
     name: string;
     avatar: string | null;
-    isGuest: boolean;
   };
 }
 
@@ -25,8 +21,6 @@ interface CurrentUser {
   _id: string;
   name: string;
   avatar: string | null;
-  isGuest: boolean;
-  guestMessageCount: number;
 }
 
 interface ChatRoomProps {
@@ -35,8 +29,6 @@ interface ChatRoomProps {
   // tab) but presence updates still need this room's live socket.
   onSocketChange?: (socket: Socket | null) => void;
 }
-
-const GUEST_LIMIT = 20;
 
 function isSameDay(a: Date, b: Date) {
   return (
@@ -63,17 +55,12 @@ function getDateLabel(dateStr: string) {
 }
 
 export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps) {
-  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
   const [showJoinModal, setShowJoinModal] = useState(false);
-  const [guestCount, setGuestCount] = useState(currentUser?.guestMessageCount ?? 0);
-  const [limitReached, setLimitReached] = useState(
-    (currentUser?.guestMessageCount ?? 0) >= GUEST_LIMIT
-  );
 
   const socketRef = useRef<Socket | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -126,10 +113,6 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
       setMessages((prev) => [...prev, message]);
     });
 
-    socket.on("room:limit_reached", () => {
-      setLimitReached(true);
-    });
-
     socket.on("room:online_count", (count: number) => {
       setOnlineCount(count);
     });
@@ -152,29 +135,13 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
       return;
     }
 
-    if (!socketRef.current || limitReached) return;
+    if (!socketRef.current) return;
 
     socketRef.current.emit("room:message", { content: content.trim() });
     setContent("");
 
-    if (currentUser?.isGuest) {
-      const newCount = guestCount + 1;
-      setGuestCount(newCount);
-      if (newCount >= GUEST_LIMIT) setLimitReached(true);
-    }
-
     inputRef.current?.focus();
   }
-
-  // Called after a successful guest sign-up from the modal —
-  // refresh server-fetched currentUser, then the socket effect
-  // below will connect and the pending message stays in the input.
-  function handleGuestJoined() {
-    setShowJoinModal(false);
-    router.refresh();
-  }
-
-  const remaining = GUEST_LIMIT - guestCount;
 
   return (
     <div className="flex h-full flex-col">
@@ -254,7 +221,6 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
                   senderId={msg.sender._id}
                   senderName={msg.sender.name}
                   senderAvatar={msg.sender.avatar}
-                  isGuest={msg.sender.isGuest}
                   isOwn={msg.sender._id === currentUser?._id}
                   createdAt={msg.createdAt}
                   showName={showDivider || messages[i - 1]?.sender._id !== msg.sender._id}
@@ -283,9 +249,6 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
           borderColor: "rgb(var(--border))",
         }}
       >
-        {/* Guest limit banner */}
-        {currentUser?.isGuest && <GuestLimitBanner remaining={remaining} reached={limitReached} />}
-
         {/* Not logged in — subtle pill hint instead of a plain sentence */}
         {!currentUser && (
           <div className="flex justify-center">
@@ -297,7 +260,7 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
               }}
             >
               <Sparkles size={11} />
-              Join to send your first message
+              Log in to send your first message
             </div>
           </div>
         )}
@@ -308,14 +271,7 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
             ref={inputRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder={
-              limitReached
-                ? "Message limit reached — sign up to continue"
-                : currentUser?.isGuest
-                  ? `Say something to Dehradun... (${remaining} left)`
-                  : "Say something to Dehradun..."
-            }
-            disabled={limitReached}
+            placeholder="Say something to Dehradun..."
             maxLength={500}
             className="flex-1 rounded-xl border px-4 py-3 text-sm outline-none transition-all disabled:opacity-50"
             style={{
@@ -326,7 +282,7 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
           />
           <button
             type="submit"
-            disabled={limitReached || !content.trim()}
+            disabled={!content.trim()}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-opacity disabled:opacity-40 hover:opacity-85"
             style={{ backgroundColor: "rgb(var(--primary))" }}
           >
@@ -336,11 +292,7 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
       </div>
 
       {showJoinModal && (
-        <JoinChatModal
-          pendingMessage={content}
-          onClose={() => setShowJoinModal(false)}
-          onGuestSuccess={handleGuestJoined}
-        />
+        <JoinChatModal pendingMessage={content} onClose={() => setShowJoinModal(false)} />
       )}
     </div>
   );

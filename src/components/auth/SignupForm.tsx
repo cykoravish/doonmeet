@@ -8,7 +8,6 @@ import Input from "@/components/ui/Input";
 import Alert from "@/components/ui/Alert";
 import Divider from "@/components/ui/Divider";
 import GoogleButton from "./GoogleButton";
-import GuestLoginButton from "./GuestLoginButton";
 import Link from "next/link";
 
 export default function SignupForm() {
@@ -129,9 +128,6 @@ export default function SignupForm() {
           Create account
         </Button>
       </form>
-
-      <Divider label="or" />
-      <GuestLoginButton />
 
       <p className="text-center text-sm" style={{ color: "rgb(var(--muted))" }}>
         Already have an account?{" "}

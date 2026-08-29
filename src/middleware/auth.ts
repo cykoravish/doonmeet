@@ -79,8 +79,8 @@ export function withAuth(handler: RouteHandler) {
         );
       }
 
-      // 5. Block unverified users (except guests — they skip email verification)
-      if (!user.isVerified && !user.isGuest) {
+      // 5. Block unverified users
+      if (!user.isVerified) {
         return NextResponse.json(
           {
             success: false,
@@ -91,19 +91,7 @@ export function withAuth(handler: RouteHandler) {
         );
       }
 
-      // 6. Block expired guest sessions
-      if (user.isGuest && user.guestExpiresAt && new Date() > user.guestExpiresAt) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: "Your guest session has expired. Please sign up to continue.",
-            code: "GUEST_EXPIRED",
-          },
-          { status: 403 }
-        );
-      }
-
-      // 7. Attach user to request and proceed
+      // 6. Attach user to request and proceed
       (req as AuthenticatedRequest).user = user;
       return handler(
         req as AuthenticatedRequest,
@@ -166,17 +154,10 @@ export function withGuestAllowed(handler: RouteHandler) {
 }
 
 // -------------------------
-// requireVerified — extra guard for sensitive actions
-// Use on top of withAuth for things like event creation
+// requireVerified — guards sensitive actions (event creation, posting,
+// commenting, etc.). withAuth already blocks unverified users, so this is
+// currently just a semantic alias kept for readability at call sites.
 // -------------------------
 export function requireVerified(handler: RouteHandler) {
-  return withAuth(async (req: AuthenticatedRequest, context) => {
-    if (req.user.isGuest) {
-      return NextResponse.json(
-        { success: false, message: "Guests cannot perform this action. Please sign up." },
-        { status: 403 }
-      );
-    }
-    return handler(req, context);
-  });
+  return withAuth(handler);
 }

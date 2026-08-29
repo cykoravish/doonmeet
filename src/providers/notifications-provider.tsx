@@ -23,7 +23,7 @@ interface NotificationsContextValue {
 
 const NotificationsContext = createContext<NotificationsContextValue | null>(null);
 
-// userId is null for guests/logged-out visitors — no socket connection is
+// userId is null for logged-out visitors — no socket connection is
 // opened and unreadCount just stays 0. Passing a single userId in from
 // Navbar (rather than each consumer deciding independently) means the bell
 // and the mobile drawer always agree on who they're fetching for.

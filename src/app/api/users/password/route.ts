@@ -14,13 +14,6 @@ export const PATCH = withAuth(async (req: AuthenticatedRequest) => {
   const limited = authLimiter(req, String(req.user._id));
   if (limited) return limited;
 
-  if (req.user.isGuest) {
-    return NextResponse.json(
-      { success: false, message: "Guests cannot set a password. Please sign up." },
-      { status: 403 }
-    );
-  }
-
   try {
     await connectDB();
 

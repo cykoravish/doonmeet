@@ -25,7 +25,6 @@ interface PostsFeedProps {
   initialPosts: PostItem[];
   initialNextCursor: string | null;
   isLoggedIn: boolean;
-  isGuest: boolean;
   authorFilter?: string;
   currentUser: { _id: string; name: string; avatar: string | null } | null;
 }
@@ -34,7 +33,6 @@ export default function PostsFeed({
   initialPosts,
   initialNextCursor,
   isLoggedIn,
-  isGuest,
   authorFilter,
   currentUser,
 }: PostsFeedProps) {
@@ -99,7 +97,7 @@ export default function PostsFeed({
     return () => observer.disconnect();
   }, [nextCursor, loadMore]);
 
-  const showComposer = isLoggedIn && currentUser && !isGuest && !authorFilter;
+  const showComposer = isLoggedIn && currentUser && !authorFilter;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
@@ -111,11 +109,7 @@ export default function PostsFeed({
             className="rounded-2xl p-5 text-center"
             style={{ backgroundColor: "rgb(var(--primary) / 0.05)" }}
           >
-            <p className="text-sm font-medium">
-              {isGuest
-                ? "Sign up to share your own posts with the community."
-                : "Log in to share a post with the community."}
-            </p>
+            <p className="text-sm font-medium">Log in to share a post with the community.</p>
           </div>
         )
       )}

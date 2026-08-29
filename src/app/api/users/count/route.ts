@@ -1,6 +1,6 @@
-// GET /api/users/count — total real (non-guest, active) member count,
-// excluding the viewer themselves — matches GET /api/users' "other
-// people" list so the "N Dehradunis" badge and the members panel agree.
+// GET /api/users/count — total active member count, excluding the viewer
+// themselves — matches GET /api/users' "other people" list so the "N
+// Dehradunis" badge and the members panel agree.
 // Kept as its own tiny endpoint rather than folded into GET /api/users so
 // the paginated members list doesn't pay for a countDocuments() on every
 // page/search request — this is called once per chat session instead.
@@ -18,7 +18,7 @@ export const GET = withGuestAllowed(async (req: AuthenticatedRequest) => {
   try {
     await connectDB();
 
-    const query: Record<string, unknown> = { isGuest: false, isActive: true };
+    const query: Record<string, unknown> = { isActive: true };
 
     // Exclude the viewer themselves, same as GET /api/users — this count
     // powers the "N Dehradunis" badge that should match the members list
