@@ -14,11 +14,11 @@ export async function getPublicUser(userId: string) {
 
     const user = await User.findById(userId)
       .select(
-        "name avatar bannerImage bio gender address interests occupation website dob lookingFor privacy role isActive createdAt lastSeenAt"
+        "name avatar bannerImage bio gender address interests occupation website dob lookingFor privacy role isActive isDeleted createdAt lastSeenAt"
       )
       .lean();
 
-    if (!user || !user.isActive) return null;
+    if (!user || !user.isActive || user.isDeleted) return null;
 
     const [communitiesCount, eventsCount, reviewsCount] = await Promise.all([
       CommunityMember.countDocuments({ user: userId }),

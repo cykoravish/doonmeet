@@ -22,6 +22,7 @@ export const GET = withGuestAllowed(async (req: AuthenticatedRequest) => {
 
     const query: Record<string, unknown> = {
       isActive: true,
+      isDeleted: false,
     };
 
     // Never show the viewer themselves in "meet other people" list
