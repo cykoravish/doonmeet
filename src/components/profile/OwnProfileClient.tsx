@@ -274,6 +274,7 @@ function ChangePasswordForm({
   hasPassword: boolean;
   onPasswordSet: () => void;
 }) {
+  const router = useRouter();
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -341,6 +342,10 @@ function ChangePasswordForm({
       // hasPassword flag so this form immediately switches to "change
       // password" mode instead of still claiming Google-only until a refresh.
       if (!hasPassword) onPasswordSet();
+
+      // Re-sync server-derived state (getSessionUser) in the background so
+      // hasPassword never drifts from the real DB value on this page.
+      router.refresh();
     } catch {
       setError("Network error. Please try again.");
     } finally {

@@ -105,8 +105,13 @@ export const DELETE = withAuth(async (req: AuthenticatedRequest) => {
   try {
     await connectDB();
 
+    // NOTE: no "+" prefix — see identical note in PATCH /api/users/password.
+    // Mixing "+passwordHash" with plain field names here made passwordHash
+    // always come back undefined, so every user (even ones with a real
+    // password) was forced through the "type DELETE to confirm" branch
+    // instead of being asked for their actual password.
     const user = await User.findById(req.user._id).select(
-      "+passwordHash googleId avatarPublicId bannerPublicId isDeleted"
+      "passwordHash googleId avatarPublicId bannerPublicId isDeleted"
     );
 
     if (!user) {
