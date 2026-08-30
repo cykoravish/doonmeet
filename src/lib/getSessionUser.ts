@@ -18,13 +18,18 @@ export async function getSessionUser() {
 
     const user = await User.findById(payload.userId as string)
       .select(
-        "-passwordHash -googleId -verificationOtp -verificationOtpExpires -verificationOtpAttempts -resetPasswordToken -resetPasswordExpires -__v"
+        "-googleId -verificationOtp -verificationOtpExpires -verificationOtpAttempts -resetPasswordToken -resetPasswordExpires -__v"
       )
       .lean();
 
     if (!user || !user.isActive) return null;
 
-    return JSON.parse(JSON.stringify(user));
+    // Strip the hash itself, but expose whether one exists — the profile
+    // page's Security tab needs this to know whether to show "change
+    // password" or "set a password for the first time".
+    const { passwordHash, ...safeUser } = user as typeof user & { passwordHash?: string | null };
+
+    return JSON.parse(JSON.stringify({ ...safeUser, hasPassword: !!passwordHash }));
   } catch {
     return null;
   }

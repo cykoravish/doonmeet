@@ -356,7 +356,7 @@ function ChangePasswordForm({
       {!hasPassword && (
         <Alert
           type="info"
-          message="You signed up with Google — set a password here to also enable email login."
+          message="No password set on your account yet — set one here to also enable email + password login."
         />
       )}
 
