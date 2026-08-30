@@ -17,7 +17,14 @@ export const PATCH = withAuth(async (req: AuthenticatedRequest) => {
   try {
     await connectDB();
 
-    const user = await User.findById(req.user._id).select("+passwordHash googleId");
+    // NOTE: no "+" prefix here — neither field has `select: false` on the
+    // schema, so "+" is unnecessary. Mixing "+field" with a plain field name
+    // (e.g. "+passwordHash googleId") triggers a Mongoose quirk where the
+    // "+"-prefixed key never resolves back to its real field name, so it's
+    // sent to MongoDB as a literal (non-existent) "+passwordHash" field —
+    // meaning passwordHash always comes back undefined, regardless of the
+    // real value in the DB. Keep this select as plain field names only.
+    const user = await User.findById(req.user._id).select("passwordHash googleId");
     if (!user) {
       return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
     }
