@@ -8,7 +8,7 @@ import { setAuthCookies } from "@/lib/tokens";
 
 const ACCESS_TOKEN_SECRET = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET);
 
-// Routes that require a logged in verified user (not guest)
+// Routes that require a logged in verified user
 const PROTECTED_ROUTES = ["/profile", "/settings", "/events/create"];
 
 // Routes only for unauthenticated users
@@ -21,7 +21,6 @@ export async function proxy(req: NextRequest) {
   const refreshToken = req.cookies.get("refresh_token")?.value;
 
   let isAuthenticated = false;
-  let isGuest = false;
   let refreshedTokens: { accessToken: string; refreshToken: string } | null = null;
 
   // Access token missing/expired but a refresh token exists — silently rotate
@@ -42,9 +41,8 @@ export async function proxy(req: NextRequest) {
 
   if (accessToken) {
     try {
-      const { payload } = await jwtVerify(accessToken, ACCESS_TOKEN_SECRET);
+      await jwtVerify(accessToken, ACCESS_TOKEN_SECRET);
       isAuthenticated = true;
-      isGuest = payload.role === "guest";
     } catch {
       isAuthenticated = false;
     }
@@ -52,7 +50,7 @@ export async function proxy(req: NextRequest) {
 
   // Redirect logged in users away from auth pages
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
-  if (isAuthRoute && isAuthenticated && !isGuest) {
+  if (isAuthRoute && isAuthenticated) {
     const response = NextResponse.redirect(new URL("/", req.url));
     if (refreshedTokens) {
       setAuthCookies(
@@ -67,7 +65,7 @@ export async function proxy(req: NextRequest) {
   // Protect routes that require a verified logged in user
   const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
 
-  if (isProtectedRoute && (!isAuthenticated || isGuest)) {
+  if (isProtectedRoute && !isAuthenticated) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("redirect", pathname);
     const response = NextResponse.redirect(loginUrl);

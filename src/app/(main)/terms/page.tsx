@@ -20,16 +20,15 @@ const TOC = [
   { id: "content", number: "06", label: "Your content" },
   { id: "events", number: "07", label: "Events & meetups" },
   { id: "location-safety", number: "08", label: "Location & safety" },
-  { id: "guest-accounts", number: "09", label: "Guest accounts" },
-  { id: "paid-features", number: "10", label: "Paid features (upcoming)" },
-  { id: "ip", number: "11", label: "Intellectual property" },
-  { id: "termination", number: "12", label: "Suspension & termination" },
-  { id: "disclaimers", number: "13", label: "Disclaimers" },
-  { id: "liability", number: "14", label: "Limitation of liability" },
-  { id: "indemnity", number: "15", label: "Indemnification" },
-  { id: "governing-law", number: "16", label: "Governing law" },
-  { id: "changes", number: "17", label: "Changes to these terms" },
-  { id: "contact", number: "18", label: "Contact us" },
+  { id: "paid-features", number: "09", label: "Paid features (upcoming)" },
+  { id: "ip", number: "10", label: "Intellectual property" },
+  { id: "termination", number: "11", label: "Suspension & termination" },
+  { id: "disclaimers", number: "12", label: "Disclaimers" },
+  { id: "liability", number: "13", label: "Limitation of liability" },
+  { id: "indemnity", number: "14", label: "Indemnification" },
+  { id: "governing-law", number: "15", label: "Governing law" },
+  { id: "changes", number: "16", label: "Changes to these terms" },
+  { id: "contact", number: "17", label: "Contact us" },
 ];
 
 export default function TermsPage() {
@@ -45,7 +44,7 @@ export default function TermsPage() {
         <p>
           These Terms of Service (&quot;Terms&quot;) form a binding agreement between you and
           DoonMeet governing your access to and use of doonmeet.in and any related apps
-          (collectively, the &quot;Service&quot;). By creating an account, joining as a guest, or
+          (collectively, the &quot;Service&quot;). By creating an account or
           otherwise using the Service, you agree to these Terms and to our{" "}
           <a href="/privacy" className="font-semibold underline" style={{ color: "rgb(var(--primary))" }}>
             Privacy Policy
@@ -56,8 +55,7 @@ export default function TermsPage() {
 
       <LegalSection id="eligibility" number="02" title="Eligibility">
         <p>
-          You must be at least <strong>18 years old</strong> to use DoonMeet, whether as a
-          registered user or a guest. By using the Service you confirm that you meet this
+          You must be at least <strong>18 years old</strong> to use DoonMeet. By using the Service you confirm that you meet this
           requirement and that you have the legal capacity to enter into these Terms.
         </p>
       </LegalSection>
@@ -99,7 +97,7 @@ export default function TermsPage() {
             <>Impersonate any person or organisation, or misrepresent your affiliation with anyone.</>,
             <>Spam, flood, or send unsolicited commercial messages through chat, comments, or events.</>,
             <>Scrape, reverse engineer, or use automated tools to access the Service beyond normal use.</>,
-            <>Circumvent guest message limits, rate limits, or account suspensions.</>,
+            <>Circumvent rate limits or account suspensions.</>,
             <>Upload malicious files, or attempt to interfere with the security or normal operation of the Service.</>,
             <>Use another user&apos;s check-in location or profile information to track, locate, or contact them outside the platform without consent.</>,
           ]}
@@ -160,22 +158,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection id="guest-accounts" number="09" title="Guest accounts">
-        <p>
-          Guest access lets you try DoonMeet&apos;s public chat without creating a full account.
-          Guest accounts:
-        </p>
-        <LegalList
-          items={[
-            <>Expire automatically 24 hours after creation.</>,
-            <>Are limited to 20 messages in the public chat.</>,
-            <>Cannot check in on the map, send direct messages, create events, or update a profile.</>,
-            <>May be removed, along with associated messages, once the session expires.</>,
-          ]}
-        />
-      </LegalSection>
-
-      <LegalSection id="paid-features" number="10" title="Paid features (upcoming)">
+      <LegalSection id="paid-features" number="09" title="Paid features (upcoming)">
         <p>
           DoonMeet is currently free. We plan to introduce paid features (such as premium account
           capabilities or paid event tools) in the future. Once available, pricing, billing terms,
@@ -188,7 +171,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection id="ip" number="11" title="Intellectual property">
+      <LegalSection id="ip" number="10" title="Intellectual property">
         <p>
           The DoonMeet name, logo, and the design, code, and branding of the Service belong to
           DoonMeet and are protected by applicable intellectual property laws. You may not copy,
@@ -197,7 +180,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection id="termination" number="12" title="Suspension & termination">
+      <LegalSection id="termination" number="11" title="Suspension & termination">
         <p>
           We may suspend or terminate your access to DoonMeet, at our discretion, if you violate
           these Terms, misuse the Service, or if we&apos;re required to do so by law. You may stop
@@ -207,7 +190,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection id="disclaimers" number="13" title="Disclaimers">
+      <LegalSection id="disclaimers" number="12" title="Disclaimers">
         <p>
           DoonMeet is provided &quot;as is&quot; and &quot;as available,&quot; without warranties
           of any kind, whether express or implied, including warranties of merchantability,
@@ -217,7 +200,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection id="liability" number="14" title="Limitation of liability">
+      <LegalSection id="liability" number="13" title="Limitation of liability">
         <p>
           To the maximum extent permitted by law, DoonMeet and its creator will not be liable for
           any indirect, incidental, special, consequential, or punitive damages, or any loss of
@@ -228,7 +211,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection id="indemnity" number="15" title="Indemnification">
+      <LegalSection id="indemnity" number="14" title="Indemnification">
         <p>
           You agree to indemnify and hold harmless DoonMeet and its creator from any claims,
           damages, losses, or expenses (including reasonable legal fees) arising from your use of
@@ -236,7 +219,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection id="governing-law" number="16" title="Governing law & disputes">
+      <LegalSection id="governing-law" number="15" title="Governing law & disputes">
         <p>
           These Terms are governed by the laws of India. Any dispute arising out of or relating to
           these Terms or the Service will be subject to the exclusive jurisdiction of the courts
@@ -244,7 +227,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection id="changes" number="17" title="Changes to these terms">
+      <LegalSection id="changes" number="16" title="Changes to these terms">
         <p>
           We may update these Terms from time to time, particularly as we introduce new features
           like paid plans. We&apos;ll update the &quot;Last updated&quot; date above, and continued
@@ -252,7 +235,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection id="contact" number="18" title="Contact us">
+      <LegalSection id="contact" number="17" title="Contact us">
         <p>Questions about these Terms? Reach out any time.</p>
       </LegalSection>
 

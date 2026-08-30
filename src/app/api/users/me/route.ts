@@ -44,14 +44,6 @@ export const PATCH = withAuth(async (req: AuthenticatedRequest) => {
   const limited = generalLimiter(req, String(req.user._id));
   if (limited) return limited;
 
-  // Guests cannot update profile
-  if (req.user.isGuest) {
-    return NextResponse.json(
-      { success: false, message: "Guests cannot update profile. Please sign up." },
-      { status: 403 }
-    );
-  }
-
   const result = await validateBody(req, updateProfileSchema);
   if (result instanceof NextResponse) return result;
 

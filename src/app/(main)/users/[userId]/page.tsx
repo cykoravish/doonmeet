@@ -113,7 +113,6 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
             <ProfileAction
               isOwnProfile={isOwnProfile}
               currentUserId={currentUserId}
-              isGuest={!!currentUser?.isGuest}
               userId={userId}
               name={user.name}
             />
@@ -163,7 +162,6 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
           <ProfileAction
             isOwnProfile={isOwnProfile}
             currentUserId={currentUserId}
-            isGuest={!!currentUser?.isGuest}
             userId={userId}
             name={user.name}
             fullWidth
@@ -312,14 +310,12 @@ function InfoRow({
 function ProfileAction({
   isOwnProfile,
   currentUserId,
-  isGuest,
   userId,
   name,
   fullWidth,
 }: {
   isOwnProfile: boolean;
   currentUserId: string | null;
-  isGuest: boolean;
   userId: string;
   name: string;
   fullWidth?: boolean;
@@ -334,20 +330,6 @@ function ProfileAction({
       >
         <Pencil size={13} />
         Edit Profile
-      </Link>
-    );
-  }
-
-  // Signed-in guest accounts can't start DMs — the API would 403. Send them
-  // to sign up instead of showing a button that silently fails.
-  if (currentUserId && isGuest) {
-    return (
-      <Link
-        href="/signup"
-        className={`flex items-center gap-1.5 rounded-xl border border-dashed border-accent/60 px-4 py-2 text-xs font-semibold text-accent shadow-sm transition-all hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${widthClass}`}
-      >
-        <MessageCircle size={13} />
-        Sign up to message
       </Link>
     );
   }

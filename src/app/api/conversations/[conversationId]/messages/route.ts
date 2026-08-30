@@ -20,13 +20,6 @@ export const GET = withAuth(
     const limited = generalLimiter(req, String(req.user._id));
     if (limited) return limited;
 
-    if (req.user.isGuest) {
-      return NextResponse.json(
-        { success: false, message: "Guests cannot access direct messages." },
-        { status: 403 }
-      );
-    }
-
     const { conversationId } = await params;
 
     if (!/^[a-f\d]{24}$/i.test(conversationId)) {
@@ -145,13 +138,6 @@ export const POST = withAuth(
   async (req: AuthenticatedRequest, { params }: { params: Promise<Record<string, string>> }) => {
     const limited = dmLimiter(req, String(req.user._id));
     if (limited) return limited;
-
-    if (req.user.isGuest) {
-      return NextResponse.json(
-        { success: false, message: "Guests cannot send direct messages. Please sign up." },
-        { status: 403 }
-      );
-    }
 
     const { conversationId } = await params;
 

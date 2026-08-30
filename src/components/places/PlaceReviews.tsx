@@ -16,7 +16,6 @@ interface Review {
 interface CurrentUser {
   _id: string;
   name: string;
-  isGuest: boolean;
 }
 
 interface PlaceReviewsProps {
@@ -151,23 +150,6 @@ export default function PlaceReviews({
                 Sign up
               </a>
             </div>
-          </div>
-        ) : currentUser.isGuest ? (
-          <div
-            className="rounded-2xl p-5"
-            style={{ backgroundColor: "rgb(var(--primary) / 0.05)" }}
-          >
-            <p className="font-semibold">Guest accounts can&apos;t post reviews</p>
-            <p className="mt-1 text-sm" style={{ color: "rgb(var(--muted))" }}>
-              Sign up for a free account to share your experience.
-            </p>
-            
-             <a href="/signup"
-              className="mt-3 inline-block rounded-lg px-4 py-2 text-sm font-semibold text-white"
-              style={{ backgroundColor: "rgb(var(--primary))" }}
-            >
-              Sign up
-            </a>
           </div>
         ) : (
           <form

@@ -13,8 +13,6 @@ interface CurrentUser {
   _id: string;
   name: string;
   avatar: string | null;
-  isGuest: boolean;
-  guestMessageCount: number;
 }
 
 interface ChatTabsProps {
@@ -75,7 +73,7 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
     router.replace(pathname, { scroll: false });
   }
 
-  const canUseMessages = !!currentUser && !currentUser.isGuest;
+  const canUseMessages = !!currentUser;
 
   return (
     // Fills the <main> the chat layout gives it exactly (100% — that main
@@ -151,9 +149,7 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
               <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
                 <Lock size={22} className="text-primary" />
               </div>
-              <p className="font-bold">
-                {currentUser?.isGuest ? "Guests can't send direct messages" : "Sign up to message people"}
-              </p>
+              <p className="font-bold">Sign up to message people</p>
               <p className="mt-1 max-w-xs text-sm text-muted">
                 Create a free account to start one-on-one conversations with people you meet on
                 DoonMeet.

@@ -20,14 +20,6 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-export const guestLoginSchema = z.object({
-  name: z
-    .string()
-    .min(2, "Name must be at least 2 characters")
-    .max(30, "Name cannot exceed 30 characters")
-    .regex(/^[a-zA-Z0-9\s]+$/, "Name can only contain letters, numbers and spaces"),
-});
-
 export const forgotPasswordSchema = z.object({
   email: z.string().email("Invalid email address").toLowerCase(),
 });
@@ -80,7 +72,6 @@ export const changePasswordSchema = z
 
 export type SignupInput = z.infer<typeof signupSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
-export type GuestLoginInput = z.infer<typeof guestLoginSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type SetPasswordInput = z.infer<typeof setPasswordSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

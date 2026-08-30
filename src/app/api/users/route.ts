@@ -1,5 +1,5 @@
-// GET /api/users — paginated list of real (non-guest) community members,
-// online users first. Powers the "All members" panel in public chat.
+// GET /api/users — paginated list of community members, online users
+// first. Powers the "All members" panel in public chat.
 // ============================================================
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
@@ -21,7 +21,6 @@ export const GET = withGuestAllowed(async (req: AuthenticatedRequest) => {
     await connectDB();
 
     const query: Record<string, unknown> = {
-      isGuest: false,
       isActive: true,
     };
 

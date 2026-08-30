@@ -256,7 +256,6 @@ export default function DMChatWindow({
                   senderId={msg.sender._id}
                   senderName={msg.sender.name}
                   senderAvatar={msg.sender.avatar}
-                  isGuest={false}
                   isOwn={msg.sender._id === currentUser._id}
                   createdAt={msg.createdAt}
                   showName={false}

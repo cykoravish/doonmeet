@@ -6,7 +6,6 @@ interface ChatMessageProps {
   senderId: string;
   senderName: string;
   senderAvatar: string | null;
-  isGuest: boolean;
   isOwn: boolean;
   createdAt: string;
   showAvatar: boolean;
@@ -19,7 +18,6 @@ export default function ChatMessage({
   senderId,
   senderName,
   senderAvatar,
-  isGuest,
   isOwn,
   createdAt,
   showAvatar,
@@ -39,7 +37,6 @@ export default function ChatMessage({
       {showAvatar ? (
         <ChatUserActions
           userId={senderId}
-          isGuest={isGuest}
           isOwn={isOwn}
           align={isOwn ? "right" : "left"}
           className="self-end shrink-0 rounded-full"
@@ -55,7 +52,7 @@ export default function ChatMessage({
           ) : (
             <div
               className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
-              style={{ backgroundColor: isGuest ? "rgb(var(--muted))" : "rgb(var(--primary))" }}
+              style={{ backgroundColor: "rgb(var(--primary))" }}
             >
               {senderName[0]?.toUpperCase()}
             </div>
@@ -67,12 +64,11 @@ export default function ChatMessage({
 
       {/* Bubble */}
       <div className={`max-w-[70%] ${isOwn ? "items-end" : "items-start"} flex flex-col gap-1`}>
-        {/* Name + badge */}
+        {/* Name */}
         {showName && (
           <div className="flex items-center gap-1.5">
             <ChatUserActions
               userId={senderId}
-              isGuest={isGuest}
               isOwn={isOwn}
               align={isOwn ? "right" : "left"}
               className="text-xs font-semibold"

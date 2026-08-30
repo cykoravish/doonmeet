@@ -3,23 +3,19 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { MessageCircle, UserRound } from "lucide-react";
-import { useToast } from "@/providers/toast-provider";
 
 interface ChatUserActionsProps {
   userId: string;
-  isGuest?: boolean;
   isOwn?: boolean;
   align?: "left" | "right";
   className?: string;
   children: ReactNode;
 }
 
-// Wraps a sender's avatar/name in the public chat. Real users get a small
-// menu (Message / View Profile) instead of jumping straight to the profile —
-// guests have no public profile, so they get a toast instead of a dead click.
+// Wraps a sender's avatar/name in the public chat with a small menu
+// (Message / View Profile).
 export default function ChatUserActions({
   userId,
-  isGuest,
   isOwn,
   align = "left",
   className,
@@ -28,7 +24,6 @@ export default function ChatUserActions({
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const { showToast } = useToast();
 
   useEffect(() => {
     if (!open) return;
@@ -51,10 +46,7 @@ export default function ChatUserActions({
   }, [open]);
 
   function handleTriggerClick() {
-    if (isGuest || !userId) {
-      showToast("Guests don't have a public profile yet — sign up to connect with them.", "info");
-      return;
-    }
+    if (!userId) return;
     setOpen((prev) => !prev);
   }
 
@@ -73,14 +65,14 @@ export default function ChatUserActions({
       <button
         type="button"
         onClick={handleTriggerClick}
-        aria-haspopup={!isGuest ? "menu" : undefined}
+        aria-haspopup="menu"
         aria-expanded={open}
         className={`border-0 bg-transparent p-0 text-left transition-opacity hover:opacity-70 ${className ?? ""}`}
       >
         {children}
       </button>
 
-      {open && !isGuest && (
+      {open && (
         <div
           role="menu"
           className={`absolute z-20 mt-1.5 w-40 overflow-hidden rounded-xl border shadow-lg ${

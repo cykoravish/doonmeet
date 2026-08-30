@@ -30,7 +30,6 @@ interface User {
   dob: string | null;
   lookingFor: string;
   role: string;
-  isGuest: boolean;
   privacy: {
     showEmail: boolean;
     showPhone: boolean;

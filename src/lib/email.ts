@@ -273,24 +273,23 @@ export async function sendInactivityReminderEmail(
   });
 }
 
-// Admin alert — fires when *anyone* (including guests) posts in the public
-// global chat room. Unlike the DM/comment emails above, this isn't gated on
-// the recipient being offline (the admin isn't a chat participant); it's
-// purely throttled — see maybeSendGlobalChatNotificationEmail.
+// Admin alert — fires when anyone posts in the public global chat room.
+// Unlike the DM/comment emails above, this isn't gated on the recipient
+// being offline (the admin isn't a chat participant); it's purely
+// throttled — see maybeSendGlobalChatNotificationEmail.
 async function sendGlobalChatNotificationEmail(
   senderName: string,
-  isGuest: boolean,
   preview: string
 ): Promise<void> {
   const link = `${APP_URL}/chat`;
   await sendAndLog({
     to: ADMIN_EMAIL,
     type: "global_chat_message",
-    subject: `New global chat message from ${senderName}${isGuest ? " (guest)" : ""}`,
+    subject: `New global chat message from ${senderName}`,
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:auto">
         <h2 style="color:#2d6a4f">New message in global chat 💬</h2>
-        <p><strong>${senderName}</strong>${isGuest ? " <span style=\"color:#c28c4a\">(guest)</span>" : ""} just posted:</p>
+        <p><strong>${senderName}</strong> just posted:</p>
         <p style="background:#f5f5f5;border-radius:8px;padding:12px 16px;color:#333;font-style:italic">
           "${preview}"
         </p>
@@ -310,7 +309,6 @@ async function sendGlobalChatNotificationEmail(
 // this is fire-and-forget from the socket handler.
 export async function maybeSendGlobalChatNotificationEmail(
   senderName: string,
-  isGuest: boolean,
   content: string
 ): Promise<void> {
   try {
@@ -319,7 +317,7 @@ export async function maybeSendGlobalChatNotificationEmail(
     lastGlobalChatEmailAt = now;
 
     const preview = content.length > 200 ? `${content.slice(0, 197)}...` : content;
-    await sendGlobalChatNotificationEmail(senderName, isGuest, preview);
+    await sendGlobalChatNotificationEmail(senderName, preview);
   } catch (err) {
     console.error("[email] maybeSendGlobalChatNotificationEmail failed:", err);
   }

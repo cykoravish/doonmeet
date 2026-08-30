@@ -106,7 +106,6 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
           initialPosts={posts}
           initialNextCursor={nextCursor}
           isLoggedIn={!!currentUser}
-          isGuest={!!currentUser?.isGuest}
           authorFilter={isValidAuthor ? author : undefined}
           currentUser={
             currentUser

@@ -37,7 +37,7 @@ export const GET = withGuestAllowed(
   }
 );
 
-// POST — create or update your own review (logged-in, verified users only — no guests)
+// POST — create or update your own review (logged-in, verified users only)
 export const POST = requireVerified(
   async (req: AuthenticatedRequest, { params }: { params: Promise<Record<string, string>> }) => {
     const limited = generalLimiter(req, String(req.user._id));

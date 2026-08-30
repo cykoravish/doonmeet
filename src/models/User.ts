@@ -7,9 +7,7 @@ export interface IUser extends Document {
   phone: string | null;
   passwordHash: string | null;
   googleId: string | null;
-  role: "user" | "guest";
-  isGuest: boolean;
-  guestExpiresAt: Date | null;
+  role: "user";
   avatar: string | null;
   avatarPublicId: string | null;
   bannerImage: string | null;
@@ -36,7 +34,6 @@ export interface IUser extends Document {
     showInterests: boolean;
     showDOB: boolean;
   };
-  guestMessageCount: number;
   verificationToken?: string;
   verificationExpires?: Date;
   resetPasswordToken?: string;
@@ -67,7 +64,7 @@ const UserSchema = new Schema<IUser>(
       lowercase: true,
       trim: true,
       unique: true,
-      sparse: true, // allows multiple nulls (guests) but unique non-null emails
+      sparse: true, // allows multiple nulls but unique non-null emails
     },
     phone: {
       type: String,
@@ -87,16 +84,8 @@ const UserSchema = new Schema<IUser>(
     // --- Role ---
     role: {
       type: String,
-      enum: ["user", "guest"],
+      enum: ["user"],
       default: "user",
-    },
-    isGuest: {
-      type: Boolean,
-      default: false,
-    },
-    guestExpiresAt: {
-      type: Date,
-      default: null, // set to Date.now + 24h on guest creation
     },
 
     // --- Profile ---
@@ -157,9 +146,6 @@ const UserSchema = new Schema<IUser>(
       showDOB: { type: Boolean, default: false },
     },
 
-    // --- Guest limits ---
-    guestMessageCount: { type: Number, default: 0 }, // public room messages sent
-
     verificationToken: { type: String, select: false, default: undefined },
     verificationExpires: { type: Date, select: false, default: undefined },
     resetPasswordToken: { type: String, select: false, default: undefined },
@@ -189,12 +175,11 @@ const UserSchema = new Schema<IUser>(
 // -------------------------
 // Indexes
 // -------------------------
-UserSchema.index({ isGuest: 1, guestExpiresAt: 1 }); // for guest cleanup
 UserSchema.index({ isActive: 1 });
 // Powers the "all members" list — online users first, then alphabetical.
-UserSchema.index({ isGuest: 1, isActive: 1, isOnline: -1, name: 1 });
+UserSchema.index({ isActive: 1, isOnline: -1, name: 1 });
 // Powers the inactivity-reminder cron's scan (see scripts/send-inactivity-emails.ts)
-UserSchema.index({ isGuest: 1, isActive: 1, isOnline: 1, lastSeenAt: 1 });
+UserSchema.index({ isActive: 1, isOnline: 1, lastSeenAt: 1 });
 
 // -------------------------
 // Instance method — compare password

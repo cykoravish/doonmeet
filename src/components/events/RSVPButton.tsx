@@ -9,7 +9,6 @@ interface RSVPButtonProps {
   isGoing: boolean;
   isFull: boolean;
   isLoggedIn: boolean;
-  isGuest: boolean;
 }
 
 export default function RSVPButton({
@@ -17,7 +16,6 @@ export default function RSVPButton({
   isGoing: initialIsGoing,
   isFull,
   isLoggedIn,
-  isGuest,
 }: RSVPButtonProps) {
   const router = useRouter();
   const [isGoing, setIsGoing] = useState(initialIsGoing);
@@ -31,18 +29,6 @@ export default function RSVPButton({
         style={{ backgroundColor: "rgb(var(--primary))" }}
       >
         Log in to RSVP
-      </a>
-    );
-  }
-
-  if (isGuest) {
-    return (
-      
-       <a href="/signup"
-        className="block w-full rounded-xl py-3 text-center text-sm font-semibold text-white transition-opacity hover:opacity-90"
-        style={{ backgroundColor: "rgb(var(--primary))" }}
-      >
-        Sign up to RSVP
       </a>
     );
   }

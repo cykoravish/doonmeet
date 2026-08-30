@@ -1,5 +1,5 @@
 // GET  — get comments for a post (guests + users)
-// POST — add a comment (logged in users only, not guests)
+// POST — add a comment (logged in users only)
 // ============================================================
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";

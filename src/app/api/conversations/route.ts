@@ -15,14 +15,6 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
   const limited = generalLimiter(req, String(req.user._id));
   if (limited) return limited;
 
-  // Guests cannot use DMs
-  if (req.user.isGuest) {
-    return NextResponse.json(
-      { success: false, message: "Guests cannot access direct messages. Please sign up." },
-      { status: 403 }
-    );
-  }
-
   try {
     await connectDB();
 
@@ -59,13 +51,6 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
   const limited = generalLimiter(req, String(req.user._id));
   if (limited) return limited;
 
-  if (req.user.isGuest) {
-    return NextResponse.json(
-      { success: false, message: "Guests cannot start conversations. Please sign up." },
-      { status: 403 }
-    );
-  }
-
   const result = await validateBody(req, createConversationSchema);
   if (result instanceof NextResponse) return result;
   const { recipientId } = result.data as { recipientId: string };
@@ -81,12 +66,12 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
   try {
     await connectDB();
 
-    // Check recipient exists and is not a guest
+    // Check recipient exists and is active
     const recipient = await User.findById(recipientId)
-      .select("_id name avatar isActive isGuest")
+      .select("_id name avatar isActive")
       .lean();
 
-    if (!recipient || !recipient.isActive || recipient.isGuest) {
+    if (!recipient || !recipient.isActive) {
       return NextResponse.json({ success: false, message: "User not found." }, { status: 404 });
     }
 

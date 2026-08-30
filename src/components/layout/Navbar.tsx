@@ -13,7 +13,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ user }: NavbarProps) {
-  const notifUserId = user && !user.isGuest ? user._id : null;
+  const notifUserId = user ? user._id : null;
 
   return (
     <NotificationsProvider userId={notifUserId}>
@@ -33,7 +33,7 @@ export default function Navbar({ user }: NavbarProps) {
 
             {user ? (
               <>
-                {!user.isGuest && <NotificationBell />}
+                <NotificationBell />
 
                 <Link
                   href="/profile"
@@ -53,7 +53,7 @@ export default function Navbar({ user }: NavbarProps) {
                     </div>
                   )}
                   <span className="text-sm font-medium max-w-[100px] truncate">
-                    {user.isGuest ? "Guest" : user.name.split(" ")[0]}
+                    {user.name.split(" ")[0]}
                   </span>
                 </Link>
               </>

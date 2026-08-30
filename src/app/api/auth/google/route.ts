@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
     await connectDB();
 
     let user = await User.findOne({ email: googlePayload.email }).select(
-      "_id name email avatar role isGuest isActive googleId isVerified"
+      "_id name email avatar role isActive googleId isVerified"
     );
 
     if (user) {
@@ -137,7 +137,6 @@ export async function POST(req: NextRequest) {
         googleId: googlePayload.sub,
         avatar: googlePayload.picture ?? null,
         isVerified: true,
-        isGuest: false,
         role: "user",
       });
     }
@@ -174,7 +173,6 @@ export async function POST(req: NextRequest) {
           email: user.email,
           avatar: user.avatar,
           role: user.role,
-          isGuest: user.isGuest,
         },
       },
       { status: 200 }

@@ -1,5 +1,5 @@
 // GET  — list posts (public feed, paginated, optionally filtered by author)
-// POST — create a new post, optional image upload (logged in users only, not guests)
+// POST — create a new post, optional image upload (logged in users only)
 // ============================================================
 import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
@@ -70,7 +70,7 @@ export const GET = withGuestAllowed(async (req: AuthenticatedRequest) => {
 });
 
 // POST /api/posts
-// requireVerified = withAuth + blocks guests
+// requireVerified = withAuth (verified, logged-in users only)
 export const POST = requireVerified(async (req: AuthenticatedRequest) => {
   const limited = postLimiter(req, String(req.user._id));
   if (limited) return limited;
