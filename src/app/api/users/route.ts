@@ -22,7 +22,10 @@ export const GET = withGuestAllowed(async (req: AuthenticatedRequest) => {
 
     const query: Record<string, unknown> = {
       isActive: true,
-      isDeleted: false,
+      // $ne (not "isDeleted: false") because plenty of accounts predate this
+      // field and simply don't have it stored — strict equality against
+      // `false` would wrongly exclude those real, non-deleted users too.
+      isDeleted: { $ne: true },
     };
 
     // Never show the viewer themselves in "meet other people" list
