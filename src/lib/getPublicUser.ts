@@ -14,11 +14,15 @@ export async function getPublicUser(userId: string) {
 
     const user = await User.findById(userId)
       .select(
-        "name avatar bannerImage bio gender address interests occupation website dob lookingFor privacy role isActive isDeleted createdAt lastSeenAt"
+        "name avatar bannerImage bio gender address interests occupation website dob lookingFor privacy role isActive isDeleted email passwordHash googleId createdAt lastSeenAt"
       )
       .lean();
 
-    if (!user || !user.isActive || user.isDeleted) return null;
+    // Two-layer deleted-account check — see GET /api/users for full
+    // reasoning on why both the isDeleted flag AND the anonymized
+    // fingerprint (email+passwordHash+googleId all null) are checked.
+    const isAnonymized = !user?.email && !user?.passwordHash && !user?.googleId;
+    if (!user || !user.isActive || user.isDeleted || isAnonymized) return null;
 
     const [communitiesCount, eventsCount, reviewsCount] = await Promise.all([
       CommunityMember.countDocuments({ user: userId }),
