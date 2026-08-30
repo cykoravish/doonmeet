@@ -70,6 +70,14 @@ export const changePasswordSchema = z
     path: ["newPassword"],
   });
 
+export const verifyOtpSchema = z.object({
+  email: z.string().email("Invalid email address").toLowerCase(),
+  otp: z
+    .string()
+    .length(4, "Enter the 4-digit code")
+    .regex(/^\d{4}$/, "OTP must be numeric"),
+});
+
 export const deleteAccountSchema = z.object({
   // Password for regular users. Google-only users (no password set) instead
   // type the literal word "DELETE" to confirm — see /api/users/me route.
@@ -81,4 +89,5 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type SetPasswordInput = z.infer<typeof setPasswordSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
 export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;

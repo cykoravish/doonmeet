@@ -18,7 +18,7 @@ export async function getSessionUser() {
 
     const user = await User.findById(payload.userId as string)
       .select(
-        "-passwordHash -googleId -verificationToken -verificationExpires -resetPasswordToken -resetPasswordExpires -__v"
+        "-passwordHash -googleId -verificationOtp -verificationOtpExpires -verificationOtpAttempts -resetPasswordToken -resetPasswordExpires -__v"
       )
       .lean();
 

@@ -19,6 +19,12 @@ export function generateSecureToken(): string {
   return crypto.randomBytes(32).toString("hex");
 }
 
+// 4-digit numeric OTP for email verification (e.g. "0482"). Uses
+// crypto.randomInt (rejection-sampled, unbiased) rather than Math.random.
+export function generateOtp(): string {
+  return crypto.randomInt(0, 10000).toString().padStart(4, "0");
+}
+
 export function setAuthCookies(
   response: Response,
   accessToken: string,

@@ -31,7 +31,7 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
 
     const user = await User.findById(req.user._id)
       .select(
-        "-googleId -verificationToken -verificationExpires -resetPasswordToken -resetPasswordExpires -__v"
+        "-googleId -verificationOtp -verificationOtpExpires -verificationOtpAttempts -resetPasswordToken -resetPasswordExpires -__v"
       )
       .lean();
 
@@ -69,7 +69,7 @@ export const PATCH = withAuth(async (req: AuthenticatedRequest) => {
         new: true, // return updated doc
         runValidators: true, // run schema validators on update
         select:
-          "-passwordHash -googleId -verificationToken -verificationExpires -resetPasswordToken -resetPasswordExpires -__v",
+          "-passwordHash -googleId -verificationOtp -verificationOtpExpires -verificationOtpAttempts -resetPasswordToken -resetPasswordExpires -__v",
       }
     ).lean();
 

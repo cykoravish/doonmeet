@@ -123,6 +123,16 @@ export const resendVerificationLimiter = rateLimit({
   max: 3,
 });
 
+// OTP verify attempts — a 4-digit OTP only has 10,000 combinations, so this
+// is deliberately tighter than authLimiter. Callers key it by email (see
+// verify-email route) so it throttles guesses against one account without
+// affecting other signups from the same IP (e.g. shared/college wifi).
+export const otpVerifyLimiter = rateLimit({
+  keyPrefix: "otp_verify",
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 8,
+});
+
 // Cleanup stale entries every 10 minutes to prevent memory leak
 setInterval(
   () => {

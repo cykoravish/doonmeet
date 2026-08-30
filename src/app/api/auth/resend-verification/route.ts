@@ -6,7 +6,7 @@ import { User } from "@/models/User";
 import { validateBody } from "@/middleware/validate";
 import { resendVerificationLimiter } from "@/middleware/rateLimit";
 import { forgotPasswordSchema } from "@/validations/auth"; // reuses { email } shape
-import { generateSecureToken } from "@/lib/tokens";
+import { generateOtp } from "@/lib/tokens";
 import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
@@ -24,20 +24,21 @@ export async function POST(req: NextRequest) {
 
     // Always return same message to prevent email enumeration
     const genericResponse = NextResponse.json(
-      { success: true, message: "If that email exists and is unverified, we've sent a new link." },
+      { success: true, message: "If that email exists and is unverified, we've sent a new code." },
       { status: 200 }
     );
 
     if (!user || user.isVerified || user.googleId) return genericResponse;
 
-    const verificationToken = generateSecureToken();
-    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const verificationOtp = generateOtp();
+    const verificationOtpExpires = new Date(Date.now() + 5 * 60 * 1000);
 
-    user.verificationToken = verificationToken;
-    user.verificationExpires = verificationExpires;
+    user.verificationOtp = verificationOtp;
+    user.verificationOtpExpires = verificationOtpExpires;
+    user.verificationOtpAttempts = 0;
     await user.save();
 
-    sendVerificationEmail(email, verificationToken).catch((err) =>
+    sendVerificationEmail(email, verificationOtp).catch((err) =>
       console.error("[resend-verification] Failed to send email:", err)
     );
 

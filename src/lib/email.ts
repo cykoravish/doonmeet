@@ -63,20 +63,18 @@ async function sendAndLog(params: {
   }
 }
 
-export async function sendVerificationEmail(email: string, token: string): Promise<void> {
-  const link = `${APP_URL}/verify-email?token=${token}`;
+export async function sendVerificationEmail(email: string, otp: string): Promise<void> {
   await sendAndLog({
     to: email,
     type: "verification",
-    subject: "Verify your DoonMeet account",
+    subject: `${otp} is your DoonMeet verification code`,
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:auto">
         <h2 style="color:#2d6a4f">Welcome to DoonMeet 👋</h2>
-        <p>Click the button below to verify your email address. This link expires in <strong>24 hours</strong>.</p>
-        <a href="${link}"
-          style="display:inline-block;background:#2d6a4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">
-          Verify Email
-        </a>
+        <p>Enter this code to verify your email address. It expires in <strong>5 minutes</strong>.</p>
+        <div style="display:inline-block;background:#f0f5f1;color:#2d6a4f;padding:16px 28px;border-radius:8px;font-size:32px;font-weight:700;letter-spacing:8px;margin:12px 0">
+          ${otp}
+        </div>
         <p style="color:#888;margin-top:24px;font-size:13px">If you didn't create an account, ignore this email.</p>
       </div>
     `,
@@ -277,10 +275,7 @@ export async function sendInactivityReminderEmail(
 // Unlike the DM/comment emails above, this isn't gated on the recipient
 // being offline (the admin isn't a chat participant); it's purely
 // throttled — see maybeSendGlobalChatNotificationEmail.
-async function sendGlobalChatNotificationEmail(
-  senderName: string,
-  preview: string
-): Promise<void> {
+async function sendGlobalChatNotificationEmail(senderName: string, preview: string): Promise<void> {
   const link = `${APP_URL}/chat`;
   await sendAndLog({
     to: ADMIN_EMAIL,
