@@ -120,13 +120,21 @@ export const DELETE = withAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    const isGoogleOnlyUser = user.googleId && !user.passwordHash;
+    // Mirrors the frontend's hasPassword flag (GET /api/users/me returns
+    // hasPassword: !!passwordHash) exactly, so the two never disagree on
+    // which confirmation UI/branch applies. Previously this also required
+    // googleId to be set, which meant an account with neither a password
+    // nor a linked Google id (e.g. legacy/seed data) would show the
+    // "type DELETE" field on the frontend but fall into the password
+    // branch here — and comparePassword() always returns false when
+    // passwordHash is null, so deletion could never succeed for them.
+    const hasNoPassword = !user.passwordHash;
 
-    if (isGoogleOnlyUser) {
+    if (hasNoPassword) {
       // No password on file — require the user to type DELETE to confirm.
       if (confirmation.trim().toUpperCase() !== "DELETE") {
         return NextResponse.json(
-          { success: false, message: 'Please type "DELETE" to confirm.' },
+          { success: false, message: 'Please type "DELETE" exactly to confirm.' },
           { status: 400 }
         );
       }
@@ -135,7 +143,7 @@ export const DELETE = withAuth(async (req: AuthenticatedRequest) => {
       const passwordMatch = await user.comparePassword(confirmation);
       if (!passwordMatch) {
         return NextResponse.json(
-          { success: false, message: "Incorrect password." },
+          { success: false, message: "Incorrect password. Please try again." },
           { status: 401 }
         );
       }
