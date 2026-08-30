@@ -20,12 +20,27 @@ export const GET = withGuestAllowed(async (req: AuthenticatedRequest) => {
   try {
     await connectDB();
 
+    // A user query, shared by every endpoint that lists/looks up "real"
+    // members. Two layers of defense against deleted accounts:
+    //
+    // 1. isDeleted: { $ne: true } — the flag set by the current delete
+    //    flow (DELETE /api/users/me). $ne (not "isDeleted: false") because
+    //    plenty of accounts predate this field and don't have it stored at
+    //    all — a strict equality match would wrongly exclude those real,
+    //    non-deleted users too.
+    //
+    // 2. The "anonymized fingerprint" — email, passwordHash AND googleId
+    //    all null at once. Some accounts were deleted/anonymized *before*
+    //    the isDeleted field existed on the schema, so flag (1) alone
+    //    misses them. But no real, active account can ever have all three
+    //    of these null simultaneously — signup requires email+password,
+    //    Google sign-in requires googleId — so this combination uniquely
+    //    identifies an anonymized account regardless of whether isDeleted
+    //    was ever set on it.
     const query: Record<string, unknown> = {
       isActive: true,
-      // $ne (not "isDeleted: false") because plenty of accounts predate this
-      // field and simply don't have it stored — strict equality against
-      // `false` would wrongly exclude those real, non-deleted users too.
       isDeleted: { $ne: true },
+      $or: [{ email: { $ne: null } }, { passwordHash: { $ne: null } }, { googleId: { $ne: null } }],
     };
 
     // Never show the viewer themselves in "meet other people" list

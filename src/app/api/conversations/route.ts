@@ -66,12 +66,14 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
   try {
     await connectDB();
 
-    // Check recipient exists, is active, and hasn't deleted their account
+    // Check recipient exists, is active, and hasn't deleted their account —
+    // two-layer check, see GET /api/users for full reasoning.
     const recipient = await User.findById(recipientId)
-      .select("_id name avatar isActive isDeleted")
+      .select("_id name avatar isActive isDeleted email passwordHash googleId")
       .lean();
 
-    if (!recipient || !recipient.isActive || recipient.isDeleted) {
+    const isAnonymized = !recipient?.email && !recipient?.passwordHash && !recipient?.googleId;
+    if (!recipient || !recipient.isActive || recipient.isDeleted || isAnonymized) {
       return NextResponse.json({ success: false, message: "User not found." }, { status: 404 });
     }
 

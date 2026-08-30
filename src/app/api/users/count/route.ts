@@ -18,7 +18,14 @@ export const GET = withGuestAllowed(async (req: AuthenticatedRequest) => {
   try {
     await connectDB();
 
-    const query: Record<string, unknown> = { isActive: true };
+    // Same two-layer filter as GET /api/users (isDeleted flag + anonymized
+    // fingerprint) — keeps this badge count consistent with what the
+    // members list panel actually shows. See that route for full reasoning.
+    const query: Record<string, unknown> = {
+      isActive: true,
+      isDeleted: { $ne: true },
+      $or: [{ email: { $ne: null } }, { passwordHash: { $ne: null } }, { googleId: { $ne: null } }],
+    };
 
     // Exclude the viewer themselves, same as GET /api/users — this count
     // powers the "N Dehradunis" badge that should match the members list
