@@ -34,8 +34,11 @@ export interface IUser extends Document {
     showInterests: boolean;
     showDOB: boolean;
   };
-  verificationToken?: string;
-  verificationExpires?: Date;
+  verificationOtp?: string;
+  verificationOtpExpires?: Date;
+  // Tracked for analytics/rate-limit context only — verification itself has
+  // no attempt lockout (rate limiting happens at the route level).
+  verificationOtpAttempts?: number;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   isVerified: boolean;
@@ -152,8 +155,9 @@ const UserSchema = new Schema<IUser>(
       showDOB: { type: Boolean, default: false },
     },
 
-    verificationToken: { type: String, select: false, default: undefined },
-    verificationExpires: { type: Date, select: false, default: undefined },
+    verificationOtp: { type: String, select: false, default: undefined },
+    verificationOtpExpires: { type: Date, select: false, default: undefined },
+    verificationOtpAttempts: { type: Number, select: false, default: 0 },
     resetPasswordToken: { type: String, select: false, default: undefined },
     resetPasswordExpires: { type: Date, select: false, default: undefined },
 

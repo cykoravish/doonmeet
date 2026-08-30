@@ -17,7 +17,6 @@ export default function SignupForm() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -34,12 +33,11 @@ export default function SignupForm() {
         setError(
           data.code === "USE_GOOGLE_LOGIN"
             ? "This email is linked to Google. Please sign in with Google."
-            : data.errors?.[0]?.message ?? data.message
+            : (data.errors?.[0]?.message ?? data.message)
         );
         return;
       }
-      setSuccess("Account created! Check your email to verify your account.");
-      setForm({ name: "", email: "", password: "" });
+      router.push(`/verify-email?email=${encodeURIComponent(form.email)}`);
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -57,7 +55,10 @@ export default function SignupForm() {
         body: JSON.stringify({ idToken: accessToken }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.message); return; }
+      if (!res.ok) {
+        setError(data.message);
+        return;
+      }
       router.push("/");
       router.refresh();
     } catch {
@@ -77,7 +78,6 @@ export default function SignupForm() {
         </p>
       </div>
 
-      {success && <Alert type="success" message={success} />}
       {error && <Alert type="error" message={error} />}
 
       {/* Google */}
@@ -131,8 +131,11 @@ export default function SignupForm() {
 
       <p className="text-center text-sm" style={{ color: "rgb(var(--muted))" }}>
         Already have an account?{" "}
-        <Link href="/login" className="font-semibold hover:underline"
-          style={{ color: "rgb(var(--primary))" }}>
+        <Link
+          href="/login"
+          className="font-semibold hover:underline"
+          style={{ color: "rgb(var(--primary))" }}
+        >
           Log in
         </Link>
       </p>
