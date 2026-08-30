@@ -42,6 +42,12 @@ export interface IUser extends Document {
   isActive: boolean;
   isOnline: boolean;
   lastSeenAt: Date;
+  // Soft-delete — set when the user permanently deletes their account.
+  // Their profile is anonymized in place (see DELETE /api/users/me) so
+  // existing posts/comments/messages still resolve to a valid User doc
+  // and simply render as "Deleted User".
+  isDeleted: boolean;
+  deletedAt: Date | null;
   // Cooldown trackers for automated emails — see src/lib/email.ts
   lastDmEmailAt: Date | null;
   lastInactivityEmailAt: Date | null;
@@ -159,6 +165,8 @@ const UserSchema = new Schema<IUser>(
     // so any process/API route can query "who's online" via a normal find().
     isOnline: { type: Boolean, default: false },
     lastSeenAt: { type: Date, default: Date.now },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
 
     // --- Automated email cooldowns ---
     // Last time this user was sent a "new DM" email notification — used to

@@ -70,8 +70,15 @@ export const changePasswordSchema = z
     path: ["newPassword"],
   });
 
+export const deleteAccountSchema = z.object({
+  // Password for regular users. Google-only users (no password set) instead
+  // type the literal word "DELETE" to confirm — see /api/users/me route.
+  confirmation: z.string().min(1, "Please confirm to continue"),
+});
+
 export type SignupInput = z.infer<typeof signupSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type SetPasswordInput = z.infer<typeof setPasswordSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;

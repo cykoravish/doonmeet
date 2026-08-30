@@ -79,7 +79,16 @@ export function withAuth(handler: RouteHandler) {
         );
       }
 
-      // 5. Block unverified users
+      // 5. Block deleted accounts (checked before the unverified check below,
+      // since a deleted account is also un-verified and deserves its own message)
+      if (user.isDeleted) {
+        return NextResponse.json(
+          { success: false, message: "This account has been deleted" },
+          { status: 401 }
+        );
+      }
+
+      // 6. Block unverified users
       if (!user.isVerified) {
         return NextResponse.json(
           {
@@ -131,7 +140,7 @@ export function withGuestAllowed(handler: RouteHandler) {
             .select("-passwordHash -googleId -__v")
             .lean<IUser>();
 
-          if (user && user.isActive) {
+          if (user && user.isActive && !user.isDeleted) {
             (req as AuthenticatedRequest).user = user;
           }
         } catch {

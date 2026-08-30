@@ -1,11 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, Settings, Shield, Bell, KeyRound, LogOut, Check, X, Newspaper } from "lucide-react";
+import {
+  MapPin,
+  Settings,
+  Shield,
+  Bell,
+  KeyRound,
+  LogOut,
+  Check,
+  X,
+  Newspaper,
+} from "lucide-react";
 import ProfileAvatar from "./ProfileAvatar";
 import EditProfileForm from "./EditProfileForm";
 import PrivacySettings from "./PrivacySettings";
 import NotificationSettings from "./NotificationSettings";
+import DeleteAccountSection from "./DeleteAccountSection";
 import MyPostsTab from "./MyPostsTab";
 import { useRouter } from "next/navigation";
 import Alert from "@/components/ui/Alert";
@@ -90,10 +101,7 @@ export default function OwnProfileClient({ user }: { user: User }) {
               <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                 <div className="min-w-0 max-w-full">
                   <h1 className="truncate text-xl font-black sm:text-2xl">{currentUser.name}</h1>
-                  <p
-                    className="truncate text-sm"
-                    style={{ color: "rgb(var(--muted))" }}
-                  >
+                  <p className="truncate text-sm" style={{ color: "rgb(var(--muted))" }}>
                     {currentUser.email}
                   </p>
                 </div>
@@ -249,6 +257,7 @@ export default function OwnProfileClient({ user }: { user: User }) {
                 hasPassword={currentUser.hasPassword}
                 onPasswordSet={() => setCurrentUser((prev) => ({ ...prev, hasPassword: true }))}
               />
+              <DeleteAccountSection hasPassword={currentUser.hasPassword} />
             </div>
           )}
         </div>
