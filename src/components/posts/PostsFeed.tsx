@@ -125,7 +125,7 @@ export default function PostsFeed({
           }
         />
       ) : (
-        <div className="space-y-4">
+        <div className="stagger-grid sm:space-y-4">
           {posts.map((post) => (
             <PostCard
               key={post._id}

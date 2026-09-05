@@ -83,22 +83,25 @@ export default function PostCard({
 }: PostCardProps) {
   return (
     <article
-      className="overflow-hidden rounded-2xl border transition-all duration-200 hover:shadow-md"
+      className="reveal-on-scroll -mx-4 overflow-hidden border-b transition-shadow duration-200 sm:mx-0 sm:rounded-2xl sm:border sm:shadow-sm sm:hover:shadow-md"
       style={{ borderColor: "rgb(var(--border))", backgroundColor: "rgb(var(--surface))" }}
     >
-      <div className="flex gap-3 p-4 sm:p-5">
+      {/* accent top border reappears once the card regains its own edges on larger screens */}
+      <div className="hidden h-0.5 w-full sm:block" style={{ backgroundColor: "rgb(var(--accent))" }} />
+
+      <div className="flex gap-3 px-4 py-4 sm:p-5">
         <UserLink userId={author._id}>
-          <Avatar name={author.name} avatar={author.avatar} />
+          <Avatar name={author.name} avatar={author.avatar} size={44} />
         </UserLink>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold">
+          <p className="text-[15px] font-semibold sm:text-sm">
             <UserLink userId={author._id}>{author.name}</UserLink>{" "}
             <span className="text-xs font-normal" style={{ color: "rgb(var(--muted))" }}>
               · {timeAgo(createdAt)}
             </span>
           </p>
-          <Link href={`/posts/${id}`} className="mt-1 block">
-            <p className="whitespace-pre-line break-words text-sm leading-relaxed line-clamp-6">
+          <Link href={`/posts/${id}`} className="mt-1.5 block">
+            <p className="whitespace-pre-line break-words text-[15px] leading-relaxed sm:text-sm line-clamp-6">
               {content}
             </p>
           </Link>
@@ -106,17 +109,29 @@ export default function PostCard({
       </div>
 
       {image && (
-        <Link href={`/posts/${id}`} className="relative block h-64 w-full sm:h-80">
-          <Image src={image} alt="Post image" fill className="object-cover" />
+        <Link
+          href={`/posts/${id}`}
+          className="relative block w-full aspect-[4/5] sm:aspect-auto sm:h-80"
+        >
+          <Image
+            src={image}
+            alt="Post image"
+            fill
+            sizes="(max-width: 640px) 100vw, 672px"
+            className="object-cover"
+          />
         </Link>
       )}
 
       <div
-        className="flex items-center justify-between gap-1.5 border-t px-4 py-2.5 text-xs font-medium sm:px-5"
+        className="flex items-center justify-between gap-1.5 border-t px-4 py-3 text-xs font-medium sm:px-5 sm:py-2.5"
         style={{ borderColor: "rgb(var(--border))", color: "rgb(var(--muted))" }}
       >
-        <Link href={`/posts/${id}`} className="flex items-center gap-1.5 py-1.5 transition-opacity hover:opacity-70">
-          <MessageCircle size={14} />
+        <Link
+          href={`/posts/${id}`}
+          className="btn-springy flex min-h-[40px] items-center gap-1.5 py-1.5 transition-opacity hover:opacity-70"
+        >
+          <MessageCircle size={15} />
           {commentCount} {commentCount === 1 ? "comment" : "comments"}
         </Link>
 
@@ -126,9 +141,9 @@ export default function PostCard({
               href={`/posts/${id}?edit=1`}
               aria-label="Edit post"
               title="Edit post"
-              className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg transition-colors active:opacity-70"
+              className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg transition-colors active:opacity-70"
             >
-              <Pencil size={14} />
+              <Pencil size={15} />
             </Link>
             <DeletePostButton postId={id} compact onDeleted={onDeleted} />
           </div>

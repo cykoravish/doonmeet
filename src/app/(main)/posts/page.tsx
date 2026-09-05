@@ -57,51 +57,68 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
 
   return (
     <div className="min-h-screen">
+      {/* Compact on mobile so real posts are visible almost immediately — the
+          richer eyebrow/description/stat-card treatment only shows from sm: up. */}
       <div
-        className="border-b py-10 sm:py-14"
+        className="border-b py-3 sm:py-14"
         style={{ backgroundColor: "rgb(var(--surface))", borderColor: "rgb(var(--border))" }}
       >
         <div className="mx-auto max-w-2xl px-4 sm:px-6">
           {filteredUser ? (
-            <div className="mb-4">
+            <div className="sm:mb-4">
               <Link
                 href="/posts"
-                className="mb-3 flex w-fit items-center gap-1.5 text-xs font-medium"
+                className="mb-1.5 flex w-fit items-center gap-1.5 text-xs font-medium sm:mb-3"
                 style={{ color: "rgb(var(--muted))" }}
               >
                 <ArrowLeft size={13} /> All Posts
               </Link>
-              <h1 className="text-2xl font-black sm:text-3xl">Posts by {filteredUser.name}</h1>
+              <h1 className="text-xl font-black sm:text-3xl">Posts by {filteredUser.name}</h1>
             </div>
           ) : (
-            <PageHeader
-              eyebrow="Community feed"
-              title="Posts from Dehradun"
-              description="Jobs, events, questions, or just something on your mind — share it with the community."
-            />
-          )}
-
-          {!filteredUser && (
-            <div className="flex items-center gap-6">
-              {[
-                { value: `${stats.totalPosts}`, label: "Posts" },
-                { value: `${stats.authorCount}`, label: "People sharing" },
-              ].map((stat) => (
-                <div key={stat.label}>
-                  <p className="text-xl font-black" style={{ color: "rgb(var(--primary))" }}>
-                    {stat.value}
-                  </p>
-                  <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-                    {stat.label}
-                  </p>
+            <>
+              {/* Mobile: one tight row — title + inline stat pills, no eyebrow/description dead space. */}
+              <div className="flex items-center justify-between gap-3 sm:hidden">
+                <h1 className="text-xl font-black">
+                  Posts from <span style={{ color: "rgb(var(--accent))" }}>Dehradun</span>
+                </h1>
+                <div
+                  className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                  style={{ backgroundColor: "rgb(var(--primary) / 0.1)", color: "rgb(var(--primary))" }}
+                >
+                  {stats.totalPosts} posts · {stats.authorCount} sharing
                 </div>
-              ))}
-            </div>
+              </div>
+
+              {/* Desktop/tablet: full header with eyebrow, description, and stat blocks. */}
+              <div className="hidden sm:block">
+                <PageHeader
+                  eyebrow="Community feed"
+                  title="Posts from Dehradun"
+                  description="Jobs, events, questions, or just something on your mind — share it with the community."
+                />
+                <div className="flex items-center gap-6">
+                  {[
+                    { value: `${stats.totalPosts}`, label: "Posts" },
+                    { value: `${stats.authorCount}`, label: "People sharing" },
+                  ].map((stat) => (
+                    <div key={stat.label}>
+                      <p className="text-xl font-black" style={{ color: "rgb(var(--primary))" }}>
+                        {stat.value}
+                      </p>
+                      <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
+                        {stat.label}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
 
-      <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto max-w-2xl px-4 py-3 sm:px-6 sm:py-10">
         <PostsFeed
           initialPosts={posts}
           initialNextCursor={nextCursor}

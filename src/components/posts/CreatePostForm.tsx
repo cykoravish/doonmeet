@@ -89,11 +89,15 @@ export default function CreatePostForm({ currentUser, onPosted }: CreatePostForm
   return (
     <form
       onSubmit={submit}
-      className="rounded-2xl border p-4 sm:p-5"
-      style={{ borderColor: "rgb(var(--border))", backgroundColor: "rgb(var(--surface))" }}
+      className="overflow-hidden rounded-2xl border border-t-2 p-4 sm:p-5"
+      style={{
+        borderColor: "rgb(var(--border))",
+        borderTopColor: "rgb(var(--accent))",
+        backgroundColor: "rgb(var(--surface))",
+      }}
     >
       <div className="flex gap-3">
-        <Avatar name={currentUser.name} avatar={currentUser.avatar} />
+        <Avatar name={currentUser.name} avatar={currentUser.avatar} size={44} />
         <div className="min-w-0 flex-1">
           <textarea
             value={content}
@@ -152,7 +156,7 @@ export default function CreatePostForm({ currentUser, onPosted }: CreatePostForm
             <button
               type="submit"
               disabled={posting || compressing || !content.trim()}
-              className="flex min-h-[40px] items-center gap-1.5 rounded-xl px-5 py-2 text-sm font-semibold text-white transition-opacity active:opacity-80 disabled:opacity-50"
+              className="btn-springy flex min-h-[40px] items-center gap-1.5 rounded-xl px-5 py-2 text-sm font-semibold text-white transition-opacity active:opacity-80 disabled:opacity-50"
               style={{ backgroundColor: "rgb(var(--primary))" }}
             >
               {posting ? <Loader2 size={15} className="animate-spin" /> : <Send size={14} />}
