@@ -92,7 +92,7 @@ export default function CreatePostForm({ currentUser, onPosted }: CreatePostForm
       className="overflow-hidden rounded-2xl border border-t-2 p-4 sm:p-5"
       style={{
         borderColor: "rgb(var(--border))",
-        borderTopColor: "rgb(var(--accent))",
+        borderTopColor: "rgb(var(--primary-light))",
         backgroundColor: "rgb(var(--surface))",
       }}
     >

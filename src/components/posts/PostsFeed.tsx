@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Loader2, Plus, X } from "lucide-react";
-import PostCard from "./PostCard";
+import PostCard, { Avatar } from "./PostCard";
 import CreatePostForm from "./CreatePostForm";
 import EmptyState from "@/components/shared/EmptyState";
 
@@ -118,12 +118,33 @@ export default function PostsFeed({
 
   return (
     <div className="mx-auto max-w-2xl">
+      {/* Desktop/tablet: a compact one-row trigger instead of a full form or a floating
+          button — clicking anywhere on it opens the same create-post sheet/modal. */}
+      {showComposer && (
+        <button
+          onClick={() => setComposerOpen(true)}
+          className="btn-springy mb-4 hidden w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-shadow hover:shadow-md sm:flex"
+          style={{ borderColor: "rgb(var(--border))", backgroundColor: "rgb(var(--surface))" }}
+        >
+          <Avatar name={currentUser!.name} avatar={currentUser!.avatar} />
+          <span className="flex-1 rounded-full px-4 py-2.5 text-sm" style={{ backgroundColor: "rgb(var(--background))", color: "rgb(var(--muted))" }}>
+            Share a job, an event, something fun...
+          </span>
+          <span
+            className="flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+            style={{ backgroundColor: "rgb(var(--primary))" }}
+          >
+            <Plus size={16} /> Post
+          </span>
+        </button>
+      )}
+
       {!showComposer && !authorFilter && (
         <div
           className="mb-4 rounded-2xl p-3.5 text-center"
           style={{ backgroundColor: "rgb(var(--primary) / 0.05)" }}
         >
-          <p className="text-sm font-medium">Log in to share a post with the community.</p>
+          <p className="text-[13px] font-medium sm:text-sm">Log in to share a post with the community.</p>
         </div>
       )}
 
@@ -171,13 +192,12 @@ export default function PostsFeed({
         </div>
       )}
 
-      {/* Instagram-style "+" FAB — replaces the old always-visible composer so the
-          whole feed area is dedicated to actual posts. Sits above the mobile bottom nav. */}
+      {/* Instagram-style "+" FAB — mobile only. Desktop uses the inline trigger row above instead. */}
       {showComposer && (
         <button
           onClick={() => setComposerOpen(true)}
           aria-label="Create post"
-          className="btn-springy fixed bottom-[calc(env(safe-area-inset-bottom)+76px)] right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg md:bottom-8"
+          className="btn-springy fixed bottom-[calc(env(safe-area-inset-bottom)+76px)] right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg sm:hidden"
           style={{ backgroundColor: "rgb(var(--primary))" }}
         >
           <Plus size={26} strokeWidth={2.5} />

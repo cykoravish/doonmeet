@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import PageHeader from "@/components/shared/PageHeader";
 import PostsFeed from "@/components/posts/PostsFeed";
 import { getSessionUser } from "@/lib/getSessionUser";
-import { getPostStats } from "@/lib/posts";
 import { getPublicUser } from "@/lib/getPublicUser";
 import { connectDB } from "@/lib/db";
 import { Post } from "@/models/Post";
@@ -48,77 +46,61 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
   const { author } = await searchParams;
   const isValidAuthor = author && /^[a-f\d]{24}$/i.test(author);
 
-  const [{ posts, nextCursor }, currentUser, stats, filteredUser] = await Promise.all([
+  const [{ posts, nextCursor }, currentUser, filteredUser] = await Promise.all([
     getInitialFeed(isValidAuthor ? author : undefined),
     getSessionUser(),
-    getPostStats(),
     isValidAuthor ? getPublicUser(author) : Promise.resolve(null),
   ]);
 
   return (
     <div className="min-h-screen">
-      {/* Compact on mobile so real posts are visible almost immediately — the
-          richer eyebrow/description/stat-card treatment only shows from sm: up. */}
+      {/* Compact everywhere — mobile keeps it to one tight row so real posts are
+          visible almost immediately; desktop gets a properly sized (not oversized)
+          header instead of a tall banner with dead space. */}
       <div
-        className="border-b py-3 sm:py-14"
+        className="border-b py-3 sm:py-7"
         style={{ backgroundColor: "rgb(var(--surface))", borderColor: "rgb(var(--border))" }}
       >
         <div className="mx-auto max-w-2xl px-4 sm:px-6">
           {filteredUser ? (
-            <div className="sm:mb-4">
+            <div>
               <Link
                 href="/posts"
-                className="mb-1.5 flex w-fit items-center gap-1.5 text-xs font-medium sm:mb-3"
+                className="mb-1.5 flex w-fit items-center gap-1.5 text-xs font-medium sm:mb-2"
                 style={{ color: "rgb(var(--muted))" }}
               >
                 <ArrowLeft size={13} /> All Posts
               </Link>
-              <h1 className="text-xl font-black sm:text-3xl">Posts by {filteredUser.name}</h1>
+              <h1 className="text-lg font-black sm:text-2xl lg:text-3xl">Posts by {filteredUser.name}</h1>
             </div>
           ) : (
             <>
-              {/* Mobile: one tight row — title + inline stat pills, no eyebrow/description dead space. */}
-              <div className="flex items-center justify-between gap-3 sm:hidden">
-                <h1 className="text-xl font-black">
-                  Posts from <span style={{ color: "rgb(var(--accent))" }}>Dehradun</span>
-                </h1>
-                <div
-                  className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                  style={{ backgroundColor: "rgb(var(--primary) / 0.1)", color: "rgb(var(--primary))" }}
-                >
-                  {stats.totalPosts} posts · {stats.authorCount} sharing
-                </div>
-              </div>
+              {/* Mobile: one tight row, title only — no stat pill, no dead space. */}
+              <h1 className="text-lg font-black sm:hidden">
+                Posts from <span style={{ color: "rgb(var(--primary))" }}>Dehradun</span>
+              </h1>
 
-              {/* Desktop/tablet: full header with eyebrow, description, and stat blocks. */}
+              {/* Desktop/tablet: small eyebrow + title + one-line description, tightly spaced. */}
               <div className="hidden sm:block">
-                <PageHeader
-                  eyebrow="Community feed"
-                  title="Posts from Dehradun"
-                  description="Jobs, events, questions, or just something on your mind — share it with the community."
-                />
-                <div className="flex items-center gap-6">
-                  {[
-                    { value: `${stats.totalPosts}`, label: "Posts" },
-                    { value: `${stats.authorCount}`, label: "People sharing" },
-                  ].map((stat) => (
-                    <div key={stat.label}>
-                      <p className="text-xl font-black" style={{ color: "rgb(var(--primary))" }}>
-                        {stat.value}
-                      </p>
-                      <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-                        {stat.label}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                <p
+                  className="mb-1 text-xs font-semibold uppercase tracking-widest"
+                  style={{ color: "rgb(var(--primary))" }}
+                >
+                  Community feed
+                </p>
+                <h1 className="text-2xl font-black lg:text-3xl">
+                  Posts from <span style={{ color: "rgb(var(--primary))" }}>Dehradun</span>
+                </h1>
+                <p className="mt-1.5 max-w-lg text-sm leading-relaxed" style={{ color: "rgb(var(--muted))" }}>
+                  Jobs, events, questions, or just something on your mind — share it with the community.
+                </p>
               </div>
             </>
           )}
         </div>
       </div>
 
-      <div className="mx-auto max-w-2xl px-4 py-3 sm:px-6 sm:py-10">
+      <div className="mx-auto max-w-2xl px-4 py-3 sm:px-6 sm:py-8">
         <PostsFeed
           initialPosts={posts}
           initialNextCursor={nextCursor}
