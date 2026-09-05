@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, X } from "lucide-react";
 import PostCard from "./PostCard";
 import CreatePostForm from "./CreatePostForm";
 import EmptyState from "@/components/shared/EmptyState";
@@ -39,6 +39,7 @@ export default function PostsFeed({
   const [posts, setPosts] = useState<PostItem[]>(initialPosts);
   const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
   const loadingRef = useRef(false); // guards against duplicate fires from the observer
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -97,21 +98,33 @@ export default function PostsFeed({
     return () => observer.disconnect();
   }, [nextCursor, loadMore]);
 
+  // Close on Escape, and lock background scroll while the composer sheet is open —
+  // standard modal behavior, self-contained and doesn't touch feed data logic.
+  useEffect(() => {
+    if (!composerOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setComposerOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [composerOpen]);
+
   const showComposer = isLoggedIn && currentUser && !authorFilter;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
-      {showComposer ? (
-        <CreatePostForm currentUser={currentUser!} onPosted={refreshFeed} />
-      ) : (
-        !authorFilter && (
-          <div
-            className="rounded-2xl p-5 text-center"
-            style={{ backgroundColor: "rgb(var(--primary) / 0.05)" }}
-          >
-            <p className="text-sm font-medium">Log in to share a post with the community.</p>
-          </div>
-        )
+    <div className="mx-auto max-w-2xl">
+      {!showComposer && !authorFilter && (
+        <div
+          className="mb-4 rounded-2xl p-3.5 text-center"
+          style={{ backgroundColor: "rgb(var(--primary) / 0.05)" }}
+        >
+          <p className="text-sm font-medium">Log in to share a post with the community.</p>
+        </div>
       )}
 
       {posts.length === 0 ? (
@@ -155,6 +168,53 @@ export default function PostsFeed({
               Load more
             </button>
           )}
+        </div>
+      )}
+
+      {/* Instagram-style "+" FAB — replaces the old always-visible composer so the
+          whole feed area is dedicated to actual posts. Sits above the mobile bottom nav. */}
+      {showComposer && (
+        <button
+          onClick={() => setComposerOpen(true)}
+          aria-label="Create post"
+          className="btn-springy fixed bottom-[calc(env(safe-area-inset-bottom)+76px)] right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg md:bottom-8"
+          style={{ backgroundColor: "rgb(var(--primary))" }}
+        >
+          <Plus size={26} strokeWidth={2.5} />
+        </button>
+      )}
+
+      {showComposer && composerOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+          <div
+            className="composer-backdrop absolute inset-0 bg-black/50"
+            onClick={() => setComposerOpen(false)}
+          />
+          <div className="composer-sheet relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl bg-surface sm:max-w-lg sm:rounded-2xl">
+            <div
+              className="sticky top-0 flex items-center justify-between border-b px-4 py-3 sm:px-5"
+              style={{ borderColor: "rgb(var(--border))", backgroundColor: "rgb(var(--surface))" }}
+            >
+              <h2 className="text-base font-bold">Create post</h2>
+              <button
+                onClick={() => setComposerOpen(false)}
+                aria-label="Close"
+                className="flex h-9 w-9 items-center justify-center rounded-full transition-colors active:opacity-70"
+                style={{ color: "rgb(var(--muted))" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-4 sm:p-5">
+              <CreatePostForm
+                currentUser={currentUser!}
+                onPosted={() => {
+                  refreshFeed();
+                  setComposerOpen(false);
+                }}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>
