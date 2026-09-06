@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
-import { Send, Loader2, Wifi, WifiOff, Sparkles } from "lucide-react";
+import { Send, Loader2, Sparkles } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import JoinChatModal from "./JoinChatModal";
 
@@ -58,7 +58,6 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
-  const [connected, setConnected] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
   const [showJoinModal, setShowJoinModal] = useState(false);
 
@@ -102,12 +101,9 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
     socketRef.current = socket;
 
     socket.on("connect", () => {
-      setConnected(true);
       onSocketChange?.(socket);
       socket.emit("room:join");
     });
-
-    socket.on("disconnect", () => setConnected(false));
 
     socket.on("room:message", (message: Message) => {
       setMessages((prev) => [...prev, message]);
@@ -148,7 +144,7 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
       {/* Live status strip — replaces the old static "Doon Public Chat" header.
           Only rendered once there's something worth showing, so it doesn't
           just sit there as empty chrome. */}
-      {(onlineCount > 0 || currentUser) && (
+      {onlineCount > 0 && (
         <div
           className="flex items-center justify-end gap-3 border-b px-4 py-1.5 md:px-6"
           style={{
@@ -156,29 +152,13 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
             borderColor: "rgb(var(--border))",
           }}
         >
-          {onlineCount > 0 && (
-            <div
-              className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs"
-              style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}
-            >
-              <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-              <span style={{ color: "rgb(var(--primary))" }}>{onlineCount} online</span>
-            </div>
-          )}
-
-          {/* Connection status — only meaningful once the user has joined */}
-          {currentUser && (
-            <div className="hidden items-center gap-1.5 sm:flex">
-              {connected ? (
-                <Wifi size={14} style={{ color: "rgb(var(--primary))" }} />
-              ) : (
-                <WifiOff size={14} style={{ color: "rgb(var(--muted))" }} />
-              )}
-              <span className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-                {connected ? "Connected" : "Connecting..."}
-              </span>
-            </div>
-          )}
+          <div
+            className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs"
+            style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}
+          >
+            <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+            <span style={{ color: "rgb(var(--primary))" }}>{onlineCount} online</span>
+          </div>
         </div>
       )}
 
