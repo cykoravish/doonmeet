@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import { Send, Loader2, Sparkles } from "lucide-react";
 import ChatMessage from "./ChatMessage";
@@ -64,6 +64,12 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
   const socketRef = useRef<Socket | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Tracks whether we've already done the first, instant jump-to-bottom for
+  // this mount. Every scroll after that is a genuine new message and should
+  // animate — but the very first render of a loaded history must not, or the
+  // user visibly sees the list animate from empty/top down to the latest
+  // message.
+  const hasScrolledInitially = useRef(false);
 
   // Auto scroll to bottom — scrolls the message list container directly
   // rather than scrollIntoView, which can otherwise walk up and scroll an
@@ -85,9 +91,20 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
       .catch(() => setLoading(false));
   }, []);
 
-  // Scroll on new messages
-  useEffect(() => {
-    scrollToBottom();
+  // Scroll on new messages. useLayoutEffect (not useEffect) so this runs
+  // before the browser paints — the very first batch of history is placed
+  // at the bottom instantly, with no visible top-to-bottom animation. Only
+  // messages after that first paint get the smooth scroll animation.
+  useLayoutEffect(() => {
+    if (messages.length === 0) return;
+
+    if (!hasScrolledInitially.current) {
+      hasScrolledInitially.current = true;
+      scrollToBottom("auto");
+      return;
+    }
+
+    scrollToBottom("smooth");
   }, [messages, scrollToBottom]);
 
   // Socket connection

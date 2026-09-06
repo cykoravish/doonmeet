@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import { ArrowLeft, Send, Loader2, ChevronUp } from "lucide-react";
 import Image from "next/image";
@@ -58,6 +58,14 @@ export default function DMChatWindow({
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // This component remounts (via `key={conversationId}` in MessagesPanel)
+  // whenever the user switches conversations, so this ref naturally resets
+  // per-conversation — first message batch jumps instantly, later ones animate.
+  const hasScrolledInitially = useRef(false);
+  // Set right before loadOlder() prepends messages, so the scroll-to-bottom
+  // effect below doesn't fight with loadOlder's own "keep reading position
+  // steady" scroll restoration.
+  const suppressNextAutoScroll = useRef(false);
 
   // Scrolls the message list container directly rather than scrollIntoView,
   // which can otherwise walk up and scroll an unintended ancestor.
@@ -79,7 +87,6 @@ export default function DMChatWindow({
         setHasMore(!!d.hasMore);
         setNextCursor(d.nextCursor ?? null);
         setLoading(false);
-        requestAnimationFrame(() => scrollToBottom("auto"));
       })
       .catch(() => !cancelled && setLoading(false));
 
@@ -114,10 +121,28 @@ export default function DMChatWindow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
-  // Auto-scroll on new messages (unless user is reading older history)
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages.length, scrollToBottom]);
+  // Scroll on new messages. useLayoutEffect (not useEffect) so this runs
+  // before the browser paints — the first loaded batch of history lands at
+  // the bottom instantly, with no visible top-to-bottom animation. Only
+  // messages after that first paint (new incoming/sent messages) animate.
+  // Skipped while still loading history and while paginating older messages
+  // (loadOlder() manages its own scroll position restoration).
+  useLayoutEffect(() => {
+    if (loading || loadingMore || messages.length === 0) return;
+
+    if (suppressNextAutoScroll.current) {
+      suppressNextAutoScroll.current = false;
+      return;
+    }
+
+    if (!hasScrolledInitially.current) {
+      hasScrolledInitially.current = true;
+      scrollToBottom("auto");
+      return;
+    }
+
+    scrollToBottom("smooth");
+  }, [messages, loading, loadingMore, scrollToBottom]);
 
   async function loadOlder() {
     if (!nextCursor || loadingMore) return;
@@ -130,6 +155,7 @@ export default function DMChatWindow({
         `/api/conversations/${conversationId}/messages?limit=30&cursor=${nextCursor}`
       );
       const d = await res.json();
+      suppressNextAutoScroll.current = true;
       setMessages((prev) => [...(d.messages ?? []), ...prev]);
       setHasMore(!!d.hasMore);
       setNextCursor(d.nextCursor ?? null);
