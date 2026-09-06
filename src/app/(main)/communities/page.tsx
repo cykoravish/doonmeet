@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import PageHeader from "@/components/shared/PageHeader";
 import CommunityCard from "@/components/communities/CommunityCard";
 import EmptyState from "@/components/shared/EmptyState";
 import { getAllCommunities } from "@/lib/communities";
@@ -32,44 +31,19 @@ export default async function CommunitiesPage({ searchParams }: CommunitiesPageP
   const communities = await getAllCommunities(category);
   const activeCategory = category ?? "";
 
-  const totalMembers = communities.reduce(
-    (sum, c) => sum + (c.memberCount as number),
-    0
-  );
-
   return (
     <div className="min-h-screen">
-      <div className="border-b py-14" style={{ backgroundColor: "rgb(var(--surface))", borderColor: "rgb(var(--border))" }}>
-        <div className="mx-auto max-w-7xl px-6">
-          <PageHeader
-            eyebrow="Find your tribe"
-            title="Communities in Dehradun"
-            description="Tech, food, photography, trekking — pick a group that matches your vibe, or start one if it doesn't exist yet."
-          />
-          <div className="flex items-center gap-6">
-            {[
-              { value: `${communities.length}`, label: "Communities" },
-              { value: totalMembers.toLocaleString(), label: "Members" },
-              { value: "7", label: "Categories" },
-            ].map((stat) => (
-              <div key={stat.label}>
-                <p className="text-xl font-black" style={{ color: "rgb(var(--primary))" }}>{stat.value}</p>
-                <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4">
+        <h1 className="mb-3 text-lg font-black sm:mb-4 sm:text-xl lg:text-2xl">Communities</h1>
 
-      <div className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-8 flex items-center gap-2 overflow-x-auto pb-2">
+        <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1 sm:mb-6">
           {CATEGORIES.map((cat) => {
             const isActive = activeCategory === cat.value;
             return (
               <Link
                 key={cat.value}
                 href={cat.value ? `/communities?category=${cat.value}` : "/communities"}
-                className="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-all"
+                className="btn-springy shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors sm:text-sm"
                 style={
                   isActive
                     ? { backgroundColor: "rgb(var(--primary))", color: "white" }
@@ -89,7 +63,7 @@ export default async function CommunitiesPage({ searchParams }: CommunitiesPageP
             description="No communities in this category yet."
           />
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="stagger-grid grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
             {communities.map((community) => (
               <CommunityCard
                 key={String(community._id)}
