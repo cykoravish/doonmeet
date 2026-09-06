@@ -10,21 +10,24 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
 
+// Base capability check — this is all `registerServiceWorker` needs. Kept
+// separate from `isPushSupported` below so registration (used for PWA
+// installability, not just push) still works in browsers/webviews that
+// support service workers but not the Push/Notification APIs.
+export function isServiceWorkerSupported(): boolean {
+  return typeof window !== "undefined" && "serviceWorker" in navigator;
+}
+
 export function isPushSupported(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    "serviceWorker" in navigator &&
-    "PushManager" in window &&
-    "Notification" in window
-  );
+  return isServiceWorkerSupported() && "PushManager" in window && "Notification" in window;
 }
 
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
-  if (!isPushSupported()) return null;
+  if (!isServiceWorkerSupported()) return null;
   try {
     return await navigator.serviceWorker.register("/sw.js");
   } catch (err) {
-    console.error("[push] Service worker registration failed:", err);
+    console.error("[sw] Service worker registration failed:", err);
     return null;
   }
 }

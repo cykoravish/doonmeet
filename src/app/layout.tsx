@@ -94,6 +94,29 @@ export default function RootLayout({
             }),
           }}
         />
+        {/* Captures `beforeinstallprompt` the instant it fires, which can
+            happen before React hydrates and our own listener (in
+            useInstallPrompt) has attached. The event only ever fires once
+            per page load and isn't replayed, so without this, a fast fire
+            means the "Install App" button never appears — Chrome just
+            shows its own default mini-infobar instead. Stashing it on
+            `window` lets useInstallPrompt pick it up on mount regardless
+            of timing. Intentionally tiny and dependency-free since it runs
+            before any app code. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function () {
+              window.addEventListener("beforeinstallprompt", function (e) {
+                e.preventDefault();
+                window.__deferredInstallPrompt = e;
+                window.dispatchEvent(new Event("pwa-install-ready"));
+              });
+              window.addEventListener("appinstalled", function () {
+                window.__deferredInstallPrompt = null;
+              });
+            })();`,
+          }}
+        />
       </head>
       <body className="min-h-screen flex flex-col">
         <RegisterServiceWorker />
