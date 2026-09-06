@@ -54,11 +54,11 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
 
   return (
     <div className="min-h-screen">
-      {/* Compact everywhere — mobile keeps it to one tight row so real posts are
-          visible almost immediately; desktop gets a properly sized (not oversized)
-          header instead of a tall banner with dead space. */}
+      {/* One unified header for every screen size — just a single title line,
+          scaling up with breakpoints. No eyebrow/description clutter, no
+          separate mobile-vs-desktop markup to fall out of sync. */}
       <div
-        className="border-b py-3 sm:py-7"
+        className="border-b py-3 sm:py-4"
         style={{ backgroundColor: "rgb(var(--surface))", borderColor: "rgb(var(--border))" }}
       >
         <div className="mx-auto max-w-2xl px-4 sm:px-6">
@@ -66,41 +66,22 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
             <div>
               <Link
                 href="/posts"
-                className="mb-1.5 flex w-fit items-center gap-1.5 text-xs font-medium sm:mb-2"
+                className="mb-1.5 flex w-fit items-center gap-1.5 text-xs font-medium"
                 style={{ color: "rgb(var(--muted))" }}
               >
                 <ArrowLeft size={13} /> All Posts
               </Link>
-              <h1 className="text-lg font-black sm:text-2xl lg:text-3xl">Posts by {filteredUser.name}</h1>
+              <h1 className="text-lg font-black sm:text-xl lg:text-2xl">Posts by {filteredUser.name}</h1>
             </div>
           ) : (
-            <>
-              {/* Mobile: one tight row, title only — no stat pill, no dead space. */}
-              <h1 className="text-lg font-black sm:hidden">
-                Posts from <span style={{ color: "rgb(var(--primary))" }}>Dehradun</span>
-              </h1>
-
-              {/* Desktop/tablet: small eyebrow + title + one-line description, tightly spaced. */}
-              <div className="hidden sm:block">
-                <p
-                  className="mb-1 text-xs font-semibold uppercase tracking-widest"
-                  style={{ color: "rgb(var(--primary))" }}
-                >
-                  Community feed
-                </p>
-                <h1 className="text-2xl font-black lg:text-3xl">
-                  Posts from <span style={{ color: "rgb(var(--primary))" }}>Dehradun</span>
-                </h1>
-                <p className="mt-1.5 max-w-lg text-sm leading-relaxed" style={{ color: "rgb(var(--muted))" }}>
-                  Jobs, events, questions, or just something on your mind — share it with the community.
-                </p>
-              </div>
-            </>
+            <h1 className="text-lg font-black sm:text-xl lg:text-2xl">
+              Posts from <span style={{ color: "rgb(var(--primary))" }}>Dehradun</span>
+            </h1>
           )}
         </div>
       </div>
 
-      <div className="mx-auto max-w-2xl px-4 py-3 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-2xl px-4 py-3 sm:px-6 sm:py-6">
         <PostsFeed
           initialPosts={posts}
           initialNextCursor={nextCursor}
