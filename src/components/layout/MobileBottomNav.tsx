@@ -31,9 +31,6 @@ export default function MobileBottomNav() {
                 >
                   <Icon size={19} strokeWidth={active ? 2.5 : 1.8} />
                 </div>
-                {active && (
-                  <div className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary" />
-                )}
               </div>
               <span className={`text-[10px] ${active ? "font-bold" : "font-normal"}`}>
                 {item.label}

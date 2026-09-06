@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { NavUser } from "@/types/user";
 import { useNotifications } from "@/providers/notifications-provider";
+import InstallAppMenuItem from "./InstallAppMenuItem";
 
 const TRANSITION_MS = 220;
 
@@ -95,7 +96,9 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
         ref={triggerRef}
         onClick={() => setOpen(true)}
         className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border"
-        aria-label={unreadCount > 0 ? `Open menu, ${unreadCount} unread notifications` : "Open menu"}
+        aria-label={
+          unreadCount > 0 ? `Open menu, ${unreadCount} unread notifications` : "Open menu"
+        }
         aria-expanded={open}
       >
         <Menu size={18} />
@@ -133,7 +136,11 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
           >
             {/* Header */}
             <div className="flex h-16 shrink-0 items-center justify-between border-b border-border px-5">
-              <Link href="/" className="flex items-center gap-2 group shrink-0" onClick={() => setOpen(false)}>
+              <Link
+                href="/"
+                className="flex items-center gap-2 group shrink-0"
+                onClick={() => setOpen(false)}
+              >
                 <Image
                   src="/doonmeet-light.png"
                   alt="DoonMeet"
@@ -186,9 +193,7 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
                       )}
                       <div className="min-w-0">
                         <p className="truncate font-bold text-sm">{user.name}</p>
-                        {user.email && (
-                          <p className="truncate text-xs text-muted">{user.email}</p>
-                        )}
+                        {user.email && <p className="truncate text-xs text-muted">{user.email}</p>}
                       </div>
                     </div>
 
@@ -242,6 +247,7 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
                         />
                       </>
                     )}
+                    <InstallAppMenuItem onInstallPrompted={() => setOpen(false)} />
                     <DrawerLink
                       href="/privacy"
                       icon={<Shield size={15} />}

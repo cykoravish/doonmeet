@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
-import { Send, Loader2, Sparkles } from "lucide-react";
+import { Send, Loader2, Sparkles, ChevronUp } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import JoinChatModal from "./JoinChatModal";
 
@@ -58,12 +58,25 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [onlineCount, setOnlineCount] = useState(0);
   const [showJoinModal, setShowJoinModal] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Tracks whether we've already done the first, instant jump-to-bottom for
+  // this mount. Every scroll after that is a genuine new message and should
+  // animate — but the very first render of a loaded history must not, or the
+  // user visibly sees the list animate from empty/top down to the latest
+  // message.
+  const hasScrolledInitially = useRef(false);
+  // Set right before loadOlder() prepends older messages, so the
+  // scroll-to-bottom effect below doesn't fight with loadOlder's own
+  // "keep reading position steady" scroll restoration.
+  const suppressNextAutoScroll = useRef(false);
 
   // Auto scroll to bottom — scrolls the message list container directly
   // rather than scrollIntoView, which can otherwise walk up and scroll an
@@ -80,15 +93,62 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
       .then((r) => r.json())
       .then((d) => {
         setMessages(d.messages ?? []);
+        setHasMore(!!d.hasMore);
+        setNextCursor(d.nextCursor ?? null);
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, []);
 
-  // Scroll on new messages
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
+  // Scroll on new messages. useLayoutEffect (not useEffect) so this runs
+  // before the browser paints — the very first batch of history is placed
+  // at the bottom instantly, with no visible top-to-bottom animation. Only
+  // messages after that first paint get the smooth scroll animation.
+  useLayoutEffect(() => {
+    if (loadingMore || messages.length === 0) return;
+
+    if (suppressNextAutoScroll.current) {
+      suppressNextAutoScroll.current = false;
+      return;
+    }
+
+    if (!hasScrolledInitially.current) {
+      hasScrolledInitially.current = true;
+      scrollToBottom("auto");
+      return;
+    }
+
+    scrollToBottom("smooth");
+  }, [messages, loadingMore, scrollToBottom]);
+
+  // Load an older page of history, preserving the reader's scroll position
+  // (the "load older" button sits at the top, so without this the newly
+  // prepended messages would push the viewport down unexpectedly).
+  async function loadOlder() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    const container = scrollAreaRef.current;
+    const prevHeight = container?.scrollHeight ?? 0;
+
+    try {
+      const res = await fetch(`/api/room-messages?limit=50&cursor=${nextCursor}`);
+      const d = await res.json();
+      suppressNextAutoScroll.current = true;
+      setMessages((prev) => [...(d.messages ?? []), ...prev]);
+      setHasMore(!!d.hasMore);
+      setNextCursor(d.nextCursor ?? null);
+
+      requestAnimationFrame(() => {
+        if (container) {
+          container.scrollTop = container.scrollHeight - prevHeight;
+        }
+      });
+    } catch {
+      // Silently ignore — the button just stays available for the user to retry.
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   // Socket connection
   useEffect(() => {
@@ -177,47 +237,70 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
             </p>
           </div>
         ) : (
-          messages.map((msg, i) => {
-            const showDivider =
-              i === 0 || getDateLabel(msg.createdAt) !== getDateLabel(messages[i - 1].createdAt);
-
-            return (
-              <div key={msg._id}>
-                {showDivider && (
-                  <div className="flex items-center justify-center py-2">
-                    <span
-                      className="rounded-full px-3 py-1 text-[11px] font-medium"
-                      style={{
-                        backgroundColor: "rgb(var(--primary) / 0.08)",
-                        color: "rgb(var(--muted))",
-                      }}
-                    >
-                      {getDateLabel(msg.createdAt)}
-                    </span>
-                  </div>
-                )}
-                <ChatMessage
-                  content={msg.content}
-                  senderId={msg.sender._id}
-                  senderName={msg.sender.name}
-                  senderAvatar={msg.sender.avatar}
-                  isOwn={msg.sender._id === currentUser?._id}
-                  createdAt={msg.createdAt}
-                  showName={showDivider || messages[i - 1]?.sender._id !== msg.sender._id}
-                  showAvatar={
-                    i === messages.length - 1 ||
-                    messages[i + 1].sender._id !== msg.sender._id ||
-                    getDateLabel(messages[i + 1].createdAt) !== getDateLabel(msg.createdAt)
-                  }
-                  isLastInGroup={
-                    i === messages.length - 1 ||
-                    messages[i + 1].sender._id !== msg.sender._id ||
-                    getDateLabel(messages[i + 1].createdAt) !== getDateLabel(msg.createdAt)
-                  }
-                />
+          <>
+            {hasMore && (
+              <div className="flex justify-center pb-2">
+                <button
+                  onClick={loadOlder}
+                  disabled={loadingMore}
+                  className="flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50"
+                  style={{
+                    borderColor: "rgb(var(--border))",
+                    color: "rgb(var(--muted))",
+                  }}
+                >
+                  {loadingMore ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <ChevronUp size={12} />
+                  )}
+                  Load earlier messages
+                </button>
               </div>
-            );
-          })
+            )}
+
+            {messages.map((msg, i) => {
+              const showDivider =
+                i === 0 || getDateLabel(msg.createdAt) !== getDateLabel(messages[i - 1].createdAt);
+
+              return (
+                <div key={msg._id}>
+                  {showDivider && (
+                    <div className="flex items-center justify-center py-2">
+                      <span
+                        className="rounded-full px-3 py-1 text-[11px] font-medium"
+                        style={{
+                          backgroundColor: "rgb(var(--primary) / 0.08)",
+                          color: "rgb(var(--muted))",
+                        }}
+                      >
+                        {getDateLabel(msg.createdAt)}
+                      </span>
+                    </div>
+                  )}
+                  <ChatMessage
+                    content={msg.content}
+                    senderId={msg.sender._id}
+                    senderName={msg.sender.name}
+                    senderAvatar={msg.sender.avatar}
+                    isOwn={msg.sender._id === currentUser?._id}
+                    createdAt={msg.createdAt}
+                    showName={showDivider || messages[i - 1]?.sender._id !== msg.sender._id}
+                    showAvatar={
+                      i === messages.length - 1 ||
+                      messages[i + 1].sender._id !== msg.sender._id ||
+                      getDateLabel(messages[i + 1].createdAt) !== getDateLabel(msg.createdAt)
+                    }
+                    isLastInGroup={
+                      i === messages.length - 1 ||
+                      messages[i + 1].sender._id !== msg.sender._id ||
+                      getDateLabel(messages[i + 1].createdAt) !== getDateLabel(msg.createdAt)
+                    }
+                  />
+                </div>
+              );
+            })}
+          </>
         )}
       </div>
 
