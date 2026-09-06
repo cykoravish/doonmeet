@@ -1,6 +1,7 @@
-// DoonMeet service worker — push notifications only.
-// Kept intentionally minimal (no offline caching) so it can't interfere
-// with normal page loads or accidentally serve stale content.
+// DoonMeet service worker — push notifications, plus the bare minimum to
+// satisfy Chrome's PWA installability check (see the fetch handler below).
+// Still no offline caching by design, so it can't interfere with normal
+// page loads or accidentally serve stale content.
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -8,6 +9,15 @@ self.addEventListener("install", () => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
+});
+
+// Chrome only fires `beforeinstallprompt` (the event our "Install App"
+// button depends on) if the service worker has a non-empty fetch handler —
+// an empty/noop one is explicitly detected and ignored. This simply passes
+// every request straight through to the network, unmodified — it exists
+// purely to satisfy that check, not to add caching or offline support.
+self.addEventListener("fetch", (event) => {
+  event.respondWith(fetch(event.request));
 });
 
 self.addEventListener("push", (event) => {
