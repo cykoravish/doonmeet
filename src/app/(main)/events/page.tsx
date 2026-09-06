@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import type { Metadata } from "next";
-import PageHeader from "@/components/shared/PageHeader";
 import EmptyState from "@/components/shared/EmptyState";
 import EventCard from "@/components/events/EventCard";
-import { getEvents, getEventStats } from "@/lib/events";
+import { getEvents } from "@/lib/events";
 
 export const metadata: Metadata = {
   title: "Events in Dehradun | DoonMeet",
@@ -31,60 +30,33 @@ interface EventsPageProps {
 export default async function EventsPage({ searchParams }: EventsPageProps) {
   const { tag, search } = await searchParams;
 
-  const [events, stats] = await Promise.all([getEvents({ tag, search }), getEventStats()]);
+  const events = await getEvents({ tag, search });
   const activeTag = tag ?? "";
 
   return (
     <div className="min-h-screen">
-      <div
-        className="border-b py-14"
-        style={{ backgroundColor: "rgb(var(--surface))", borderColor: "rgb(var(--border))" }}
-      >
-        <div className="mx-auto max-w-7xl px-6">
-          <PageHeader
-            eyebrow="What's happening"
-            title="Events in Dehradun"
-            description="See what's happening around Dehradun this week, and RSVP in a couple of taps."
-            action={
-              <Link
-                href="/events/create"
-                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                style={{ backgroundColor: "rgb(var(--primary))" }}
-              >
-                <Plus size={16} />
-                Create Event
-              </Link>
-            }
-          />
-
-          <div className="flex items-center gap-6">
-            {[
-              { value: `${stats.totalEvents}`, label: "Upcoming events" },
-              { value: `${stats.organiserCount}`, label: "Organisers" },
-              { value: `${stats.totalRSVPs}`, label: "RSVPs" },
-            ].map((stat) => (
-              <div key={stat.label}>
-                <p className="text-xl font-black" style={{ color: "rgb(var(--primary))" }}>
-                  {stat.value}
-                </p>
-                <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-                  {stat.label}
-                </p>
-              </div>
-            ))}
-          </div>
+      <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4">
+        <div className="mb-4 flex items-center justify-between gap-3 sm:mb-6">
+          <h1 className="text-lg font-black sm:text-xl lg:text-2xl">Events</h1>
+          <Link
+            href="/events/create"
+            className="btn-springy flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold text-white sm:px-5 sm:py-2.5 sm:text-sm"
+            style={{ backgroundColor: "rgb(var(--primary))" }}
+          >
+            <Plus size={15} />
+            <span className="hidden sm:inline">Create Event</span>
+            <span className="sm:hidden">Create</span>
+          </Link>
         </div>
-      </div>
 
-      <div className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-8 flex items-center gap-2 overflow-x-auto pb-2">
+        <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1 sm:mb-6">
           {TAGS.map((t) => {
             const isActive = activeTag === t.value;
             return (
               <Link
                 key={t.value}
                 href={t.value ? `/events?tag=${t.value}` : "/events"}
-                className="shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-all"
+                className="btn-springy shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors sm:text-sm"
                 style={{
                   backgroundColor: isActive ? "rgb(var(--primary))" : "rgb(var(--surface))",
                   borderColor: isActive ? "rgb(var(--primary))" : "rgb(var(--border))",
@@ -114,7 +86,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
             }
           />
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="stagger-grid grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
             {events.map((event) => (
               <EventCard
                 key={String(event._id)}
