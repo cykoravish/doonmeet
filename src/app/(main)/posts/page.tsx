@@ -54,34 +54,20 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
 
   return (
     <div className="min-h-screen">
-      {/* One unified header for every screen size — just a single title line,
-          scaling up with breakpoints. No eyebrow/description clutter, no
-          separate mobile-vs-desktop markup to fall out of sync. */}
-      <div
-        className="border-b py-3 sm:py-4"
-        style={{ backgroundColor: "rgb(var(--surface))", borderColor: "rgb(var(--border))" }}
-      >
-        <div className="mx-auto max-w-2xl px-4 sm:px-6">
-          {filteredUser ? (
-            <div>
-              <Link
-                href="/posts"
-                className="mb-1.5 flex w-fit items-center gap-1.5 text-xs font-medium"
-                style={{ color: "rgb(var(--muted))" }}
-              >
-                <ArrowLeft size={13} /> All Posts
-              </Link>
-              <h1 className="text-lg font-black sm:text-xl lg:text-2xl">Posts by {filteredUser.name}</h1>
-            </div>
-          ) : (
-            <h1 className="text-lg font-black sm:text-xl lg:text-2xl">
-              Posts from <span style={{ color: "rgb(var(--primary))" }}>Dehradun</span>
-            </h1>
-          )}
-        </div>
-      </div>
+      <div className="mx-auto max-w-2xl px-4 py-3 sm:px-6 sm:py-4">
+        {filteredUser && (
+          <div className="mb-3">
+            <Link
+              href="/posts"
+              className="mb-1.5 flex w-fit items-center gap-1.5 text-xs font-medium"
+              style={{ color: "rgb(var(--muted))" }}
+            >
+              <ArrowLeft size={13} /> All Posts
+            </Link>
+            <h1 className="text-lg font-black sm:text-xl">Posts by {filteredUser.name}</h1>
+          </div>
+        )}
 
-      <div className="mx-auto max-w-2xl px-4 py-3 sm:px-6 sm:py-6">
         <PostsFeed
           initialPosts={posts}
           initialNextCursor={nextCursor}

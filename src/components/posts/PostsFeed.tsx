@@ -123,18 +123,18 @@ export default function PostsFeed({
       {showComposer && (
         <button
           onClick={() => setComposerOpen(true)}
-          className="btn-springy mb-4 hidden w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-shadow hover:shadow-md sm:flex"
+          className="btn-springy mb-3 hidden w-full items-center gap-2.5 rounded-2xl border p-2.5 text-left transition-shadow hover:shadow-md sm:flex"
           style={{ borderColor: "rgb(var(--border))", backgroundColor: "rgb(var(--surface))" }}
         >
-          <Avatar name={currentUser!.name} avatar={currentUser!.avatar} />
-          <span className="flex-1 rounded-full px-4 py-2.5 text-sm" style={{ backgroundColor: "rgb(var(--background))", color: "rgb(var(--muted))" }}>
+          <Avatar name={currentUser!.name} avatar={currentUser!.avatar} size={34} />
+          <span className="flex-1 rounded-full px-3.5 py-2 text-sm" style={{ backgroundColor: "rgb(var(--background))", color: "rgb(var(--muted))" }}>
             Share a job, an event, something fun...
           </span>
           <span
-            className="flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+            className="flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold text-white"
             style={{ backgroundColor: "rgb(var(--primary))" }}
           >
-            <Plus size={16} /> Post
+            <Plus size={15} /> Post
           </span>
         </button>
       )}
