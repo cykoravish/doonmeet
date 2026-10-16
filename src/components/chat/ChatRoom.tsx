@@ -28,6 +28,8 @@ interface ChatRoomProps {
   // The members panel now lives in ChatTabs (so it's reachable from any
   // tab) but presence updates still need this room's live socket.
   onSocketChange?: (socket: Socket | null) => void;
+  // Open a DM with this user (switches to the Messages tab).
+  onStartDm?: (userId: string) => void;
 }
 
 function isSameDay(a: Date, b: Date) {
@@ -54,7 +56,7 @@ function getDateLabel(dateStr: string) {
   });
 }
 
-export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps) {
+export default function ChatRoom({ currentUser, onSocketChange, onStartDm }: ChatRoomProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
@@ -284,6 +286,7 @@ export default function ChatRoom({ currentUser, onSocketChange }: ChatRoomProps)
                     senderName={msg.sender.name}
                     senderAvatar={msg.sender.avatar}
                     isOwn={msg.sender._id === currentUser?._id}
+                    onMessageUser={onStartDm}
                     createdAt={msg.createdAt}
                     showName={showDivider || messages[i - 1]?.sender._id !== msg.sender._id}
                     showAvatar={

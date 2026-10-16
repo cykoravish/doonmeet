@@ -32,7 +32,16 @@ export default function MessagesPanel({
     try {
       const res = await fetch("/api/conversations");
       const d = await res.json();
-      if (d.success) setConversations(d.conversations ?? []);
+      if (d.success) {
+        const fetched: ConversationSummary[] = d.conversations ?? [];
+        // Merge, don't overwrite: a conversation created locally (deep-link /
+        // "Message" button) may not be in this response if the GET raced it.
+        setConversations((prev) => {
+          const fetchedIds = new Set(fetched.map((c) => c._id));
+          const localOnly = prev.filter((c) => !fetchedIds.has(c._id));
+          return [...localOnly, ...fetched];
+        });
+      }
     } catch {
       setError("Couldn't load your messages. Please try again.");
     } finally {
