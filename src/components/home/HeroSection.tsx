@@ -225,8 +225,8 @@ export default function HeroSection() {
           </h1>
 
           <p className="mb-7 max-w-md text-base leading-relaxed text-muted">
-            Chat, meet, and explore Dehradun — one connection at a time. From Rajpur Road to
-            Robber&apos;s Cave, your people are already here.
+            DoonMeet is a free local community for Dehradun. Chat with people nearby, find events,
+            join communities and discover places — from Rajpur Road to Robber&apos;s Cave.
           </p>
 
           <div className="mb-8 flex flex-wrap gap-3">

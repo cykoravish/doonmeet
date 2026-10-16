@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
 import LegalPageShell from "@/components/legal/LegalPageShell";
 import { LegalSection, LegalCallout, LegalList, LegalContact } from "@/components/legal/LegalSection";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy | DoonMeet",
+export const metadata = pageMetadata({
+  title: "Privacy Policy",
   description:
     "Learn how DoonMeet collects, uses and protects your personal data, including location, chat and profile information.",
-  alternates: { canonical: "https://doonmeet.in/privacy" },
-};
+  path: "/privacy",
+});
 
 const LAST_UPDATED = "17 July 2026";
 

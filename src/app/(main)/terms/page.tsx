@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
 import LegalPageShell from "@/components/legal/LegalPageShell";
 import { LegalSection, LegalCallout, LegalList, LegalContact } from "@/components/legal/LegalSection";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Terms of Service | DoonMeet",
+export const metadata = pageMetadata({
+  title: "Terms of Service",
   description:
     "The terms that govern your use of DoonMeet — Dehradun's local social platform for events, communities, chat and the live map.",
-  alternates: { canonical: "https://doonmeet.in/terms" },
-};
+  path: "/terms",
+});
 
 const LAST_UPDATED = "17 July 2026";
 

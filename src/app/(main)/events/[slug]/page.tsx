@@ -10,6 +10,14 @@ import { getSessionUser } from "@/lib/getSessionUser";
 import EventComments from "@/components/events/EventComments";
 import RSVPButton from "@/components/events/RSVPButton";
 import ShareButton from "@/components/events/ShareButton";
+import JsonLd from "@/components/seo/JsonLd";
+import {
+  absoluteUrl,
+  breadcrumbJsonLd,
+  DEFAULT_OG_IMAGE,
+  pageMetadata,
+  truncate,
+} from "@/lib/seo";
 
 interface EventDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -18,28 +26,27 @@ interface EventDetailPageProps {
 export async function generateMetadata({ params }: EventDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
   const event = await getEventBySlug(slug);
-  if (!event) return { title: "Event Not Found | DoonMeet" };
+  if (!event) return { title: "Event Not Found", robots: { index: false, follow: false } };
 
-  const description = (event.description as string)?.slice(0, 155);
-  const url = `https://doonmeet.in/events/${slug}`;
+  // Lead with the date and venue — that's what people scan for in results.
+  const when = new Date(event.date as string).toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  });
+  const venue = (event.location as { name?: string } | undefined)?.name;
+  const description = truncate(
+    `${when}${venue ? ` · ${venue}` : ""}. ${event.description as string}`
+  );
 
-  return {
-    title: `${event.title} | DoonMeet Events`,
+  return pageMetadata({
+    title: `${event.title as string} — Event in Dehradun`,
     description,
-    alternates: { canonical: url },
-    openGraph: {
-      title: event.title as string,
-      description,
-      url,
-      images: event.banner ? [event.banner as string] : [],
-      type: "website",
-    },
-    twitter: {
-      card: event.banner ? "summary_large_image" : "summary",
-      title: event.title as string,
-      description,
-    },
-  };
+    path: `/events/${slug}`,
+    image: (event.banner as string | null) ?? undefined,
+  });
 }
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
@@ -69,12 +76,14 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
     "@context": "https://schema.org",
     "@type": "Event",
     name: event.title,
+    url: absoluteUrl(`/events/${slug}`),
     description: event.description,
     startDate: eventDate.toISOString(),
     ...(endsAt && { endDate: endsAt.toISOString() }),
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     eventStatus: "https://schema.org/EventScheduled",
-    image: event.banner ? [event.banner] : undefined,
+    image: [absoluteUrl((event.banner as string | null) ?? DEFAULT_OG_IMAGE)],
+    ...(event.capacity ? { maximumAttendeeCapacity: event.capacity } : {}),
     location: {
       "@type": "Place",
       name: (event.location as { name: string })?.name || "Dehradun",
@@ -94,10 +103,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
 
   return (
     <div className="min-h-screen">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd data={[jsonLd, breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Events", path: "/events" }, { name: event.title as string, path: `/events/${slug}` }])]} />
 
       {/* Banner */}
       <div className="relative h-72 w-full overflow-hidden md:h-96">

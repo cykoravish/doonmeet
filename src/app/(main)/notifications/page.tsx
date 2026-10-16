@@ -1,12 +1,10 @@
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import { redirect } from "next/navigation";
-import type { Metadata } from "next";
 import NotificationsClient from "@/components/notifications/NotificationsClient";
+import { noIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Notifications | DoonMeet",
-};
+export const metadata = noIndexMetadata("Notifications");
 
 const ACCESS_TOKEN_SECRET = new TextEncoder().encode(
   process.env.ACCESS_TOKEN_SECRET

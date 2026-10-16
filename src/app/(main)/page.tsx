@@ -2,30 +2,26 @@ import HeroSection from "@/components/home/HeroSection";
 import QuickActions from "@/components/home/QuickActions";
 import PopularPlaces from "@/components/home/PopularPlaces";
 import ExploreCategories from "@/components/home/ExploreCategories";
-import type { Metadata } from "next";
+import AboutAndFaq from "@/components/home/AboutAndFaq";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "DoonMeet — Connect with Dehradun",
+export const metadata = pageMetadata({
+  title: "DoonMeet — Events, Communities & People in Dehradun",
+  absoluteTitle: true,
   description:
-    "New in Dehradun or just tired of the same five people in your contacts? DoonMeet helps you find local events, join communities built around your interests, and meet people across the Doon Valley.",
+    "Find events happening in Dehradun, join local communities, discover places and chat with people nearby. DoonMeet is free and made for the Doon Valley.",
+  path: "/",
   keywords: [
     "Dehradun",
     "DoonMeet",
     "Doon Valley",
     "Dehradun events",
     "Dehradun communities",
-    "meet people Dehradun",
+    "meet people in Dehradun",
+    "things to do in Dehradun",
+    "places to visit in Dehradun",
   ],
-  alternates: { canonical: "https://doonmeet.in" },
-  openGraph: {
-    title: "DoonMeet — Connect with Dehradun",
-    description: "Local events, real communities, and people worth meeting — right here in Dehradun.",
-    url: "https://doonmeet.in",
-    siteName: "DoonMeet",
-    locale: "en_IN",
-    type: "website",
-  },
-};
+});
 
 export default function HomePage() {
   return (
@@ -34,6 +30,7 @@ export default function HomePage() {
       <QuickActions />
       <PopularPlaces />
       <ExploreCategories />
+      <AboutAndFaq />
     </>
   );
 }

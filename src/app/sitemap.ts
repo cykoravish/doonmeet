@@ -4,14 +4,18 @@ import { Community } from "@/models/Community";
 import { Event } from "@/models/Event";
 import { Post } from "@/models/Post";
 import { Place } from "@/models/Place";
+import { MIN_INDEXABLE_POST_LENGTH, SITE_URL } from "@/lib/seo";
+
+// Without this the sitemap is generated once at build time and never again,
+// so new events/places/posts would not show up until the next deploy.
+export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = "https://doonmeet.in";
+  const base = SITE_URL;
 
   const staticRoutes = ["", "/posts", "/communities", "/events", "/places", "/chat"].map(
     (route) => ({
       url: `${base}${route}`,
-      lastModified: new Date(),
       changeFrequency: "daily" as const,
       priority: route === "" ? 1 : 0.7,
     })
@@ -19,7 +23,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const legalRoutes = ["/privacy", "/terms", "/refund-policy"].map((route) => ({
     url: `${base}${route}`,
-    lastModified: new Date(),
     changeFrequency: "yearly" as const,
     priority: 0.3,
   }));
@@ -63,7 +66,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     // Cap at the most recent 1000 posts — sitemaps beyond that should be
     // split into a sitemap index, but this comfortably covers current scale.
-    const posts = await Post.find({})
+    // Thin posts (very short, no image) are noindex'd on the page itself, so
+    // they don't belong in the sitemap either.
+    const posts = await Post.find({
+      $or: [
+        { image: { $nin: [null, ""] } },
+        { $expr: { $gte: [{ $strLenCP: "$content" }, MIN_INDEXABLE_POST_LENGTH] } },
+      ],
+    })
       .sort({ _id: -1 })
       .limit(1000)
       .select("_id updatedAt")

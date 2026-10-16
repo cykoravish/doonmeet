@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
 import LegalPageShell from "@/components/legal/LegalPageShell";
 import { LegalSection, LegalCallout, LegalList, LegalContact } from "@/components/legal/LegalSection";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Refund & Cancellation Policy | DoonMeet",
+export const metadata = pageMetadata({
+  title: "Refund & Cancellation Policy",
   description:
     "DoonMeet's refund and cancellation policy for current and upcoming paid features.",
-  alternates: { canonical: "https://doonmeet.in/refund-policy" },
-};
+  path: "/refund-policy",
+});
 
 const LAST_UPDATED = "17 July 2026";
 

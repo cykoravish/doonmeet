@@ -6,6 +6,7 @@ import { ToastProvider } from "@/providers/toast-provider";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import RegisterServiceWorker from "@/components/pwa/RegisterServiceWorker";
+import JsonLd from "@/components/seo/JsonLd";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,6 +21,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://doonmeet.in"),
   manifest: "/manifest.json",
+  applicationName: "DoonMeet",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   title: {
     default: "DoonMeet - Meet People, Events & Communities in Dehradun",
     template: "%s | DoonMeet",
@@ -58,41 +71,42 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="en-IN"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+        <JsonLd
+          data={[
+            {
               "@context": "https://schema.org",
               "@type": "WebSite",
+              "@id": "https://doonmeet.in/#website",
               name: "DoonMeet",
+              alternateName: ["Doon Meet", "DoonMeet Dehradun"],
               url: "https://doonmeet.in",
+              inLanguage: "en-IN",
               description:
-                "Discover local events, join communities, chat with people, and connect with others in Dehradun through DoonMeet.",
-              potentialAction: {
-                "@type": "SearchAction",
-                target: "https://doonmeet.in/communities?search={search_term_string}",
-                "query-input": "required name=search_term_string",
-              },
-            }),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+                "A free local community for Dehradun — find events, join communities, discover places and chat with people nearby.",
+              publisher: { "@id": "https://doonmeet.in/#organization" },
+            },
+            {
               "@context": "https://schema.org",
               "@type": "Organization",
+              "@id": "https://doonmeet.in/#organization",
               name: "DoonMeet",
               url: "https://doonmeet.in",
               logo: "https://doonmeet.in/doonmeet-light.png",
+              description:
+                "DoonMeet is a local community platform for Dehradun, Uttarakhand — events, communities, places and chat in one place.",
+              areaServed: {
+                "@type": "City",
+                name: "Dehradun",
+                containedInPlace: { "@type": "AdministrativeArea", name: "Uttarakhand, India" },
+              },
               sameAs: ["https://instagram.com/cykoravish"],
-            }),
-          }}
+            },
+          ]}
         />
         {/* Captures `beforeinstallprompt` the instant it fires, which can
             happen before React hydrates and our own listener (in

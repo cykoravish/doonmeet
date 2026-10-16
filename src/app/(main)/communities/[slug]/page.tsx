@@ -3,6 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Users, Calendar, Globe, Megaphone } from "lucide-react";
 import type { Metadata } from "next";
+import JsonLd from "@/components/seo/JsonLd";
+import { absoluteUrl, breadcrumbJsonLd, pageMetadata, truncate } from "@/lib/seo";
 import { getCommunityBySlug, getCommunityMembers, isUserMember, getCommunityEvents } from "@/lib/communities";
 import { getSessionUser } from "@/lib/getSessionUser";
 import JoinLeaveButton from "@/components/communities/JoinLeaveButton";
@@ -24,29 +26,20 @@ interface CommunityPageProps {
 export async function generateMetadata({ params }: CommunityPageProps): Promise<Metadata> {
   const { slug } = await params;
   const community = await getCommunityBySlug(slug);
-  if (!community) return { title: "Community Not Found | DoonMeet" };
+  if (!community) return { title: "Community Not Found", robots: { index: false, follow: false } };
 
-  const description = (community.description as string)?.slice(0, 155);
-  const title = `${community.name} | DoonMeet Communities`;
-  const url = `https://doonmeet.in/communities/${slug}`;
+  const name = community.name as string;
+  const description = truncate(
+    (community.description as string)?.trim() ||
+      `Join ${name}, a ${community.category as string} community in Dehradun on DoonMeet — meet members, join discussions and find events.`
+  );
 
-  return {
-    title,
+  return pageMetadata({
+    title: `${name} — Dehradun Community`,
     description,
-    alternates: { canonical: url },
-    openGraph: {
-      title,
-      description,
-      url,
-      images: community.icon ? [community.icon as string] : [],
-      type: "website",
-    },
-    twitter: {
-      card: "summary",
-      title,
-      description,
-    },
-  };
+    path: `/communities/${slug}`,
+    image: ((community.banner as string | null) || (community.icon as string | null)) ?? undefined,
+  });
 }
 
 export default async function CommunityDetailPage({ params }: CommunityPageProps) {
@@ -74,17 +67,15 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
     "@type": "Organization",
     name: community.name,
     description: community.description,
-    url: `https://doonmeet.in/communities/${slug}`,
+    url: absoluteUrl(`/communities/${slug}`),
+    ...(community.banner || community.icon ? { image: absoluteUrl((community.banner || community.icon) as string) } : {}),
     memberOf: { "@type": "Organization", name: "DoonMeet", url: "https://doonmeet.in" },
     location: { "@type": "Place", name: "Dehradun, Uttarakhand, India" },
   };
 
   return (
     <div className="min-h-screen">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd data={[jsonLd, breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Communities", path: "/communities" }, { name: community.name as string, path: `/communities/${slug}` }])]} />
 
       {/* Hero */}
       <div

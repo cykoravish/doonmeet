@@ -42,11 +42,13 @@ export async function generateMetadata({
 }: UserProfilePageProps): Promise<Metadata> {
   const { userId } = await params;
   const user = await getPublicUser(userId);
-  if (!user) return { title: "User Not Found | DoonMeet" };
+  if (!user) return { title: "User Not Found", robots: { index: false, follow: false } };
+  // Member profiles are personal pages — robots.txt blocks crawling them and
+  // this keeps them out of results even if someone links to one.
   return {
-    title: `${user.name} | DoonMeet`,
+    title: user.name,
     description: user.bio || `${user.name}'s profile on DoonMeet`,
-    alternates: { canonical: `https://doonmeet.in/users/${userId}` },
+    robots: { index: false, follow: true },
   };
 }
 

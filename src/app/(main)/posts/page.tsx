@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import PostsFeed from "@/components/posts/PostsFeed";
@@ -6,19 +5,17 @@ import { getSessionUser } from "@/lib/getSessionUser";
 import { getPublicUser } from "@/lib/getPublicUser";
 import { connectDB } from "@/lib/db";
 import { Post } from "@/models/Post";
+import { pageMetadata } from "@/lib/seo";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbJsonLd } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Posts — Community Feed | DoonMeet",
+export const metadata = pageMetadata({
+  title: "Dehradun Community Feed — Posts & Local Updates",
   description:
-    "See what people in Dehradun are sharing right now — jobs, events, questions, and everyday moments from the Doon Valley community.",
-  keywords: ["Dehradun posts", "Dehradun community feed", "Doon Valley updates", "local Dehradun news"],
-  alternates: { canonical: "https://doonmeet.in/posts" },
-  openGraph: {
-    title: "Posts — Community Feed | DoonMeet",
-    description: "See what people in Dehradun are sharing right now.",
-    url: "https://doonmeet.in/posts",
-  },
-};
+    "See what people in Dehradun are sharing right now — questions, recommendations, events and everyday moments from the Doon Valley.",
+  path: "/posts",
+  keywords: ["Dehradun posts", "Dehradun community feed", "Doon Valley updates"],
+});
 
 const PAGE_SIZE = 20;
 
@@ -54,7 +51,9 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
 
   return (
     <div className="min-h-screen">
+      <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Posts", path: "/posts" }])} />
       <div className="mx-auto max-w-2xl px-4 py-3 sm:px-6 sm:py-4">
+        {!filteredUser && <h1 className="sr-only">Dehradun community feed</h1>}
         {filteredUser && (
           <div className="mb-3">
             <Link

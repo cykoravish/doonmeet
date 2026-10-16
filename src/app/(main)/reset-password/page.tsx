@@ -1,10 +1,9 @@
 import { Suspense } from "react";
 import AuthBrandPanel from "@/components/auth/AuthBrandPanel";
 import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
+import { noIndexMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Reset Password | DoonMeet",
-};
+export const metadata = noIndexMetadata("Reset Password");
 
 export default function ResetPasswordPage() {
   return (
