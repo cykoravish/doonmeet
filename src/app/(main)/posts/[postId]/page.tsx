@@ -2,6 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
+import JsonLd from "@/components/seo/JsonLd";
+import {
+  absoluteUrl,
+  breadcrumbJsonLd,
+  MIN_INDEXABLE_POST_LENGTH,
+  pageMetadata,
+  truncate,
+} from "@/lib/seo";
 import { getPostById } from "@/lib/posts";
 import { getSessionUser } from "@/lib/getSessionUser";
 import PostComments from "@/components/posts/PostComments";
@@ -13,31 +21,30 @@ interface PostDetailPageProps {
 }
 
 function buildPostDescription(content: string): string {
-  const trimmed = content.trim().replace(/\s+/g, " ");
-  return trimmed.length > 155 ? `${trimmed.slice(0, 152)}...` : trimmed;
+  return truncate(content, 155);
 }
 
 export async function generateMetadata({ params }: PostDetailPageProps): Promise<Metadata> {
   const { postId } = await params;
   const post = await getPostById(postId);
-  if (!post) return { title: "Post Not Found | DoonMeet" };
+  if (!post) return { title: "Post Not Found", robots: { index: false, follow: false } };
 
   const description = buildPostDescription(post.content);
   const authorName = post.author?.name ?? "Someone";
-  const title = `${authorName} on DoonMeet: ${description.slice(0, 60)}${description.length > 60 ? "..." : ""}`;
+  const title = `${authorName}: ${truncate(post.content, 55)}`;
 
-  return {
+  // Very short text-only posts ("hi", "test") are thin content — keep them
+  // out of search results. They stay reachable by link.
+  const isThin = post.content.trim().length < MIN_INDEXABLE_POST_LENGTH && !post.image;
+
+  return pageMetadata({
     title,
     description,
-    alternates: { canonical: `https://doonmeet.in/posts/${postId}` },
-    openGraph: {
-      title,
-      description,
-      url: `https://doonmeet.in/posts/${postId}`,
-      images: post.image ? [post.image] : [],
-      type: "article",
-    },
-  };
+    path: `/posts/${postId}`,
+    image: post.image ?? undefined,
+    type: "article",
+    noindex: isThin,
+  });
 }
 
 export default async function PostDetailPage({ params, searchParams }: PostDetailPageProps) {
@@ -61,7 +68,8 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
     articleBody: post.content,
     datePublished: createdAtStr,
     dateModified: updatedAtStr,
-    image: post.image ? [post.image] : undefined,
+    image: post.image ? [absoluteUrl(post.image)] : undefined,
+    url: absoluteUrl(`/posts/${postId}`),
     author: {
       "@type": "Person",
       name: author.name,
@@ -71,10 +79,7 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
 
   return (
     <div className="min-h-screen">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd data={[jsonLd, breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Posts", path: "/posts" }, { name: buildPostDescription(post.content).slice(0, 60), path: `/posts/${postId}` }])]} />
 
       <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8">
         <Link

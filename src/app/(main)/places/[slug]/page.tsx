@@ -6,6 +6,8 @@ import Link from "next/link";
 import { getPlaceWithRating } from "@/lib/places";
 import { getSessionUser } from "@/lib/getSessionUser";
 import PlaceReviews from "@/components/places/PlaceReviews";
+import JsonLd from "@/components/seo/JsonLd";
+import { absoluteUrl, breadcrumbJsonLd, pageMetadata, truncate } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -15,19 +17,14 @@ export async function generateMetadata({
   const { slug } = await params;
   const place = await getPlaceWithRating(slug);
 
-  if (!place) return { title: "Place Not Found | DoonMeet" };
+  if (!place) return { title: "Place Not Found", robots: { index: false, follow: false } };
 
-  return {
-    title: `${place.title} — Dehradun | DoonMeet`,
-    description: place.shortDescription,
-    alternates: { canonical: `https://doonmeet.in/places/${slug}` },
-    openGraph: {
-      title: `${place.title} | DoonMeet`,
-      description: place.shortDescription,
-      images: [place.image as string],
-      url: `https://doonmeet.in/places/${slug}`,
-    },
-  };
+  return pageMetadata({
+    title: `${place.title as string}, Dehradun — Guide & Reviews`,
+    description: truncate(place.shortDescription as string),
+    path: `/places/${slug}`,
+    image: place.image as string,
+  });
 }
 
 export default async function PlaceDetailPage({
@@ -48,8 +45,8 @@ export default async function PlaceDetailPage({
     "@type": "TouristAttraction",
     name: place.title as string,
     description: place.shortDescription as string,
-    image: `https://doonmeet.in${place.image}`,
-    url: `https://doonmeet.in/places/${slug}`,
+    image: absoluteUrl(place.image as string),
+    url: absoluteUrl(`/places/${slug}`),
     address: {
       "@type": "PostalAddress",
       addressLocality: "Dehradun",
@@ -67,10 +64,7 @@ export default async function PlaceDetailPage({
 
   return (
     <div>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd data={[jsonLd, breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Places", path: "/places" }, { name: place.title as string, path: `/places/${slug}` }])]} />
 
       {/* Hero */}
       <div className="relative h-72 w-full md:h-96">

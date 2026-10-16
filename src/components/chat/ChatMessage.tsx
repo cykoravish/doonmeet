@@ -11,6 +11,7 @@ interface ChatMessageProps {
   showAvatar: boolean;
   showName: boolean;
   isLastInGroup: boolean;
+  onMessageUser?: (userId: string) => void;
 }
 
 export default function ChatMessage({
@@ -23,6 +24,7 @@ export default function ChatMessage({
   showAvatar,
   showName,
   isLastInGroup,
+  onMessageUser,
 }: ChatMessageProps) {
   const time = new Date(createdAt).toLocaleTimeString("en-IN", {
     hour: "2-digit",
@@ -38,6 +40,7 @@ export default function ChatMessage({
         <ChatUserActions
           userId={senderId}
           isOwn={isOwn}
+          onMessage={onMessageUser}
           align={isOwn ? "right" : "left"}
           className="self-end shrink-0 rounded-full"
         >
@@ -70,6 +73,7 @@ export default function ChatMessage({
             <ChatUserActions
               userId={senderId}
               isOwn={isOwn}
+              onMessage={onMessageUser}
               align={isOwn ? "right" : "left"}
               className="text-xs font-semibold"
             >

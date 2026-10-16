@@ -1,11 +1,9 @@
 import { redirect } from "next/navigation";
-import type { Metadata } from "next";
 import OwnProfileClient from "@/components/profile/OwnProfileClient";
 import { getSessionUser } from "@/lib/getSessionUser";
+import { noIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "My Profile | DoonMeet",
-};
+export const metadata = noIndexMetadata("My Profile");
 
 export default async function ProfilePage() {
   const user = await getSessionUser();

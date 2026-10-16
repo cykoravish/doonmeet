@@ -9,6 +9,8 @@ interface ChatUserActionsProps {
   isOwn?: boolean;
   align?: "left" | "right";
   className?: string;
+  // When provided, "Message" opens the DM in-place (no URL round trip).
+  onMessage?: (userId: string) => void;
   children: ReactNode;
 }
 
@@ -19,11 +21,20 @@ export default function ChatUserActions({
   isOwn,
   align = "left",
   className,
+  onMessage,
   children,
 }: ChatUserActionsProps) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // The menu opens below the trigger, so for the last message it can end up
+  // clipped by the chat scroll area. Scroll just enough to reveal it fully.
+  useEffect(() => {
+    if (!open) return;
+    menuRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -52,6 +63,10 @@ export default function ChatUserActions({
 
   function goToMessage() {
     setOpen(false);
+    if (onMessage) {
+      onMessage(userId);
+      return;
+    }
     router.push(`/chat?dm=${userId}`);
   }
 
@@ -74,6 +89,7 @@ export default function ChatUserActions({
 
       {open && (
         <div
+          ref={menuRef}
           role="menu"
           className={`absolute z-20 mt-1.5 w-40 overflow-hidden rounded-xl border shadow-lg ${
             align === "right" ? "right-0" : "left-0"

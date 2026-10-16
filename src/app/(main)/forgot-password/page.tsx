@@ -1,10 +1,8 @@
 import AuthBrandPanel from "@/components/auth/AuthBrandPanel";
 import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
+import { noIndexMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Forgot Password | DoonMeet",
-  description: "Reset your DoonMeet account password.",
-};
+export const metadata = noIndexMetadata("Forgot Password", "Reset your DoonMeet account password.");
 
 export default function ForgotPasswordPage() {
   return (

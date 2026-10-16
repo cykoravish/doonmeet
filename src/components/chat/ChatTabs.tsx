@@ -70,7 +70,20 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
 
   function clearDmParam() {
     setPendingDmUserId(null);
-    router.replace(pathname, { scroll: false });
+    // Only touch the URL if a ?dm= param is actually there.
+    if (searchParams.get("dm")) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("dm");
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    }
+  }
+
+  // "Message" from the public chat menu — switch tabs directly instead of
+  // relying on a same-page URL change.
+  function startDm(userId: string) {
+    setPendingDmUserId(userId);
+    setTab("messages");
   }
 
   const canUseMessages = !!currentUser;
@@ -135,7 +148,11 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
       </div>
 
       <div className="min-h-0 flex-1">
-        {tab === "public" && <ChatRoom currentUser={currentUser} onSocketChange={setSocketInstance} />}
+        {tab === "public" && <ChatRoom
+            currentUser={currentUser}
+            onSocketChange={setSocketInstance}
+            onStartDm={startDm}
+          />}
 
         {tab === "messages" &&
           (canUseMessages ? (

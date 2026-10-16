@@ -1,10 +1,8 @@
 import AuthBrandPanel from "@/components/auth/AuthBrandPanel";
 import LoginForm from "@/components/auth/LoginForm";
+import { noIndexMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Log In | DoonMeet",
-  description: "Log in to DoonMeet and reconnect with Dehradun.",
-};
+export const metadata = noIndexMetadata("Log In", "Log in to DoonMeet and reconnect with Dehradun.");
 
 export default function LoginPage() {
   return (

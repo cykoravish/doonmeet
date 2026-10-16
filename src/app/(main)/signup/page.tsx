@@ -1,10 +1,8 @@
 import AuthBrandPanel from "@/components/auth/AuthBrandPanel";
 import SignupForm from "@/components/auth/SignupForm";
+import { noIndexMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Sign Up | DoonMeet",
-  description: "Create your DoonMeet account and connect with people across Dehradun.",
-};
+export const metadata = noIndexMetadata("Sign Up", "Create your free DoonMeet account and connect with people across Dehradun.");
 
 export default function SignupPage() {
   return (

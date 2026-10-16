@@ -1,17 +1,19 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import type { Metadata } from "next";
 import EmptyState from "@/components/shared/EmptyState";
 import EventCard from "@/components/events/EventCard";
 import { getEvents } from "@/lib/events";
+import { pageMetadata } from "@/lib/seo";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbJsonLd } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Events in Dehradun | DoonMeet",
+export const metadata = pageMetadata({
+  title: "Events in Dehradun — Meetups & Things to Do",
   description:
-    "From tech meetups to nature walks, see what's happening around Dehradun this week — and RSVP in a couple of taps.",
+    "Tech meetups, nature walks, food trails, photo walks — see what's happening around Dehradun and RSVP in a couple of taps.",
+  path: "/events",
   keywords: ["Dehradun events", "local meetups", "Doon Valley events", "things to do in Dehradun"],
-  alternates: { canonical: "https://doonmeet.in/events" },
-};
+});
 
 const TAGS = [
   { label: "All", value: "" },
@@ -35,9 +37,15 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
 
   return (
     <div className="min-h-screen">
+      <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Events", path: "/events" }])} />
       <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4">
         <div className="mb-4 flex items-center justify-between gap-3 sm:mb-6">
-          <h1 className="text-lg font-black sm:text-xl lg:text-2xl">Events</h1>
+          <div className="min-w-0">
+            <h1 className="text-lg font-black sm:text-xl lg:text-2xl">Events in Dehradun</h1>
+            <p className="mt-0.5 text-xs leading-snug text-muted sm:text-sm">
+              Meetups, walks, workshops and more — RSVP in a couple of taps.
+            </p>
+          </div>
           <Link
             href="/events/create"
             className="btn-springy flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold text-white sm:px-5 sm:py-2.5 sm:text-sm"

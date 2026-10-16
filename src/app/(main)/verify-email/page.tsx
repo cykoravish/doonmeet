@@ -1,10 +1,9 @@
 import { Suspense } from "react";
 import AuthBrandPanel from "@/components/auth/AuthBrandPanel";
 import VerifyEmailHandler from "@/components/auth/VerifyEmailHandler";
+import { noIndexMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Verify Email | DoonMeet",
-};
+export const metadata = noIndexMetadata("Verify Email");
 
 export default function VerifyEmailPage() {
   return (

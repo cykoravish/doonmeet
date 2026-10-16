@@ -1,11 +1,8 @@
-import { Metadata } from "next";
 import { CalendarPlus } from "lucide-react";
 import CreateEventForm from "@/components/events/CreateEventForm";
+import { noIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Create Event | DoonMeet",
-  description: "Create and publish a local event in Dehradun.",
-};
+export const metadata = noIndexMetadata("Create Event", "Create and publish a local event in Dehradun.");
 
 export default function CreateEventPage() {
   return (

@@ -1,14 +1,17 @@
 import { Suspense } from "react";
-import type { Metadata } from "next";
 import { getAllPlacesWithRatings } from "@/lib/places";
 import PlacesExplorer from "@/components/places/PlacesExplorer";
+import { pageMetadata } from "@/lib/seo";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbJsonLd } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Explore Places in Dehradun | DoonMeet",
+export const metadata = pageMetadata({
+  title: "Places to Visit in Dehradun — Reviews & Local Tips",
   description:
-    "Clock Tower, Robber's Cave, hidden cafes, weekend nature spots — real reviews from people who've actually been, not just a list of coordinates.",
-  alternates: { canonical: "https://doonmeet.in/places" },
-};
+    "Robber's Cave, Clock Tower, hidden cafes and weekend nature spots in Dehradun — honest reviews from people who've actually been there.",
+  path: "/places",
+  keywords: ["places to visit in Dehradun", "Dehradun tourist places", "cafes in Dehradun", "Dehradun nature spots"],
+});
 export const dynamic = "force-dynamic";
 
 export default async function PlacesPage() {
@@ -16,6 +19,7 @@ export default async function PlacesPage() {
 
   return (
     <div>
+      <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Places", path: "/places" }])} />
       <section className="mx-auto max-w-7xl px-6 py-16">
         <p
           className="mb-2 text-sm font-semibold uppercase tracking-widest"

@@ -1,15 +1,18 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import CommunityCard from "@/components/communities/CommunityCard";
 import EmptyState from "@/components/shared/EmptyState";
 import { getAllCommunities } from "@/lib/communities";
+import { pageMetadata } from "@/lib/seo";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbJsonLd } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Communities in Dehradun | DoonMeet",
+export const metadata = pageMetadata({
+  title: "Communities in Dehradun — Find Your People",
   description:
-    "Whether you're into tech, photography, food or weekend treks, there's a Dehradun community on DoonMeet for it — or start your own.",
-  alternates: { canonical: "https://doonmeet.in/communities" },
-};
+    "Into tech, photography, food or weekend treks? Join a Dehradun community that matches your interests on DoonMeet and meet people who share them.",
+  path: "/communities",
+  keywords: ["Dehradun communities", "Dehradun groups", "meet people in Dehradun"],
+});
 
 const CATEGORIES = [
   { label: "All", value: "" },
@@ -33,8 +36,14 @@ export default async function CommunitiesPage({ searchParams }: CommunitiesPageP
 
   return (
     <div className="min-h-screen">
+      <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Communities", path: "/communities" }])} />
       <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4">
-        <h1 className="mb-3 text-lg font-black sm:mb-4 sm:text-xl lg:text-2xl">Communities</h1>
+        <div className="mb-3 sm:mb-4">
+          <h1 className="text-lg font-black sm:text-xl lg:text-2xl">Communities in Dehradun</h1>
+          <p className="mt-0.5 text-xs leading-snug text-muted sm:text-sm">
+            Find people who love the same things you do — tech, trails, food and more.
+          </p>
+        </div>
 
         <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1 sm:mb-6">
           {CATEGORIES.map((cat) => {
