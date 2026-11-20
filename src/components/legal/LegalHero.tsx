@@ -1,12 +1,13 @@
 import Link from "next/link";
 import LegalContours from "./LegalContours";
 
-export type LegalDocKey = "privacy" | "terms" | "refund";
+export type LegalDocKey = "privacy" | "terms" | "refund" | "grievance";
 
 const DOCS: { key: LegalDocKey; label: string; shortLabel: string; href: string }[] = [
   { key: "privacy", label: "Privacy Policy", shortLabel: "Privacy", href: "/privacy" },
   { key: "terms", label: "Terms of Service", shortLabel: "Terms", href: "/terms" },
   { key: "refund", label: "Refund & Cancellation", shortLabel: "Refunds", href: "/refund-policy" },
+  { key: "grievance", label: "Grievance Redressal", shortLabel: "Grievance", href: "/grievance" },
 ];
 
 interface LegalHeroProps {

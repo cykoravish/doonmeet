@@ -1,3 +1,5 @@
+import { GRIEVANCE_OFFICER } from "@/lib/legal";
+
 export function LegalSection({
   id,
   number,
@@ -42,7 +44,7 @@ export function LegalCallout({
   const colors = {
     primary: { border: "rgb(var(--primary) / 0.25)", bg: "rgb(var(--primary) / 0.06)", text: "rgb(var(--primary-fg))" },
     accent: { border: "rgb(var(--accent) / 0.3)", bg: "rgb(var(--accent) / 0.08)", text: "rgb(var(--accent-fg))" },
-    danger: { border: "rgb(220 38 38 / 0.25)", bg: "rgb(220 38 38 / 0.06)", text: "rgb(220 38 38)" },
+    danger: { border: "rgb(var(--danger) / 0.25)", bg: "rgb(var(--danger) / 0.06)", text: "rgb(var(--danger))" },
   }[tone];
 
   return (
@@ -89,11 +91,11 @@ export function LegalContact() {
         Reach out and we&apos;ll get back to you — usually within a few days.
       </p>
       <a
-        href="mailto:cykoravish@gmail.com"
+        href={`mailto:${GRIEVANCE_OFFICER.email}`}
         className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
         style={{ backgroundColor: "rgb(var(--primary))" }}
       >
-        cykoravish@gmail.com
+        {GRIEVANCE_OFFICER.email}
       </a>
     </div>
   );

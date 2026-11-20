@@ -237,6 +237,14 @@ export default function TermsPage() {
 
       <LegalSection id="contact" number="17" title="Contact us">
         <p>Questions about these Terms? Reach out any time.</p>
+        <p>
+          To report content or conduct that breaks these Terms, use the in-app Report option or see
+          our{" "}
+          <a href="/grievance" className="font-semibold underline" style={{ color: "rgb(var(--primary-fg))" }}>
+            Grievance Redressal
+          </a>{" "}
+          page for the Grievance Officer&apos;s details, timelines and how to appeal.
+        </p>
       </LegalSection>
 
       <LegalContact />

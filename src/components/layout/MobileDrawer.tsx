@@ -5,6 +5,7 @@ import {
   Bell,
   CalendarDays,
   FileText,
+  LifeBuoy,
   LogOut,
   MapPin,
   Menu,
@@ -189,6 +190,7 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
               <DrawerSection title="About">
                 <DrawerLink href="/privacy" icon={<Shield size={20} />} label="Privacy Policy" onClick={close} />
                 <DrawerLink href="/terms" icon={<FileText size={20} />} label="Terms of Service" onClick={close} />
+                <DrawerLink href="/grievance" icon={<LifeBuoy size={20} />} label="Report a problem" onClick={close} />
               </DrawerSection>
 
               {user && (

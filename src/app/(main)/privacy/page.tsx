@@ -1,4 +1,5 @@
 import LegalPageShell from "@/components/legal/LegalPageShell";
+import { GRIEVANCE_OFFICER } from "@/lib/legal";
 import { LegalSection, LegalCallout, LegalList, LegalContact } from "@/components/legal/LegalSection";
 import { pageMetadata } from "@/lib/seo";
 
@@ -230,11 +231,18 @@ export default function PrivacyPolicyPage() {
           complaints or concerns regarding content or privacy on the platform.
         </p>
         <p>
-          <strong>Name:</strong> Ravish Bisht
+          <strong>Name:</strong> {GRIEVANCE_OFFICER.name}
           <br />
-          <strong>Email:</strong> cykoravish@gmail.com
+          <strong>Email:</strong> {GRIEVANCE_OFFICER.email}
           <br />
-          <strong>Location:</strong> Dehradun, Uttarakhand, India
+          <strong>Location:</strong> {GRIEVANCE_OFFICER.location}
+        </p>
+        <p>
+          How to file a complaint, response timelines and how to appeal are explained on our{" "}
+          <a href="/grievance" className="font-semibold underline" style={{ color: "rgb(var(--primary-fg))" }}>
+            Grievance Redressal
+          </a>{" "}
+          page.
         </p>
       </LegalSection>
 

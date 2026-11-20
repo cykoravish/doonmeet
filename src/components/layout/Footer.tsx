@@ -17,6 +17,7 @@ const links = {
     { label: "Privacy Policy", href: "/privacy" },
     { label: "Terms of Service", href: "/terms" },
     { label: "Refund & Cancellation", href: "/refund-policy" },
+    { label: "Grievance Redressal", href: "/grievance" },
   ],
 };
 

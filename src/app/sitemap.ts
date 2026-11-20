@@ -21,7 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   );
 
-  const legalRoutes = ["/privacy", "/terms", "/refund-policy"].map((route) => ({
+  const legalRoutes = ["/privacy", "/terms", "/refund-policy", "/grievance"].map((route) => ({
     url: `${base}${route}`,
     changeFrequency: "yearly" as const,
     priority: 0.3,
