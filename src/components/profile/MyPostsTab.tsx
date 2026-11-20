@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2, Newspaper } from "lucide-react";
 import PostCard from "@/components/posts/PostCard";
 import EmptyState from "@/components/shared/EmptyState";
+import { buttonClasses } from "@/components/ui/Button";
 
 interface Author {
   _id: string;
@@ -59,34 +60,30 @@ export default function MyPostsTab({ userId }: { userId: string }) {
 
   return (
     <div>
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-bold">My Posts</h2>
-          <p className="mt-1 text-xs" style={{ color: "rgb(var(--muted))" }}>
-            Everything you&apos;ve shared with the community.
-          </p>
+          <h2 className="text-lg font-extrabold">My posts</h2>
+          <p className="mt-0.5 text-sm text-muted">Everything you&apos;ve shared with Dehradun.</p>
         </div>
-        <Link
-          href="/posts"
-          className="flex min-h-[40px] w-fit shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold active:opacity-70"
-          style={{ backgroundColor: "rgb(var(--primary) / 0.1)", color: "rgb(var(--primary))" }}
-        >
-          <Newspaper size={13} /> New post
+        <Link href="/posts?compose=1" className={buttonClasses("primary", "sm", "shrink-0")}>
+          <Newspaper size={17} aria-hidden="true" /> New post
         </Link>
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-10">
-          <Loader2 size={20} className="animate-spin" style={{ color: "rgb(var(--muted))" }} />
+        <div className="flex flex-col gap-3" aria-label="Loading posts">
+          {[0, 1].map((i) => (
+            <div key={i} className="h-32 rounded-[20px] bg-surface-2" />
+          ))}
         </div>
       ) : posts.length === 0 ? (
         <EmptyState
-          icon="📝"
+          icon={<Newspaper size={28} />}
           title="No posts yet"
           description="Share a job, an event, or anything on your mind."
         />
       ) : (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-3">
           {posts.map((post) => (
             <PostCard
               key={post._id}
@@ -106,12 +103,12 @@ export default function MyPostsTab({ userId }: { userId: string }) {
       {nextCursor && (
         <div className="flex justify-center pt-5">
           <button
+            type="button"
             onClick={loadMore}
             disabled={loadingMore}
-            className="flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
-            style={{ borderColor: "rgb(var(--border))" }}
+            className={buttonClasses("secondary", "md")}
           >
-            {loadingMore && <Loader2 size={14} className="animate-spin" />}
+            {loadingMore && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
             Load more
           </button>
         </div>

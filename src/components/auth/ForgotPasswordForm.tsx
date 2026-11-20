@@ -37,33 +37,35 @@ export default function ForgotPasswordForm() {
     <div className="flex flex-col gap-5">
       <Link
         href="/login"
-        className="flex items-center gap-1.5 text-sm w-fit hover:underline"
-        style={{ color: "rgb(var(--muted))" }}
+        className="-ml-2 -mb-2 flex min-h-11 w-fit items-center gap-1.5 rounded-[12px] px-2 text-sm font-semibold text-muted hover:bg-surface-2 hover:text-text"
       >
-        <ArrowLeft size={14} />
+        <ArrowLeft size={17} aria-hidden="true" />
         Back to login
       </Link>
 
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Forgot password?</h1>
-        <p className="mt-1 text-sm" style={{ color: "rgb(var(--muted))" }}>
-          Enter your email and we&apos;ll send you a reset link.
+      <header>
+        <h1 className="text-[28px] leading-tight font-extrabold">Forgot password?</h1>
+        <p className="mt-1 text-[15px] text-muted">
+          No problem. Enter your email and we&apos;ll send you a reset link.
         </p>
-      </div>
+      </header>
 
       {error && <Alert type="error" message={error} />}
       {success && <Alert type="success" message={success} />}
 
       {!success && (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input
+            label="Email"
             type="email"
-            placeholder="Email address"
+            autoComplete="email"
+            inputMode="email"
+            placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <Button type="submit" loading={loading}>
+          <Button type="submit" size="lg" loading={loading}>
             Send reset link
           </Button>
         </form>

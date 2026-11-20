@@ -46,7 +46,7 @@ export default function TermsPage() {
           DoonMeet governing your access to and use of doonmeet.in and any related apps
           (collectively, the &quot;Service&quot;). By creating an account or
           otherwise using the Service, you agree to these Terms and to our{" "}
-          <a href="/privacy" className="font-semibold underline" style={{ color: "rgb(var(--primary))" }}>
+          <a href="/privacy" className="font-semibold underline" style={{ color: "rgb(var(--primary-fg))" }}>
             Privacy Policy
           </a>
           .
@@ -164,7 +164,7 @@ export default function TermsPage() {
           capabilities or paid event tools) in the future. Once available, pricing, billing terms,
           and any subscription details will be shown clearly before you pay, and will be governed
           by these Terms together with our{" "}
-          <a href="/refund-policy" className="font-semibold underline" style={{ color: "rgb(var(--primary))" }}>
+          <a href="/refund-policy" className="font-semibold underline" style={{ color: "rgb(var(--primary-fg))" }}>
             Refund &amp; Cancellation Policy
           </a>
           . Payments will be processed through a licensed third-party payment gateway.

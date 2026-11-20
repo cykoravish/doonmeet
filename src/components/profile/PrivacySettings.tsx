@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import Alert from "@/components/ui/Alert";
+import SwitchRow from "@/components/ui/Switch";
 
 interface Privacy {
   showEmail: boolean;
@@ -21,9 +22,9 @@ const FIELDS = [
   { key: "showEmail", label: "Email address", description: "Show your email on your public profile" },
   { key: "showPhone", label: "Phone number", description: "Show your phone on your public profile" },
   { key: "showGender", label: "Gender", description: "Show your gender on your public profile" },
-  { key: "showAddress", label: "Address / Area", description: "Show your location on your public profile" },
+  { key: "showAddress", label: "Area in Dehradun", description: "Show where you live on your public profile" },
   { key: "showInterests", label: "Interests", description: "Show your interests on your public profile" },
-  { key: "showDOB", label: "Date of Birth", description: "Show your date of birth on your public profile" },
+  { key: "showDOB", label: "Date of birth", description: "Show your birthday on your public profile" },
 ] as const;
 
 export default function PrivacySettings({ initialPrivacy }: PrivacySettingsProps) {
@@ -58,64 +59,21 @@ export default function PrivacySettings({ initialPrivacy }: PrivacySettingsProps
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-2.5">
       {error && <Alert type="error" message={error} />}
 
       {FIELDS.map((field) => {
         const isOn = privacy[field.key];
-        const isSaving = saving === field.key;
-
         return (
-          <div
+          <SwitchRow
             key={field.key}
-            className="flex items-center justify-between gap-3 rounded-xl border p-4"
-            style={{
-              borderColor: "rgb(var(--border))",
-              backgroundColor: "rgb(var(--surface))",
-            }}
-          >
-            <div className="flex min-w-0 items-center gap-3">
-              <div
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-                style={{
-                  backgroundColor: isOn
-                    ? "rgb(var(--primary) / 0.1)"
-                    : "rgb(var(--muted) / 0.1)",
-                }}
-              >
-                {isOn ? (
-                  <Eye size={14} style={{ color: "rgb(var(--primary))" }} />
-                ) : (
-                  <EyeOff size={14} style={{ color: "rgb(var(--muted))" }} />
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium">{field.label}</p>
-                <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-                  {field.description}
-                </p>
-              </div>
-            </div>
-
-            {/* Toggle */}
-            <button
-              onClick={() => toggle(field.key)}
-              disabled={isSaving}
-              className="relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50"
-              style={{
-                backgroundColor: isOn
-                  ? "rgb(var(--primary))"
-                  : "rgb(var(--border))",
-              }}
-            >
-              <div
-                className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"
-                style={{
-                  transform: isOn ? "translateX(20px)" : "translateX(2px)",
-                }}
-              />
-            </button>
-          </div>
+            label={field.label}
+            description={field.description}
+            checked={isOn}
+            onChange={() => toggle(field.key)}
+            saving={saving === field.key}
+            icon={isOn ? <Eye size={19} /> : <EyeOff size={19} />}
+          />
         );
       })}
     </div>

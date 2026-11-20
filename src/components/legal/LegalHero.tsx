@@ -27,7 +27,7 @@ export default function LegalHero({ active, title, description, lastUpdated }: L
       <div className="relative mx-auto max-w-5xl px-6 pb-10 pt-14 md:pt-20">
         <p
           className="mb-3 font-[family-name:var(--font-geist-mono)] text-xs font-semibold uppercase tracking-[0.25em]"
-          style={{ color: "rgb(var(--primary))" }}
+          style={{ color: "rgb(var(--primary-fg))" }}
         >
           Legal · Doon Valley
         </p>
@@ -45,7 +45,7 @@ export default function LegalHero({ active, title, description, lastUpdated }: L
           className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium"
           style={{
             backgroundColor: "rgb(var(--primary) / 0.08)",
-            color: "rgb(var(--primary))",
+            color: "rgb(var(--primary-fg))",
           }}
         >
           <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "rgb(var(--primary))" }} />

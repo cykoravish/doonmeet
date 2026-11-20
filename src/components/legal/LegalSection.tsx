@@ -14,7 +14,7 @@ export function LegalSection({
       <div className="mb-4 flex items-baseline gap-3">
         <span
           className="font-[family-name:var(--font-geist-mono)] text-sm font-semibold"
-          style={{ color: "rgb(var(--accent))" }}
+          style={{ color: "rgb(var(--accent-fg))" }}
         >
           {number}
         </span>
@@ -40,8 +40,8 @@ export function LegalCallout({
   children: React.ReactNode;
 }) {
   const colors = {
-    primary: { border: "rgb(var(--primary) / 0.25)", bg: "rgb(var(--primary) / 0.06)", text: "rgb(var(--primary))" },
-    accent: { border: "rgb(var(--accent) / 0.3)", bg: "rgb(var(--accent) / 0.08)", text: "rgb(var(--accent))" },
+    primary: { border: "rgb(var(--primary) / 0.25)", bg: "rgb(var(--primary) / 0.06)", text: "rgb(var(--primary-fg))" },
+    accent: { border: "rgb(var(--accent) / 0.3)", bg: "rgb(var(--accent) / 0.08)", text: "rgb(var(--accent-fg))" },
     danger: { border: "rgb(220 38 38 / 0.25)", bg: "rgb(220 38 38 / 0.06)", text: "rgb(220 38 38)" },
   }[tone];
 

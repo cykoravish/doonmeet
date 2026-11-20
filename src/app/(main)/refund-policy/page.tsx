@@ -43,7 +43,7 @@ export default function RefundPolicyPage() {
         <p>
           Once paid features go live, this policy will govern all payments made on DoonMeet,
           alongside our{" "}
-          <a href="/terms" className="font-semibold underline" style={{ color: "rgb(var(--primary))" }}>
+          <a href="/terms" className="font-semibold underline" style={{ color: "rgb(var(--primary-fg))" }}>
             Terms of Service
           </a>
           .
@@ -114,7 +114,7 @@ export default function RefundPolicyPage() {
           If DoonMeet introduces paid event tickets in the future, please note that event
           cancellations, rescheduling, and refunds for the event itself are the responsibility of
           the individual event organiser, not DoonMeet — consistent with Section 7 of our{" "}
-          <a href="/terms" className="font-semibold underline" style={{ color: "rgb(var(--primary))" }}>
+          <a href="/terms" className="font-semibold underline" style={{ color: "rgb(var(--primary-fg))" }}>
             Terms of Service
           </a>
           , which explains that DoonMeet is a listing platform and not the organiser of user-created

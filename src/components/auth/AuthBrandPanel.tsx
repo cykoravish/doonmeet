@@ -1,84 +1,34 @@
+import Image from "next/image";
 import { MapPin } from "lucide-react";
 
+// Desktop-only side panel for auth pages (display:none below lg, so phones
+// download nothing for it — next/image is lazy by default). Uses our own
+// optimised Clock Tower photo instead of a remote stock image, and no
+// made-up stats.
 export default function AuthBrandPanel() {
   return (
-    <div className="relative hidden lg:flex flex-col justify-between overflow-hidden h-full min-h-screen">
-      
-      {/* Background image */}
-      <img
-        src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80"
-        alt="Dehradun hills"
-        className="absolute inset-0 h-full w-full object-cover"
+    <div className="relative hidden overflow-hidden lg:block">
+      <Image
+        src="/images/hero-clock-tower.webp"
+        alt=""
+        fill
+        sizes="(min-width: 1024px) 60vw, 0px"
+        className="object-cover"
       />
+      <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/40 to-black/10" aria-hidden="true" />
 
-      {/* Gradient overlays */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/50 to-transparent" />
-      <div
-        className="absolute inset-0 opacity-40"
-        style={{
-          background: "linear-gradient(135deg, rgb(var(--primary)) 0%, transparent 60%)",
-        }}
-      />
-
-      {/* Content */}
-      <div className="relative z-10 flex flex-col justify-between h-full p-12">
-        
-        {/* Logo */}
-        <div className="flex items-center gap-2.5">
-          <div
-            className="flex h-9 w-9 items-center justify-center rounded-xl"
-            style={{ backgroundColor: "rgb(var(--primary))" }}
-          >
-            <MapPin size={18} color="white" />
-          </div>
-          <span className="text-lg font-bold text-white tracking-tight">DoonMeet</span>
-        </div>
-
-        {/* Main content */}
-        <div>
-          {/* Eyebrow */}
-          <div className="flex items-center gap-2 mb-4">
-            <div
-              className="h-px w-8"
-              style={{ backgroundColor: "rgb(var(--accent))" }}
-            />
-            <span
-              className="text-xs font-semibold uppercase tracking-[0.2em]"
-              style={{ color: "rgb(var(--accent))" }}
-            >
-              Dehradun&apos;s own
-            </span>
-          </div>
-
-          {/* Headline */}
-          <h2 className="text-5xl font-black text-white leading-[1.1] mb-6">
-            Where Doon
-            <br />
-            <span style={{ color: "rgb(var(--primary-light))" }}>
-              comes alive.
-            </span>
-          </h2>
-
-          {/* Stats row */}
-          <div className="flex items-center gap-6">
-            {[
-              { value: "10K+", label: "People" },
-              { value: "500+", label: "Events" },
-              { value: "50+", label: "Communities" },
-            ].map((stat) => (
-              <div key={stat.label}>
-                <p className="text-xl font-bold text-white">{stat.value}</p>
-                <p className="text-xs" style={{ color: "rgb(255 255 255 / 0.5)" }}>
-                  {stat.label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Bottom */}
-        <p className="text-xs" style={{ color: "rgb(255 255 255 / 0.35)" }}>
-          © 2025 DoonMeet · Built for Dehradun
+      <div className="relative flex h-full flex-col justify-end p-12 text-white">
+        <p className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-sm font-semibold">
+          <MapPin size={15} aria-hidden="true" />
+          Dehradun, Uttarakhand
+        </p>
+        <p className="font-display text-5xl leading-[1.05] font-extrabold">
+          Where Doon
+          <br />
+          comes alive.
+        </p>
+        <p className="mt-4 max-w-md text-lg text-white/80">
+          Chat with people nearby, find events and join communities — a free local space made for Dehradun.
         </p>
       </div>
     </div>

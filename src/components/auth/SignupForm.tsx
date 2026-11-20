@@ -2,18 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import PasswordInput from "@/components/ui/PasswordInput";
 import Alert from "@/components/ui/Alert";
 import Divider from "@/components/ui/Divider";
 import GoogleButton from "./GoogleButton";
-import Link from "next/link";
 
 export default function SignupForm() {
   const router = useRouter();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
@@ -32,7 +31,7 @@ export default function SignupForm() {
       if (!res.ok) {
         setError(
           data.code === "USE_GOOGLE_LOGIN"
-            ? "This email is linked to Google. Please sign in with Google."
+            ? "This email is linked to Google. Please continue with Google."
             : (data.errors?.[0]?.message ?? data.message)
         );
         return;
@@ -70,72 +69,67 @@ export default function SignupForm() {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Create account</h1>
-        <p className="mt-1 text-sm" style={{ color: "rgb(var(--muted))" }}>
-          Join DoonMeet and connect with Dehradun
-        </p>
-      </div>
+      <header>
+        <h1 className="text-[28px] leading-tight font-extrabold">Join DoonMeet</h1>
+        <p className="mt-1 text-[15px] text-muted">Free forever. Meet people, find events, join communities.</p>
+      </header>
 
       {error && <Alert type="error" message={error} />}
 
-      {/* Google */}
-      <GoogleButton
-        loading={googleLoading}
-        onSuccess={handleGoogle}
-        onError={() => setError("Google sign in failed.")}
-      />
+      {/* Google first — fastest way in on a phone (no password to type) */}
+      <GoogleButton loading={googleLoading} onSuccess={handleGoogle} onError={() => setError("Google sign in failed.")} />
 
-      <Divider label="or sign up with email" />
+      <Divider label="or with email" />
 
-      {/* Form */}
-      <form onSubmit={handleSignup} className="flex flex-col gap-3">
+      <form onSubmit={handleSignup} className="flex flex-col gap-4">
         <Input
-          placeholder="Full name"
+          label="Your name"
+          autoComplete="name"
+          autoCapitalize="words"
+          placeholder="e.g. Aman Negi"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
+          maxLength={50}
           required
         />
         <Input
+          label="Email"
           type="email"
-          placeholder="Email address"
+          autoComplete="email"
+          inputMode="email"
+          placeholder="you@example.com"
+          hint="We'll send a 4-digit code to verify it."
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           required
         />
-        <div className="relative">
-          <Input
-            type={showPassword ? "text" : "password"}
-            placeholder="Password"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            required
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-3"
-            style={{ color: "rgb(var(--muted))" }}
-          >
-            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-        </div>
-        <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-          Min 8 characters, 1 uppercase, 1 number
-        </p>
-        <Button type="submit" loading={loading}>
-          Create account
+        <PasswordInput
+          label="Password"
+          autoComplete="new-password"
+          hint="At least 8 characters, with 1 capital letter and 1 number."
+          value={form.password}
+          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          required
+        />
+        <Button type="submit" size="lg" loading={loading}>
+          Create free account
         </Button>
+        <p className="text-center text-sm text-muted">
+          By signing up you agree to our{" "}
+          <Link href="/terms" className="font-semibold text-text underline">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="font-semibold text-text underline">
+            Privacy Policy
+          </Link>
+          .
+        </p>
       </form>
 
-      <p className="text-center text-sm" style={{ color: "rgb(var(--muted))" }}>
+      <p className="text-center text-[15px] text-muted">
         Already have an account?{" "}
-        <Link
-          href="/login"
-          className="font-semibold hover:underline"
-          style={{ color: "rgb(var(--primary))" }}
-        >
+        <Link href="/login" className="font-semibold text-primary-fg hover:underline">
           Log in
         </Link>
       </p>

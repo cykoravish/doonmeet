@@ -10,10 +10,9 @@ interface ProfileBannerProps {
   editable?: boolean;
 }
 
-// Full-width banner on the public profile page. Editable only for the
-// profile owner — hover reveals a camera affordance, same interaction
-// pattern as ProfileAvatar. No banner set yet falls back to the themed
-// decorative gradient instead of a blank/plain block.
+// Banner on the public profile page. Owners get an always-visible "Edit"
+// pill (a hover-only control is invisible on phones). No banner yet → a
+// static ridge silhouette on the brand green.
 export default function ProfileBanner({ bannerImage, editable = false }: ProfileBannerProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -52,50 +51,30 @@ export default function ProfileBanner({ bannerImage, editable = false }: Profile
   }
 
   return (
-    <div className="group relative h-40 overflow-hidden sm:h-52 md:h-60 bg-gradient-to-br from-primary via-primary to-primary-light">
+    <div className="relative h-36 overflow-hidden bg-primary sm:h-52 md:rounded-b-[24px]">
       {displaySrc ? (
-        <Image src={displaySrc} alt="Profile banner" fill priority className="object-cover" />
+        <Image src={displaySrc} alt="" fill priority sizes="100vw" className="object-cover" />
       ) : (
         <svg
           aria-hidden="true"
-          viewBox="0 0 400 160"
+          viewBox="0 0 390 120"
           preserveAspectRatio="none"
-          className="absolute inset-0 h-full w-full"
+          className="absolute inset-x-0 bottom-0 h-3/4 w-full fill-on-primary opacity-15"
         >
-          <path
-            d="M0,40 C60,10 100,55 160,35 C220,15 260,50 320,30 C350,20 380,35 400,25 V0 H0 Z"
-            fill="rgb(255 255 255 / 0.10)"
-          />
-          <path
-            d="M0,80 C50,60 110,95 170,75 C230,55 270,90 330,70 C360,60 385,72 400,65 V0 H0 Z"
-            fill="rgb(255 255 255 / 0.07)"
-          />
-          <path
-            d="M0,120 C55,100 115,130 175,112 C235,94 275,125 335,108 C365,99 385,110 400,104 V0 H0 Z"
-            fill="rgb(255 255 255 / 0.05)"
-          />
+          <path d="M0 120 L0 80 L60 40 L95 62 L160 16 L215 58 L250 38 L330 80 L390 50 L390 120 Z" />
         </svg>
       )}
-
-      {/* Soft bottom fade so the avatar ring transitions in cleanly */}
-      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/10 to-transparent" />
 
       {editable && (
         <>
           <button
+            type="button"
             onClick={() => inputRef.current?.click()}
             disabled={loading}
-            aria-label={displaySrc ? "Change banner image" : "Add a banner image"}
-            className="absolute inset-0 flex items-center justify-center gap-2 bg-black/0 text-white opacity-0 transition-all group-hover:bg-black/30 group-hover:opacity-100 focus-visible:bg-black/30 focus-visible:opacity-100"
+            className="absolute right-3 bottom-3 flex h-10 items-center gap-1.5 rounded-full bg-black/55 px-3.5 text-sm font-semibold text-white"
           >
-            {loading ? (
-              <Loader2 size={20} className="animate-spin" />
-            ) : (
-              <span className="flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm">
-                <Camera size={14} />
-                {displaySrc ? "Change banner" : "Add a banner"}
-              </span>
-            )}
+            {loading ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Camera size={16} aria-hidden="true" />}
+            {displaySrc ? "Change banner" : "Add banner"}
           </button>
           <input
             ref={inputRef}

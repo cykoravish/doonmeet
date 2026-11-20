@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell, BellOff, Loader2 } from "lucide-react";
 import Alert from "@/components/ui/Alert";
+import SwitchRow from "@/components/ui/Switch";
 import {
   isPushSupported,
   getPushSubscriptionStatus,
@@ -48,66 +49,31 @@ export default function NotificationSettings() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-2.5">
       {error && <Alert type="error" message={error} />}
 
       {!supported && (
         <Alert
           type="info"
-          message="Browser notifications aren't supported here. On iPhone, add DoonMeet to your Home Screen from Safari first."
+          message="Notifications aren't supported in this browser. On iPhone, add DoonMeet to your Home Screen from Safari first."
         />
       )}
 
-      <div
-        className="flex items-center justify-between gap-3 rounded-xl border p-4"
-        style={{
-          borderColor: "rgb(var(--border))",
-          backgroundColor: "rgb(var(--surface))",
-        }}
-      >
-        <div className="flex min-w-0 items-center gap-3">
-          <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-            style={{
-              backgroundColor: enabled
-                ? "rgb(var(--primary) / 0.1)"
-                : "rgb(var(--muted) / 0.1)",
-            }}
-          >
-            {enabled ? (
-              <Bell size={14} style={{ color: "rgb(var(--primary))" }} />
-            ) : (
-              <BellOff size={14} style={{ color: "rgb(var(--muted))" }} />
-            )}
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium">Browser notifications</p>
-            <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-              Get notified about new messages and replies even when DoonMeet isn&apos;t open.
-            </p>
-          </div>
+      {checking ? (
+        <div className="flex h-[72px] items-center justify-center rounded-[16px] border border-border">
+          <Loader2 size={18} className="animate-spin text-muted" aria-label="Checking notification status" />
         </div>
-
-        {checking ? (
-          <Loader2 size={16} className="shrink-0 animate-spin" style={{ color: "rgb(var(--muted))" }} />
-        ) : (
-          <button
-            onClick={handleToggle}
-            disabled={saving || !supported}
-            className="relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50"
-            style={{
-              backgroundColor: enabled ? "rgb(var(--primary))" : "rgb(var(--border))",
-            }}
-          >
-            <div
-              className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"
-              style={{
-                transform: enabled ? "translateX(20px)" : "translateX(2px)",
-              }}
-            />
-          </button>
-        )}
-      </div>
+      ) : (
+        <SwitchRow
+          label="Phone notifications"
+          description="Get notified about new messages and replies even when DoonMeet is closed."
+          checked={enabled}
+          onChange={handleToggle}
+          disabled={!supported}
+          saving={saving}
+          icon={enabled ? <Bell size={19} /> : <BellOff size={19} />}
+        />
+      )}
     </div>
   );
 }

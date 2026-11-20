@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
 import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
+import PasswordInput from "@/components/ui/PasswordInput";
 import Alert from "@/components/ui/Alert";
 
 export default function ResetPasswordForm() {
@@ -13,7 +13,6 @@ export default function ResetPasswordForm() {
   const token = searchParams.get("token");
 
   const [form, setForm] = useState({ password: "", confirmPassword: "" });
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -45,52 +44,44 @@ export default function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <Alert type="error" message="Invalid reset link. Please request a new one." />
+      <div className="flex flex-col gap-4">
+        <h1 className="text-[28px] leading-tight font-extrabold">Link not valid</h1>
+        <Alert type="error" message="This reset link is invalid or incomplete. Please request a new one." />
+        <Link href="/forgot-password" className="font-semibold text-primary-fg hover:underline">
+          Send me a new link →
+        </Link>
+      </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Reset password</h1>
-        <p className="mt-1 text-sm" style={{ color: "rgb(var(--muted))" }}>
-          Enter your new password below.
-        </p>
-      </div>
+      <header>
+        <h1 className="text-[28px] leading-tight font-extrabold">Set a new password</h1>
+        <p className="mt-1 text-[15px] text-muted">Choose something you haven&apos;t used before.</p>
+      </header>
 
       {error && <Alert type="error" message={error} />}
       {success && <Alert type="success" message={success} />}
 
       {!success && (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <div className="relative">
-            <Input
-              type={showPassword ? "text" : "password"}
-              placeholder="New password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-3"
-              style={{ color: "rgb(var(--muted))" }}
-            >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-          </div>
-          <Input
-            type="password"
-            placeholder="Confirm new password"
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <PasswordInput
+            label="New password"
+            autoComplete="new-password"
+            hint="At least 8 characters, with 1 capital letter and 1 number."
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            required
+          />
+          <PasswordInput
+            label="Confirm new password"
+            autoComplete="new-password"
             value={form.confirmPassword}
             onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
             required
           />
-          <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-            Min 8 characters, 1 uppercase, 1 number
-          </p>
-          <Button type="submit" loading={loading}>
+          <Button type="submit" size="lg" loading={loading}>
             Reset password
           </Button>
         </form>

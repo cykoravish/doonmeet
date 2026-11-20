@@ -146,7 +146,7 @@ export default function PrivacyPolicyPage() {
             <>Payments will be processed by a licensed third-party payment gateway — we do not, and will not, store your full card, UPI or bank details on our own servers.</>,
             <>We&apos;ll only retain what&apos;s needed for receipts, support, and fraud prevention — such as a transaction ID, amount, and status.</>,
             <>This policy will be updated before any paid feature goes live, and our{" "}
-              <a href="/refund-policy" className="font-semibold underline" style={{ color: "rgb(var(--primary))" }}>
+              <a href="/refund-policy" className="font-semibold underline" style={{ color: "rgb(var(--primary-fg))" }}>
                 Refund &amp; Cancellation Policy
               </a>{" "}
               will explain how charges and cancellations work.

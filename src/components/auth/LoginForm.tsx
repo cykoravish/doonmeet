@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import PasswordInput from "@/components/ui/PasswordInput";
 import Alert from "@/components/ui/Alert";
 import Divider from "@/components/ui/Divider";
 import GoogleButton from "./GoogleButton";
@@ -13,14 +13,15 @@ import GoogleButton from "./GoogleButton";
 export default function LoginForm() {
   const router = useRouter();
   const [form, setForm] = useState({ email: "", password: "" });
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setUnverifiedEmail(null);
     setLoading(true);
     try {
       const res = await fetch("/api/auth/login", {
@@ -31,9 +32,10 @@ export default function LoginForm() {
       const data = await res.json();
       if (!res.ok) {
         if (data.code === "USE_GOOGLE_LOGIN") {
-          setError("This account uses Google login. Please sign in with Google or set a password from settings.");
+          setError("This account uses Google login. Tap “Continue with Google” above.");
         } else if (data.code === "EMAIL_UNVERIFIED") {
-          setError("Please verify your email first. Check your inbox or resend the link.");
+          setError("Please verify your email first — we sent you a 4-digit code.");
+          setUnverifiedEmail(form.email);
         } else {
           setError(data.message ?? "Invalid email or password.");
         }
@@ -58,7 +60,10 @@ export default function LoginForm() {
         body: JSON.stringify({ idToken: accessToken }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.message); return; }
+      if (!res.ok) {
+        setError(data.message);
+        return;
+      }
       router.push("/");
       router.refresh();
     } catch {
@@ -70,14 +75,20 @@ export default function LoginForm() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
-        <p className="mt-1 text-sm" style={{ color: "rgb(var(--muted))" }}>
-          Log in to your DoonMeet account
-        </p>
-      </div>
+      <header>
+        <h1 className="text-[28px] leading-tight font-extrabold">Welcome back</h1>
+        <p className="mt-1 text-[15px] text-muted">Log in and see what&apos;s happening in Doon.</p>
+      </header>
 
       {error && <Alert type="error" message={error} />}
+      {unverifiedEmail && (
+        <Link
+          href={`/verify-email?email=${encodeURIComponent(unverifiedEmail)}`}
+          className="-mt-2 text-sm font-semibold text-primary-fg hover:underline"
+        >
+          Enter my verification code →
+        </Link>
+      )}
 
       <GoogleButton
         label="Continue with Google"
@@ -86,56 +97,43 @@ export default function LoginForm() {
         onError={() => setError("Google sign in failed.")}
       />
 
-      <Divider label="or log in with email" />
+      <Divider label="or with email" />
 
-      <form onSubmit={handleLogin} className="flex flex-col gap-3">
+      <form onSubmit={handleLogin} className="flex flex-col gap-4">
         <Input
+          label="Email"
           type="email"
-          placeholder="Email address"
+          autoComplete="email"
+          inputMode="email"
+          placeholder="you@example.com"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           required
         />
-        <div className="relative">
-          <Input
-            type={showPassword ? "text" : "password"}
-            placeholder="Password"
+        <div className="flex flex-col gap-1">
+          <PasswordInput
+            label="Password"
+            autoComplete="current-password"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             required
           />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-3"
-            style={{ color: "rgb(var(--muted))" }}
-          >
-            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-        </div>
-
-        <div className="flex justify-end">
           <Link
             href="/forgot-password"
-            className="text-xs hover:underline"
-            style={{ color: "rgb(var(--primary))" }}
+            className="flex min-h-10 items-center self-end text-sm font-semibold text-primary-fg hover:underline"
           >
             Forgot password?
           </Link>
         </div>
 
-        <Button type="submit" loading={loading}>
+        <Button type="submit" size="lg" loading={loading}>
           Log in
         </Button>
       </form>
 
-      <p className="text-center text-sm" style={{ color: "rgb(var(--muted))" }}>
-        Don&apos;t have an account?{" "}
-        <Link
-          href="/signup"
-          className="font-semibold hover:underline"
-          style={{ color: "rgb(var(--primary))" }}
-        >
+      <p className="text-center text-[15px] text-muted">
+        New to DoonMeet?{" "}
+        <Link href="/signup" className="font-semibold text-primary-fg hover:underline">
           Sign up free
         </Link>
       </p>

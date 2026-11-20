@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import { Camera, Loader2 } from "lucide-react";
+import { useToast } from "@/providers/toast-provider";
 
 interface ProfileAvatarProps {
   avatar: string | null;
@@ -26,6 +27,7 @@ export default function ProfileAvatar({
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { showToast } = useToast();
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -38,19 +40,22 @@ export default function ProfileAvatar({
       const formData = new FormData();
       formData.append("avatar", file);
 
-      const res = await fetch("/api/users/avatar", {
-        method: "POST",
-        body: formData,
-      });
-
+      const res = await fetch("/api/users/avatar", { method: "POST", body: formData });
       const data = await res.json();
       if (res.ok && data.avatar) {
         onUpdate?.(data.avatar);
+        showToast("Profile photo updated!", "success");
+      } else {
+        // Roll back the preview — otherwise the old photo silently "looks" replaced.
+        setPreview(null);
+        showToast(data.message || "Couldn't update your photo.", "error");
       }
     } catch {
       setPreview(null);
+      showToast("Network error while uploading photo.", "error");
     } finally {
       setLoading(false);
+      if (inputRef.current) inputRef.current.value = "";
     }
   }
 
@@ -61,50 +66,47 @@ export default function ProfileAvatar({
       {displaySrc ? (
         <Image
           src={displaySrc}
-          alt={name}
+          alt={editable ? "" : name}
           width={size}
           height={size}
-          className="h-full w-full rounded-full border-4 object-cover shadow-md"
-          style={{ borderColor: "rgb(var(--background))" }}
+          sizes="96px"
+          className="h-full w-full rounded-full border-4 border-surface object-cover"
         />
       ) : (
         <div
-          className="flex h-full w-full items-center justify-center rounded-full border-4 font-bold text-white shadow-md"
-          style={{
-            backgroundColor: "rgb(var(--primary))",
-            borderColor: "rgb(var(--background))",
-            fontSize: "clamp(1.25rem, 7vw, 2rem)",
-          }}
+          className="flex h-full w-full items-center justify-center rounded-full border-4 border-surface bg-primary-soft font-display font-extrabold text-primary-fg"
+          style={{ fontSize: "clamp(1.5rem, 7vw, 2.25rem)" }}
+          aria-hidden={editable || undefined}
         >
           {name[0]?.toUpperCase()}
         </div>
       )}
 
-      {/* Edit overlay */}
       {editable && (
         <>
           <button
+            type="button"
             onClick={() => inputRef.current?.click()}
             disabled={loading}
             aria-label={displaySrc ? "Change profile photo" : "Add a profile photo"}
-            className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 active:opacity-100"
+            className="absolute inset-0 flex items-center justify-center rounded-full"
           >
-            {loading && <Loader2 size={20} className="animate-spin text-white" />}
+            {loading && (
+              <span className="flex h-full w-full items-center justify-center rounded-full bg-black/40">
+                <Loader2 size={22} className="animate-spin text-white" aria-hidden="true" />
+              </span>
+            )}
           </button>
 
-          {/* Always-visible camera badge — hover-only affordances don't
-              exist on touch devices, so this is how mobile users discover
-              the avatar is tappable to change. */}
+          {/* Always-visible camera badge — touch devices have no hover, so
+              this is how people discover the photo is tappable. */}
           {!loading && (
-            <div
-              className="pointer-events-none absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full border-2 shadow-sm"
-              style={{
-                backgroundColor: "rgb(var(--primary))",
-                borderColor: "rgb(var(--background))",
-              }}
+            <span
+              className="pointer-events-none absolute right-0 bottom-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-primary text-on-primary"
+              aria-hidden="true"
             >
-              <Camera size={13} className="text-white" />
-            </div>
+              <Camera size={15} />
+            </span>
           )}
 
           <input

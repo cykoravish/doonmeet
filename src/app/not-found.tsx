@@ -1,48 +1,30 @@
 import Link from "next/link";
-import { MapPin } from "lucide-react";
+import { MapPinOff } from "lucide-react";
+import { buttonClasses } from "@/components/ui/Button";
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+    <main className="flex min-h-dvh flex-col items-center justify-center px-4 text-center">
+      <span className="mb-5 flex h-20 w-20 items-center justify-center rounded-[24px] bg-primary-soft text-primary-fg">
+        <MapPinOff size={38} aria-hidden="true" />
+      </span>
 
-      {/* Big 404 */}
-      <div className="relative mb-8">
-        <p
-          className="text-[10rem] font-black leading-none opacity-5 select-none text-primary-fg"
-        >
-          404
-        </p>
-        <div className="absolute inset-0 flex items-center justify-center">
-         <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-[linear-gradient(135deg,rgb(var(--primary))_0%,rgb(var(--primary-light))_100%)]">
-            <MapPin size={44} color="white" />
-          </div>
-        </div>
-      </div>
-
-      <h1 className="mb-2 text-3xl font-black">Lost in the Doon Valley?</h1>
-      <p className="mb-8 max-w-sm text-sm text-muted">
-        Looks like this page wandered off into the hills. Let&apos;s get you back.
+      <p className="text-sm font-bold tracking-wider text-muted uppercase">Error 404</p>
+      <h1 className="mt-1 text-[28px] leading-tight font-extrabold sm:text-4xl">Lost in the Doon Valley?</h1>
+      <p className="mt-2 mb-7 max-w-sm text-[15px] text-muted">
+        This page wandered off into the hills. Let&apos;s get you back.
       </p>
 
-      <div className="flex flex-wrap justify-center gap-3">
-        <Link
-          href="/"
-          className="rounded-xl px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 bg-primary"
-        >
+      <div className="flex w-full max-w-xs flex-col gap-2 sm:max-w-none sm:flex-row sm:justify-center">
+        <Link href="/" className={buttonClasses("primary", "md")}>
           Back to home
         </Link>
-        <Link
-          href="/events"
-            className="rounded-xl border border-border px-6 py-3 text-sm font-semibold transition-opacity hover:opacity-80"
-        >
-          Explore events
+        <Link href="/posts" className={buttonClasses("secondary", "md")}>
+          See what&apos;s new
         </Link>
       </div>
 
-      {/* Subtle Dehradun quote */}
-      <p className="mt-16 text-xs text-muted">
-        &ldquo;Not all those who wander in Dehradun are lost.&rdquo;
-      </p>
-    </div>
+      <p className="mt-14 text-sm text-muted">&ldquo;Not all those who wander in Dehradun are lost.&rdquo;</p>
+    </main>
   );
 }

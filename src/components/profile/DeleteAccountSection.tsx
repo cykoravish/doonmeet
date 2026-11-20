@@ -74,22 +74,14 @@ export default function DeleteAccountSection({ hasPassword }: DeleteAccountSecti
   }
 
   return (
-    <div
-      className="mt-8 rounded-xl border p-3 sm:p-4"
-      style={{ borderColor: "rgb(220 38 38 / 0.4)", backgroundColor: "rgb(220 38 38 / 0.04)" }}
-    >
+    <div className="mt-8 rounded-[20px] border border-danger/40 bg-danger/5 p-4">
       <div className="flex items-start gap-3">
-        <div
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-          style={{ backgroundColor: "rgb(220 38 38 / 0.1)" }}
-        >
-          <AlertTriangle size={15} style={{ color: "rgb(220 38 38)" }} />
-        </div>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-danger/10 text-danger">
+          <AlertTriangle size={19} aria-hidden="true" />
+        </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold" style={{ color: "rgb(220 38 38)" }}>
-            Delete Account
-          </p>
-          <p className="mt-1 text-xs leading-relaxed" style={{ color: "rgb(var(--muted))" }}>
+          <h3 className="text-base font-bold text-danger">Delete account</h3>
+          <p className="mt-1 text-sm leading-relaxed text-muted">
             This permanently deletes your account. Your profile, photos, and personal details are
             removed. Your existing posts, comments, and messages stay visible to others but will
             show as &quot;Deleted User&quot;. This cannot be undone.
@@ -97,9 +89,9 @@ export default function DeleteAccountSection({ hasPassword }: DeleteAccountSecti
 
           {!expanded ? (
             <button
+              type="button"
               onClick={() => setExpanded(true)}
-              className="mt-3 min-h-[44px] text-xs font-semibold underline"
-              style={{ color: "rgb(220 38 38)" }}
+              className="mt-2 min-h-11 text-sm font-semibold text-danger underline"
             >
               Delete my account
             </button>
@@ -121,14 +113,12 @@ export default function DeleteAccountSection({ hasPassword }: DeleteAccountSecti
                   autoCapitalize={hasPassword ? undefined : "characters"}
                   disabled={loading}
                 />
-                <p className="mt-1 text-xs" style={{ color: "rgb(var(--muted))" }}>
-                  {helperHint}
-                </p>
+                <p className="mt-1 text-sm text-muted">{helperHint}</p>
               </div>
 
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   className="w-full sm:flex-1"
                   onClick={() => {
                     setExpanded(false);
@@ -139,13 +129,8 @@ export default function DeleteAccountSection({ hasPassword }: DeleteAccountSecti
                 >
                   Cancel
                 </Button>
-                <Button
-                  className="w-full sm:flex-1"
-                  style={{ backgroundColor: "rgb(220 38 38)", color: "white" }}
-                  onClick={handleDelete}
-                  loading={loading}
-                >
-                  Permanently Delete
+                <Button variant="danger" className="w-full sm:flex-1" onClick={handleDelete} loading={loading}>
+                  Permanently delete
                 </Button>
               </div>
             </div>

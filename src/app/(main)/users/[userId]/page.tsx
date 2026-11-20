@@ -21,6 +21,7 @@ import { getPublicUser } from "@/lib/getPublicUser";
 import { getSessionUser } from "@/lib/getSessionUser";
 import { getPosts } from "@/lib/posts";
 import ProfileBanner from "@/components/profile/ProfileBanner";
+import { buttonClasses } from "@/components/ui/Button";
 import PostCard from "@/components/posts/PostCard";
 
 const LOOKING_FOR_LABELS: Record<string, string> = {
@@ -96,12 +97,13 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
                 alt={user.name}
                 width={144}
                 height={144}
+                sizes="144px"
                 className="h-28 w-28 rounded-full object-cover sm:h-32 sm:w-32 md:h-36 md:w-36"
                 style={avatarRingStyle}
               />
             ) : (
               <div
-                className="flex h-28 w-28 items-center justify-center rounded-full bg-primary text-4xl font-black text-white sm:h-32 sm:w-32 md:h-36 md:w-36"
+                className="flex h-28 w-28 items-center justify-center rounded-full bg-primary-soft font-display text-4xl font-extrabold text-primary-fg sm:h-32 sm:w-32 md:h-36 md:w-36"
                 style={avatarRingStyle}
               >
                 {user.name[0]?.toUpperCase()}
@@ -123,9 +125,9 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
 
         {/* Identity block — always below the avatar, normal flow. */}
         <div className="mt-4 text-center sm:text-left">
-          <h1 className="break-words text-2xl font-black sm:text-3xl">{user.name}</h1>
+          <h1 className="text-[28px] leading-tight font-extrabold break-words sm:text-4xl">{user.name}</h1>
           {user.bio && (
-            <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted sm:mx-0">
+            <p className="mx-auto mt-2 max-w-xl text-[16px] leading-relaxed text-text sm:mx-0">
               {user.bio}
             </p>
           )}
@@ -134,13 +136,13 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
         {/* Meta row — location + a stamp-style "joined" badge */}
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
           {user.address && (
-            <div className="flex items-center gap-1 text-xs text-muted">
-              <MapPin size={12} className="shrink-0" />
+            <div className="flex items-center gap-1 text-sm text-muted">
+              <MapPin size={15} className="shrink-0" aria-hidden="true" />
               <span className="break-words">{user.address}</span>
             </div>
           )}
-          <div className="flex items-center gap-1.5 rounded-full border border-dashed border-accent/50 px-3 py-1 text-xs font-medium text-accent">
-            <Calendar size={12} />
+          <div className="flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1 text-sm font-semibold text-accent-fg">
+            <Calendar size={14} aria-hidden="true" />
             Exploring Dehradun since {joinedDate}
           </div>
         </div>
@@ -151,7 +153,7 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
             {user.interests.map((i: string) => (
               <span
                 key={i}
-                className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium capitalize text-primary-fg"
+                className="rounded-full bg-primary-soft px-3 py-1 text-sm font-semibold capitalize text-primary-fg"
               >
                 {i}
               </span>
@@ -171,7 +173,7 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
         </div>
 
         {/* Activity stats */}
-        <div className="mt-6 grid grid-cols-3 divide-x divide-border rounded-2xl border border-border bg-surface shadow-sm">
+        <div className="mt-6 grid grid-cols-3 divide-x divide-border rounded-[20px] border border-border bg-surface">
           <StatBlock icon={Users} label="Communities" value={user.stats.communities} />
           <StatBlock icon={PartyPopper} label="Events" value={user.stats.events} />
           <StatBlock icon={Star} label="Reviews" value={user.stats.reviews} />
@@ -179,8 +181,8 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
 
         {/* Public info */}
         {(user.gender || user.email || user.occupation || user.website || user.dob || user.lookingFor) && (
-          <div className="mb-10 mt-4 space-y-1 rounded-2xl border border-border bg-surface p-5 shadow-sm">
-            <h2 className="mb-2 text-sm font-bold">About</h2>
+          <div className="mt-4 mb-8 rounded-[20px] border border-border bg-surface p-4 sm:p-5">
+            <h2 className="mb-1 text-lg font-extrabold">About</h2>
             {user.occupation && (
               <InfoRow icon={Briefcase} label="Occupation" value={user.occupation} />
             )}
@@ -217,19 +219,18 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
         {/* Posts */}
         {posts.length > 0 && (
           <div className="mb-10">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-bold">Posts</h2>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-extrabold">Posts</h2>
               {posts.length === POSTS_PREVIEW_LIMIT && (
                 <Link
                   href={`/posts?author=${userId}`}
-                  className="text-xs font-semibold"
-                  style={{ color: "rgb(var(--primary))" }}
+                  className="flex min-h-11 items-center text-sm font-semibold text-primary-fg hover:underline"
                 >
                   View all
                 </Link>
               )}
             </div>
-            <div className="space-y-4">
+            <div className="flex flex-col gap-3">
               {posts.map((post) => (
                 <PostCard
                   key={post._id}
@@ -264,10 +265,10 @@ function StatBlock({
   value: number;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1 px-2 py-4 transition-colors hover:bg-primary/5">
-      <Icon size={17} className="text-primary-fg" />
-      <span className="text-lg font-black">{value}</span>
-      <span className="text-[11px] text-muted">{label}</span>
+    <div className="flex flex-col items-center gap-0.5 px-2 py-4">
+      <Icon size={19} className="text-primary-fg" aria-hidden="true" />
+      <span className="font-display text-xl font-extrabold">{value}</span>
+      <span className="text-[13px] text-muted">{label}</span>
     </div>
   );
 }
@@ -286,9 +287,9 @@ function InfoRow({
   href?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-border/60 py-2.5 text-sm last:border-b-0">
+    <div className="flex min-h-12 items-center justify-between gap-3 border-b border-border/60 py-2.5 text-[15px] last:border-b-0">
       <span className="flex items-center gap-2 text-muted">
-        <Icon size={14} className="shrink-0" />
+        <Icon size={17} className="shrink-0" aria-hidden="true" />
         {label}
       </span>
       {href ? (
@@ -322,16 +323,16 @@ function ProfileAction({
   name: string;
   fullWidth?: boolean;
 }) {
-  const widthClass = fullWidth ? "w-full max-w-xs justify-center" : "";
+  const widthClass = fullWidth ? "w-full max-w-xs" : "";
 
   if (isOwnProfile) {
     return (
       <Link
         href="/profile"
-        className={`flex items-center gap-1.5 rounded-xl border border-border px-4 py-2 text-xs font-semibold shadow-sm transition-all hover:border-primary hover:text-primary-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${widthClass}`}
+        className={buttonClasses("secondary", "md", widthClass)}
       >
-        <Pencil size={13} />
-        Edit Profile
+        <Pencil size={17} aria-hidden="true" />
+        Edit profile
       </Link>
     );
   }
@@ -340,9 +341,9 @@ function ProfileAction({
     return (
       <Link
         href={`/chat?dm=${userId}`}
-        className={`flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${widthClass}`}
+        className={buttonClasses("primary", "md", widthClass)}
       >
-        <MessageCircle size={13} />
+        <MessageCircle size={17} aria-hidden="true" />
         Message {name.split(" ")[0]}
       </Link>
     );
@@ -351,10 +352,10 @@ function ProfileAction({
   return (
     <Link
       href="/login"
-      className={`flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${widthClass}`}
+      className={buttonClasses("primary", "md", widthClass)}
     >
-      <MessageCircle size={13} />
-      Send Message
+      <MessageCircle size={17} aria-hidden="true" />
+      Log in to message
     </Link>
   );
 }

@@ -29,9 +29,9 @@ export function useToast() {
 let idCounter = 0;
 
 const TYPE_STYLES: Record<ToastType, { color: string; icon: ReactNode }> = {
-  info: { color: "rgb(var(--accent))", icon: <Info size={16} /> },
-  success: { color: "rgb(var(--primary))", icon: <CheckCircle2 size={16} /> },
-  error: { color: "rgb(220 38 38)", icon: <XCircle size={16} /> },
+  info: { color: "rgb(var(--accent-fg))", icon: <Info size={16} /> },
+  success: { color: "rgb(var(--primary-fg))", icon: <CheckCircle2 size={16} /> },
+  error: { color: "rgb(var(--danger))", icon: <XCircle size={16} /> },
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {

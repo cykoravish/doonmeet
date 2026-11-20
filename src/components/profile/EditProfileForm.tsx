@@ -122,12 +122,12 @@ export default function EditProfileForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {error && <Alert type="error" message={error} />}
       {success && <Alert type="success" message={success} />}
 
       <Input
-        label="Full Name"
+        label="Name"
         value={form.name}
         onChange={(e) => setForm({ ...form, name: e.target.value })}
         required
@@ -135,43 +135,33 @@ export default function EditProfileForm({
       />
 
       {/* Bio */}
-      <div>
-        <p className="mb-1 text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="profile-bio" className="text-sm font-semibold text-text">
           Bio
-        </p>
+        </label>
         <textarea
+          id="profile-bio"
           value={form.bio}
           onChange={(e) => setForm({ ...form, bio: e.target.value })}
           placeholder="Tell people about yourself..."
           rows={3}
           maxLength={300}
-          className="w-full resize-none rounded-xl border px-4 py-3 text-base outline-none sm:text-sm transition-all"
-          style={{
-            backgroundColor: "rgb(var(--surface))",
-            borderColor: "rgb(var(--border))",
-            color: "rgb(var(--text))",
-          }}
+          className="w-full resize-none rounded-[14px] border-[1.5px] border-transparent bg-surface-2 px-4 py-3 text-base leading-relaxed text-text outline-none placeholder:text-muted focus:border-primary focus:bg-surface"
         />
-        <p className="text-right text-xs" style={{ color: "rgb(var(--muted))" }}>
-          {form.bio.length}/300
-        </p>
+        <p className="text-right text-sm text-muted">{form.bio.length}/300</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Gender */}
-        <div>
-          <p className="mb-1 text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="profile-gender" className="text-sm font-semibold text-text">
             Gender
-          </p>
+          </label>
           <select
+            id="profile-gender"
             value={form.gender}
             onChange={(e) => setForm({ ...form, gender: e.target.value })}
-            className="w-full rounded-xl border px-4 py-3 text-base outline-none sm:text-sm"
-            style={{
-              backgroundColor: "rgb(var(--surface))",
-              borderColor: "rgb(var(--border))",
-              color: "rgb(var(--text))",
-            }}
+            className="h-12 w-full rounded-[14px] border-[1.5px] border-transparent bg-surface-2 px-3 text-base text-text outline-none focus:border-primary"
           >
             <option value="">Prefer not to say</option>
             {GENDERS.map((g) => (
@@ -190,7 +180,7 @@ export default function EditProfileForm({
       </div>
 
       <Input
-        label="Address / Area in Dehradun"
+        label="Area in Dehradun"
         value={form.address}
         onChange={(e) => setForm({ ...form, address: e.target.value })}
         placeholder="e.g. Rajpur Road, Dehradun"
@@ -207,7 +197,7 @@ export default function EditProfileForm({
         />
 
         <Input
-          label="Date of Birth"
+          label="Date of birth"
           type="date"
           value={form.dob}
           onChange={(e) => setForm({ ...form, dob: e.target.value })}
@@ -216,7 +206,7 @@ export default function EditProfileForm({
       </div>
 
       <Input
-        label="Website / Social link"
+        label="Website or social link"
         type="url"
         value={form.website}
         onChange={(e) => setForm({ ...form, website: e.target.value })}
@@ -225,19 +215,15 @@ export default function EditProfileForm({
       />
 
       {/* Looking for */}
-      <div>
-        <p className="mb-1 text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="profile-looking-for" className="text-sm font-semibold text-text">
           What best describes you?
-        </p>
+        </label>
         <select
+          id="profile-looking-for"
           value={form.lookingFor}
           onChange={(e) => setForm({ ...form, lookingFor: e.target.value })}
-          className="w-full rounded-xl border px-4 py-3 text-base outline-none sm:text-sm"
-          style={{
-            backgroundColor: "rgb(var(--surface))",
-            borderColor: "rgb(var(--border))",
-            color: "rgb(var(--text))",
-          }}
+          className="h-12 w-full rounded-[14px] border-[1.5px] border-transparent bg-surface-2 px-3 text-base text-text outline-none focus:border-primary"
         >
           <option value="">Prefer not to say</option>
           {LOOKING_FOR_OPTIONS.map((o) => (
@@ -250,10 +236,10 @@ export default function EditProfileForm({
 
       {/* Interests */}
       <div>
-        <p className="mb-2 text-xs font-medium" style={{ color: "rgb(var(--muted))" }}>
-          Interests (max 10)
+        <p id="profile-interests-label" className="mb-2 text-sm font-semibold text-text">
+          Interests <span className="font-normal text-muted">(up to 10)</span>
         </p>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-labelledby="profile-interests-label">
           {INTERESTS.map((interest) => {
             const active = form.interests.includes(interest.toLowerCase());
             return (
@@ -261,12 +247,10 @@ export default function EditProfileForm({
                 key={interest}
                 type="button"
                 onClick={() => toggleInterest(interest)}
-                className="min-h-[36px] rounded-full border px-3.5 py-1.5 text-xs font-medium capitalize transition-all active:opacity-80"
-                style={{
-                  backgroundColor: active ? "rgb(var(--primary))" : "transparent",
-                  borderColor: active ? "rgb(var(--primary))" : "rgb(var(--border))",
-                  color: active ? "white" : "rgb(var(--muted))",
-                }}
+                aria-pressed={active}
+                className={`h-10 rounded-full px-4 text-sm font-semibold capitalize transition-colors ${
+                  active ? "bg-primary text-on-primary" : "bg-surface-2 text-text hover:bg-border"
+                }`}
               >
                 {interest}
               </button>
@@ -275,8 +259,8 @@ export default function EditProfileForm({
         </div>
       </div>
 
-      <Button type="submit" loading={loading}>
-        Save Changes
+      <Button type="submit" size="lg" loading={loading}>
+        Save changes
       </Button>
     </form>
   );
