@@ -9,18 +9,21 @@ interface ChatUserActionsProps {
   isOwn?: boolean;
   align?: "left" | "right";
   className?: string;
+  /** Accessible name for the trigger button. */
+  label?: string;
   // When provided, "Message" opens the DM in-place (no URL round trip).
   onMessage?: (userId: string) => void;
   children: ReactNode;
 }
 
 // Wraps a sender's avatar/name in the public chat with a small menu
-// (Message / View Profile).
+// (Message / View profile).
 export default function ChatUserActions({
   userId,
   isOwn,
   align = "left",
   className,
+  label,
   onMessage,
   children,
 }: ChatUserActionsProps) {
@@ -33,13 +36,13 @@ export default function ChatUserActions({
   // clipped by the chat scroll area. Scroll just enough to reveal it fully.
   useEffect(() => {
     if (!open) return;
-    menuRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    menuRef.current?.scrollIntoView({ block: "nearest" });
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
 
-    function handleOutside(e: MouseEvent) {
+    function handleOutside(e: PointerEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
@@ -48,18 +51,13 @@ export default function ChatUserActions({
       if (e.key === "Escape") setOpen(false);
     }
 
-    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("pointerdown", handleOutside);
     document.addEventListener("keydown", handleEscape);
     return () => {
-      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("pointerdown", handleOutside);
       document.removeEventListener("keydown", handleEscape);
     };
   }, [open]);
-
-  function handleTriggerClick() {
-    if (!userId) return;
-    setOpen((prev) => !prev);
-  }
 
   function goToMessage() {
     setOpen(false);
@@ -76,13 +74,14 @@ export default function ChatUserActions({
   }
 
   return (
-    <div ref={wrapperRef} className="relative inline-block">
+    <div ref={wrapperRef} className="relative inline-flex min-w-0">
       <button
         type="button"
-        onClick={handleTriggerClick}
+        onClick={() => userId && setOpen((prev) => !prev)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className={`border-0 bg-transparent p-0 text-left transition-opacity hover:opacity-70 ${className ?? ""}`}
+        aria-label={label}
+        className={`border-0 bg-transparent p-0 text-left ${className ?? ""}`}
       >
         {children}
       </button>
@@ -91,23 +90,18 @@ export default function ChatUserActions({
         <div
           ref={menuRef}
           role="menu"
-          className={`absolute z-20 mt-1.5 w-40 overflow-hidden rounded-xl border shadow-lg ${
+          className={`absolute top-full z-20 mt-1.5 w-48 overflow-hidden rounded-[16px] border border-border bg-surface py-1 shadow-lg ${
             align === "right" ? "right-0" : "left-0"
           }`}
-          style={{
-            backgroundColor: "rgb(var(--surface))",
-            borderColor: "rgb(var(--border))",
-          }}
         >
           {!isOwn && (
             <button
               role="menuitem"
               type="button"
               onClick={goToMessage}
-              className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-xs font-medium transition-colors hover:bg-primary/10"
-              style={{ color: "rgb(var(--text))" }}
+              className="flex min-h-11 w-full items-center gap-2.5 px-3.5 text-left text-[15px] font-medium text-text hover:bg-surface-2"
             >
-              <MessageCircle size={13} style={{ color: "rgb(var(--primary))" }} />
+              <MessageCircle size={18} className="text-primary-fg" aria-hidden="true" />
               Message
             </button>
           )}
@@ -115,11 +109,10 @@ export default function ChatUserActions({
             role="menuitem"
             type="button"
             onClick={goToProfile}
-            className="flex w-full items-center gap-2 border-t px-3.5 py-2.5 text-left text-xs font-medium transition-colors hover:bg-primary/10"
-            style={{ color: "rgb(var(--text))", borderColor: "rgb(var(--border))" }}
+            className="flex min-h-11 w-full items-center gap-2.5 px-3.5 text-left text-[15px] font-medium text-text hover:bg-surface-2"
           >
-            <UserRound size={13} style={{ color: "rgb(var(--primary))" }} />
-            View Profile
+            <UserRound size={18} className="text-primary-fg" aria-hidden="true" />
+            View profile
           </button>
         </div>
       )}

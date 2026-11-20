@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, MessageCircle, AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { Loader2, MessageCircle, Users } from "lucide-react";
 import ConversationListItem, { type ConversationSummary } from "./ConversationListItem";
 import DMChatWindow from "./DMChatWindow";
+import Alert from "@/components/ui/Alert";
+import { buttonClasses } from "@/components/ui/Button";
 
 interface CurrentUser {
   _id: string;
@@ -15,12 +18,15 @@ interface MessagesPanelProps {
   currentUser: CurrentUser;
   initialDmUserId: string | null;
   onDmParamConsumed: () => void;
+  /** Lets ChatTabs hide its header on mobile while a conversation is full-screen. */
+  onConversationOpenChange?: (open: boolean) => void;
 }
 
 export default function MessagesPanel({
   currentUser,
   initialDmUserId,
   onDmParamConsumed,
+  onConversationOpenChange,
 }: MessagesPanelProps) {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,9 +88,7 @@ export default function MessagesPanel({
           _id: conv._id,
           lastMessage: conv.lastMessage,
           unreadCount: 0,
-          otherParticipant: conv.participants.find(
-            (p: { _id: string }) => p._id !== userId
-          ),
+          otherParticipant: conv.participants.find((p: { _id: string }) => p._id !== userId),
         };
         setConversations((prev) => {
           const exists = prev.some((c) => c._id === shaped._id);
@@ -110,9 +114,7 @@ export default function MessagesPanel({
     // Bump unread count for conversations not currently open, and re-sort by recency.
     setConversations((prev) => {
       const updated = prev.map((c) =>
-        c._id === conversationId && c._id !== selectedId
-          ? { ...c, unreadCount: c.unreadCount + 1 }
-          : c
+        c._id === conversationId && c._id !== selectedId ? { ...c, unreadCount: c.unreadCount + 1 } : c
       );
       return [...updated].sort((a, b) => {
         const aTime = a.lastMessage.sentAt ? new Date(a.lastMessage.sentAt).getTime() : 0;
@@ -124,17 +126,23 @@ export default function MessagesPanel({
 
   function handleSelect(id: string) {
     setSelectedId(id);
-    setConversations((prev) =>
-      prev.map((c) => (c._id === id ? { ...c, unreadCount: 0 } : c))
-    );
+    setConversations((prev) => prev.map((c) => (c._id === id ? { ...c, unreadCount: 0 } : c)));
   }
 
   const selectedConversation = conversations.find((c) => c._id === selectedId) ?? null;
+  const conversationOpen = !!selectedConversation?.otherParticipant;
+
+  useEffect(() => {
+    onConversationOpenChange?.(conversationOpen);
+  }, [conversationOpen, onConversationOpenChange]);
+
+  // Leaving the Messages tab shouldn't leave the header hidden.
+  useEffect(() => () => onConversationOpenChange?.(false), [onConversationOpenChange]);
 
   if (resolvingDm) {
     return (
       <div className="flex h-full items-center justify-center">
-        <Loader2 size={22} className="animate-spin text-muted" />
+        <Loader2 size={22} className="animate-spin text-muted" aria-label="Opening conversation" />
       </div>
     );
   }
@@ -143,64 +151,77 @@ export default function MessagesPanel({
     <div className="flex h-full">
       {/* Conversation list — hidden on mobile once a chat is open */}
       <div
-        className={`w-full shrink-0 overflow-y-auto border-r border-border p-2 md:block md:w-80 ${
-          selectedConversation ? "hidden" : "block"
+        className={`w-full shrink-0 overflow-y-auto overscroll-contain border-r border-border p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:block md:w-80 ${
+          conversationOpen ? "hidden" : "block"
         }`}
       >
         {error && (
-          <div className="mb-2 flex items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-xs text-red-600">
-            <AlertCircle size={14} className="mt-0.5 shrink-0" />
-            {error}
+          <div className="mb-2">
+            <Alert type="error" message={error} />
           </div>
         )}
 
         {loading ? (
-          <div className="flex h-40 items-center justify-center">
-            <Loader2 size={20} className="animate-spin text-muted" />
-          </div>
-        ) : conversations.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center px-4 py-16 text-center">
-            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-              <MessageCircle size={24} className="text-primary-fg" />
-            </div>
-            <p className="font-bold">No messages yet</p>
-            <p className="mt-1 text-sm text-muted">
-              Visit someone&apos;s profile and hit &ldquo;Message&rdquo; to start a conversation.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {conversations.map((conv) => (
-              <ConversationListItem
-                key={conv._id}
-                conversation={conv}
-                isActive={conv._id === selectedId}
-                currentUserId={currentUser._id}
-                onClick={() => handleSelect(conv._id)}
-              />
+          // Static skeleton rows — no shimmer animation
+          <div className="flex flex-col gap-1" aria-label="Loading conversations">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-3 px-3 py-2.5">
+                <div className="h-[52px] w-[52px] shrink-0 rounded-full bg-surface-2" />
+                <div className="flex-1">
+                  <div className="h-3.5 w-2/5 rounded bg-surface-2" />
+                  <div className="mt-2 h-3 w-3/4 rounded bg-surface-2" />
+                </div>
+              </div>
             ))}
           </div>
+        ) : conversations.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center px-6 py-16 text-center">
+            <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-[18px] bg-primary-soft text-primary-fg">
+              <MessageCircle size={26} aria-hidden="true" />
+            </span>
+            <p className="font-bold">No messages yet</p>
+            <p className="mt-1 max-w-xs text-[15px] text-muted">
+              Find someone from Dehradun and say hi — your conversations will show up here.
+            </p>
+            <Link href="/chat?members=1" scroll={false} className={buttonClasses("primary", "md", "mt-4")}>
+              <Users size={18} aria-hidden="true" />
+              Find people
+            </Link>
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-0.5">
+            {conversations.map((conv) => (
+              <li key={conv._id}>
+                <ConversationListItem
+                  conversation={conv}
+                  isActive={conv._id === selectedId}
+                  currentUserId={currentUser._id}
+                  onClick={() => handleSelect(conv._id)}
+                />
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 
       {/* Active conversation */}
-      <div className={`min-w-0 flex-1 ${selectedConversation ? "block" : "hidden md:block"}`}>
-        {selectedConversation?.otherParticipant ? (
+      <div className={`min-w-0 flex-1 ${conversationOpen ? "block" : "hidden md:block"}`}>
+        {conversationOpen ? (
           <DMChatWindow
-            key={selectedConversation._id}
-            conversationId={selectedConversation._id}
-            otherParticipant={selectedConversation.otherParticipant}
+            key={selectedConversation!._id}
+            conversationId={selectedConversation!._id}
+            otherParticipant={selectedConversation!.otherParticipant!}
             currentUser={currentUser}
             onBack={() => setSelectedId(null)}
             onMessageSent={handleNewIncomingMessage}
           />
         ) : (
           <div className="hidden h-full flex-col items-center justify-center text-center md:flex">
-            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-              <MessageCircle size={24} className="text-primary-fg" />
-            </div>
+            <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-[18px] bg-primary-soft text-primary-fg">
+              <MessageCircle size={26} aria-hidden="true" />
+            </span>
             <p className="font-bold">Select a conversation</p>
-            <p className="mt-1 text-sm text-muted">Pick someone from the list to start chatting</p>
+            <p className="mt-1 text-[15px] text-muted">Pick someone from the list to start chatting</p>
           </div>
         )}
       </div>

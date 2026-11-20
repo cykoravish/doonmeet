@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Avatar from "@/components/ui/Avatar";
 
 export interface ConversationSummary {
   _id: string;
@@ -23,12 +23,13 @@ interface ConversationListItemProps {
   onClick: () => void;
 }
 
-function timeAgo(date: string | null) {
+function shortTimeAgo(date: string | null) {
   if (!date) return "";
   const diff = Date.now() - new Date(date).getTime();
   const mins = Math.floor(diff / 60000);
   const hours = Math.floor(mins / 60);
   const days = Math.floor(hours / 24);
+  if (days > 6) return new Date(date).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
   if (days > 0) return `${days}d`;
   if (hours > 0) return `${hours}h`;
   if (mins > 0) return `${mins}m`;
@@ -49,49 +50,36 @@ export default function ConversationListItem({
 
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
-        isActive ? "bg-primary/10" : "hover:bg-primary/5"
+      aria-current={isActive ? "true" : undefined}
+      className={`flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left transition-colors ${
+        isActive ? "bg-primary-soft" : "hover:bg-surface-2"
       }`}
     >
-      <div className="relative shrink-0">
-        {other.avatar ? (
-          <Image
-            src={other.avatar}
-            alt={other.name}
-            width={48}
-            height={48}
-            className="h-12 w-12 rounded-full object-cover"
-          />
-        ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-base font-bold text-white">
-            {other.name[0]?.toUpperCase()}
-          </div>
-        )}
-      </div>
+      <Avatar name={other.name} src={other.avatar} size={52} />
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
-          <p className={`truncate text-sm ${hasUnread ? "font-bold" : "font-semibold"}`}>
+        <div className="flex items-baseline justify-between gap-2">
+          <p className={`truncate text-base ${hasUnread ? "font-bold" : "font-semibold"} text-text`}>
             {other.name}
           </p>
           {conversation.lastMessage.sentAt && (
-            <span className="shrink-0 text-[11px] text-muted">
-              {timeAgo(conversation.lastMessage.sentAt)}
+            <span className={`shrink-0 text-xs ${hasUnread ? "font-semibold text-primary-fg" : "text-muted"}`}>
+              {shortTimeAgo(conversation.lastMessage.sentAt)}
             </span>
           )}
         </div>
-        <div className="flex items-center justify-between gap-2">
-          <p
-            className={`truncate text-xs ${hasUnread ? "font-semibold text-text" : "text-muted"}`}
-          >
+        <div className="mt-0.5 flex items-center justify-between gap-2">
+          <p className={`truncate text-sm ${hasUnread ? "font-semibold text-text" : "text-muted"}`}>
             {conversation.lastMessage.content
               ? `${isOwnLastMessage ? "You: " : ""}${conversation.lastMessage.content}`
               : "Say hi \u{1F44B}"}
           </p>
           {hasUnread && (
-            <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-white">
+            <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold text-on-primary">
               {conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}
+              <span className="sr-only"> unread</span>
             </span>
           )}
         </div>

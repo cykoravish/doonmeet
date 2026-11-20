@@ -38,11 +38,14 @@ export const GET = withGuestAllowed(async (req: AuthenticatedRequest) => {
       .populate("sender", "name avatar role") // only safe public fields
       .lean();
 
-    // Reverse so frontend renders oldest → newest
+    // Reverse so frontend renders oldest → newest. (.reverse() mutates in
+    // place, so read the oldest id from `ordered[0]` — not the last element,
+    // which after reversing is the NEWEST message and made "load earlier"
+    // return the same page again.)
     const ordered = messages.reverse();
 
     // Next cursor = oldest message id in this batch (for loading more)
-    const nextCursor = messages.length === limit ? String(messages[messages.length - 1]._id) : null;
+    const nextCursor = ordered.length === limit ? String(ordered[0]._id) : null;
 
     return NextResponse.json(
       {

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { io, Socket } from "socket.io-client";
-import { Send, Loader2, Sparkles, ChevronUp } from "lucide-react";
+import { ArrowDown, ChevronUp, Loader2, MessagesSquare, Send, ShieldCheck } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import JoinChatModal from "./JoinChatModal";
+import { appendUnique, buildChatRows, prependUnique } from "./chatUtils";
+import { useChatScroll } from "./useChatScroll";
 
 interface Message {
   _id: string;
@@ -25,35 +27,11 @@ interface CurrentUser {
 
 interface ChatRoomProps {
   currentUser: CurrentUser | null;
-  // The members panel now lives in ChatTabs (so it's reachable from any
-  // tab) but presence updates still need this room's live socket.
+  // The members panel lives in ChatTabs (so it's reachable from any tab)
+  // but presence updates still need this room's live socket.
   onSocketChange?: (socket: Socket | null) => void;
   // Open a DM with this user (switches to the Messages tab).
   onStartDm?: (userId: string) => void;
-}
-
-function isSameDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-
-function getDateLabel(dateStr: string) {
-  const date = new Date(dateStr);
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-
-  if (isSameDay(date, today)) return "Today";
-  if (isSameDay(date, yesterday)) return "Yesterday";
-
-  return date.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "long",
-    year: date.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
-  });
 }
 
 export default function ChatRoom({ currentUser, onSocketChange, onStartDm }: ChatRoomProps) {
@@ -63,31 +41,19 @@ export default function ChatRoom({ currentUser, onSocketChange, onStartDm }: Cha
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [onlineCount, setOnlineCount] = useState(0);
   const [showJoinModal, setShowJoinModal] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  // Tracks whether we've already done the first, instant jump-to-bottom for
-  // this mount. Every scroll after that is a genuine new message and should
-  // animate — but the very first render of a loaded history must not, or the
-  // user visibly sees the list animate from empty/top down to the latest
-  // message.
-  const hasScrolledInitially = useRef(false);
-  // Set right before loadOlder() prepends older messages, so the
-  // scroll-to-bottom effect below doesn't fight with loadOlder's own
-  // "keep reading position steady" scroll restoration.
-  const suppressNextAutoScroll = useRef(false);
 
-  // Auto scroll to bottom — scrolls the message list container directly
-  // rather than scrollIntoView, which can otherwise walk up and scroll an
-  // unintended ancestor.
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    const el = scrollAreaRef.current;
-    if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior });
-  }, []);
+  const { scrollRef, onScroll, scrollToBottom, beginPrepend, unseenCount } = useChatScroll({
+    messages,
+    ready: !loading,
+    currentUserId: currentUser?._id,
+  });
+
+  // Dividers / grouping / time strings computed once per message list change.
+  const rows = useMemo(() => buildChatRows(messages), [messages]);
 
   // Fetch initial messages
   useEffect(() => {
@@ -97,69 +63,33 @@ export default function ChatRoom({ currentUser, onSocketChange, onStartDm }: Cha
         setMessages(d.messages ?? []);
         setHasMore(!!d.hasMore);
         setNextCursor(d.nextCursor ?? null);
-        setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  // Scroll on new messages. useLayoutEffect (not useEffect) so this runs
-  // before the browser paints — the very first batch of history is placed
-  // at the bottom instantly, with no visible top-to-bottom animation. Only
-  // messages after that first paint get the smooth scroll animation.
-  useLayoutEffect(() => {
-    if (loadingMore || messages.length === 0) return;
-
-    if (suppressNextAutoScroll.current) {
-      suppressNextAutoScroll.current = false;
-      return;
-    }
-
-    if (!hasScrolledInitially.current) {
-      hasScrolledInitially.current = true;
-      scrollToBottom("auto");
-      return;
-    }
-
-    scrollToBottom("smooth");
-  }, [messages, loadingMore, scrollToBottom]);
-
-  // Load an older page of history, preserving the reader's scroll position
-  // (the "load older" button sits at the top, so without this the newly
-  // prepended messages would push the viewport down unexpectedly).
   async function loadOlder() {
     if (!nextCursor || loadingMore) return;
     setLoadingMore(true);
-    const container = scrollAreaRef.current;
-    const prevHeight = container?.scrollHeight ?? 0;
-
     try {
       const res = await fetch(`/api/room-messages?limit=50&cursor=${nextCursor}`);
       const d = await res.json();
-      suppressNextAutoScroll.current = true;
-      setMessages((prev) => [...(d.messages ?? []), ...prev]);
+      beginPrepend();
+      setMessages((prev) => prependUnique(prev, d.messages ?? []));
       setHasMore(!!d.hasMore);
       setNextCursor(d.nextCursor ?? null);
-
-      requestAnimationFrame(() => {
-        if (container) {
-          container.scrollTop = container.scrollHeight - prevHeight;
-        }
-      });
     } catch {
-      // Silently ignore — the button just stays available for the user to retry.
+      // Button stays available for a retry.
     } finally {
       setLoadingMore(false);
     }
   }
 
-  // Socket connection
+  // Socket connection (logged-in users only — the server requires auth)
   useEffect(() => {
     if (!currentUser) return;
 
-    const socket = io({
-      withCredentials: true,
-    });
-
+    const socket = io({ withCredentials: true });
     socketRef.current = socket;
 
     socket.on("connect", () => {
@@ -168,11 +98,7 @@ export default function ChatRoom({ currentUser, onSocketChange, onStartDm }: Cha
     });
 
     socket.on("room:message", (message: Message) => {
-      setMessages((prev) => [...prev, message]);
-    });
-
-    socket.on("room:online_count", (count: number) => {
-      setOnlineCount(count);
+      setMessages((prev) => appendUnique(prev, message));
     });
 
     return () => {
@@ -187,7 +113,7 @@ export default function ChatRoom({ currentUser, onSocketChange, onStartDm }: Cha
     e.preventDefault();
     if (!content.trim()) return;
 
-    // Not logged in — show the join modal instead of sending
+    // Not logged in — show the join sheet instead of sending
     if (!currentUser) {
       setShowJoinModal(true);
       return;
@@ -197,162 +123,124 @@ export default function ChatRoom({ currentUser, onSocketChange, onStartDm }: Cha
 
     socketRef.current.emit("room:message", { content: content.trim() });
     setContent("");
-
     inputRef.current?.focus();
   }
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Live status strip — replaces the old static "Doon Public Chat" header.
-          Only rendered once there's something worth showing, so it doesn't
-          just sit there as empty chrome. */}
-      {onlineCount > 0 && (
-        <div
-          className="flex items-center justify-end gap-3 border-b px-4 py-1.5 md:px-6"
-          style={{
-            backgroundColor: "rgb(var(--surface))",
-            borderColor: "rgb(var(--border))",
-          }}
-        >
-          <div
-            className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs"
-            style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}
-          >
-            <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-            <span style={{ color: "rgb(var(--primary))" }}>{onlineCount} online</span>
-          </div>
+    <div className="relative flex h-full flex-col">
+      <div
+        ref={scrollRef}
+        onScroll={onScroll}
+        className="flex-1 overflow-y-auto overscroll-contain px-3 pt-3 pb-2 sm:px-6"
+      >
+        {/* House rules + a hint that names are tappable (a feature people
+            otherwise never discover). Scrolls away with the history. */}
+        <div className="mx-auto mb-3 flex max-w-md items-start gap-2.5 rounded-[14px] bg-primary-soft px-3.5 py-2.5 text-sm text-text">
+          <ShieldCheck size={18} className="mt-px shrink-0 text-primary-fg" aria-hidden="true" />
+          <p>
+            Be kind — everyone in Dehradun can read this chat. Tap someone&apos;s name to message
+            them or see their profile.
+          </p>
         </div>
-      )}
 
-      {/* Messages area */}
-      <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
         {loading ? (
-          <div className="flex h-full items-center justify-center">
-            <Loader2 size={24} className="animate-spin" style={{ color: "rgb(var(--muted))" }} />
+          <div className="flex h-40 items-center justify-center">
+            <Loader2 size={22} className="animate-spin text-muted" aria-label="Loading messages" />
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-center">
-            <span className="mb-3 text-5xl">👋</span>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-[18px] bg-primary-soft text-primary-fg">
+              <MessagesSquare size={26} aria-hidden="true" />
+            </span>
             <p className="font-bold">No messages yet</p>
-            <p className="mt-1 text-sm" style={{ color: "rgb(var(--muted))" }}>
-              Be the first to say something!
-            </p>
+            <p className="mt-1 text-[15px] text-muted">Say hi to Dehradun — be the first!</p>
           </div>
         ) : (
           <>
             {hasMore && (
-              <div className="flex justify-center pb-2">
+              <div className="flex justify-center pb-3">
                 <button
+                  type="button"
                   onClick={loadOlder}
                   disabled={loadingMore}
-                  className="flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50"
-                  style={{
-                    borderColor: "rgb(var(--border))",
-                    color: "rgb(var(--muted))",
-                  }}
+                  className="flex h-10 items-center gap-1.5 rounded-full bg-surface-2 px-4 text-sm font-semibold text-muted transition-colors hover:text-text disabled:opacity-50"
                 >
                   {loadingMore ? (
-                    <Loader2 size={12} className="animate-spin" />
+                    <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                   ) : (
-                    <ChevronUp size={12} />
+                    <ChevronUp size={16} aria-hidden="true" />
                   )}
                   Load earlier messages
                 </button>
               </div>
             )}
 
-            {messages.map((msg, i) => {
-              const showDivider =
-                i === 0 || getDateLabel(msg.createdAt) !== getDateLabel(messages[i - 1].createdAt);
-
-              return (
-                <div key={msg._id}>
-                  {showDivider && (
-                    <div className="flex items-center justify-center py-2">
-                      <span
-                        className="rounded-full px-3 py-1 text-[11px] font-medium"
-                        style={{
-                          backgroundColor: "rgb(var(--primary) / 0.08)",
-                          color: "rgb(var(--muted))",
-                        }}
-                      >
-                        {getDateLabel(msg.createdAt)}
-                      </span>
-                    </div>
-                  )}
-                  <ChatMessage
-                    content={msg.content}
-                    senderId={msg.sender._id}
-                    senderName={msg.sender.name}
-                    senderAvatar={msg.sender.avatar}
-                    isOwn={msg.sender._id === currentUser?._id}
-                    onMessageUser={onStartDm}
-                    createdAt={msg.createdAt}
-                    showName={showDivider || messages[i - 1]?.sender._id !== msg.sender._id}
-                    showAvatar={
-                      i === messages.length - 1 ||
-                      messages[i + 1].sender._id !== msg.sender._id ||
-                      getDateLabel(messages[i + 1].createdAt) !== getDateLabel(msg.createdAt)
-                    }
-                    isLastInGroup={
-                      i === messages.length - 1 ||
-                      messages[i + 1].sender._id !== msg.sender._id ||
-                      getDateLabel(messages[i + 1].createdAt) !== getDateLabel(msg.createdAt)
-                    }
-                  />
-                </div>
-              );
-            })}
+            {rows.map((row) => (
+              <div key={row.msg._id}>
+                {row.showDivider && (
+                  <div className="flex justify-center py-2">
+                    <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-muted">
+                      {row.dayLabel}
+                    </span>
+                  </div>
+                )}
+                <ChatMessage
+                  content={row.msg.content}
+                  senderId={row.msg.sender._id}
+                  senderName={row.msg.sender.name}
+                  senderAvatar={row.msg.sender.avatar}
+                  isOwn={row.msg.sender._id === currentUser?._id}
+                  time={row.time}
+                  firstInGroup={row.firstInGroup}
+                  lastInGroup={row.lastInGroup}
+                  onMessageUser={onStartDm}
+                />
+              </div>
+            ))}
           </>
         )}
       </div>
 
-      {/* Bottom input area */}
-      <div
-        className="border-t px-4 py-2 space-y-1.5 md:px-6 md:py-2.5 md:space-y-2"
-        style={{
-          backgroundColor: "rgb(var(--surface))",
-          borderColor: "rgb(var(--border))",
-        }}
-      >
-        {/* Not logged in — subtle pill hint instead of a plain sentence */}
-        {!currentUser && (
-          <div className="flex justify-center">
-            <div
-              className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
-              style={{
-                backgroundColor: "rgb(var(--primary) / 0.1)",
-                color: "rgb(var(--primary))",
-              }}
-            >
-              <Sparkles size={11} />
-              Log in to send your first message
-            </div>
-          </div>
-        )}
+      {unseenCount > 0 && (
+        <button
+          type="button"
+          onClick={() => scrollToBottom()}
+          className="absolute bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-1/2 z-10 flex h-10 -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-on-primary shadow-md md:bottom-20"
+        >
+          <ArrowDown size={16} aria-hidden="true" />
+          {unseenCount} new {unseenCount === 1 ? "message" : "messages"}
+        </button>
+      )}
 
-        {/* Input */}
-        <form onSubmit={handleSend} className="flex items-center gap-3">
+      {/* Composer */}
+      <div className="border-t border-border bg-surface px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:px-6 md:pb-3">
+        {!currentUser && (
+          <p className="mb-2 text-center text-sm text-muted">
+            <span className="font-semibold text-primary-fg">Sign up free</span> to send messages
+          </p>
+        )}
+        <form onSubmit={handleSend} className="flex items-center gap-2">
+          <label htmlFor="room-message-input" className="sr-only">
+            Message the public chat
+          </label>
           <input
+            id="room-message-input"
             ref={inputRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Say something to Dehradun..."
+            placeholder="Message Doon…"
             maxLength={500}
-            className="flex-1 rounded-xl border px-4 py-3 text-sm outline-none transition-all disabled:opacity-50"
-            style={{
-              backgroundColor: "rgb(var(--background))",
-              borderColor: "rgb(var(--border))",
-              color: "rgb(var(--text))",
-            }}
+            autoComplete="off"
+            enterKeyHint="send"
+            className="h-12 min-w-0 flex-1 rounded-[16px] border-[1.5px] border-transparent bg-surface-2 px-4 text-base text-text outline-none placeholder:text-muted focus:border-primary focus:bg-surface"
           />
           <button
             type="submit"
             disabled={!content.trim()}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-opacity disabled:opacity-40 hover:opacity-85"
-            style={{ backgroundColor: "rgb(var(--primary))" }}
+            aria-label="Send message"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] bg-primary text-on-primary transition-colors hover:bg-primary/90 disabled:opacity-40"
           >
-            <Send size={16} className="text-white" />
+            <Send size={19} aria-hidden="true" />
           </button>
         </form>
       </div>

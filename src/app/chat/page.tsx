@@ -15,8 +15,13 @@ export default async function ChatPage() {
   const currentUser = await getSessionUser();
 
   return (
-    <Suspense fallback={null}>
-      <ChatTabs currentUser={currentUser} />
-    </Suspense>
+    <>
+      {/* The chat UI is all interactive; this gives the page a real H1 for
+          search engines and screen readers without adding visual chrome. */}
+      <h1 className="sr-only">Dehradun public chat — talk to people nearby</h1>
+      <Suspense fallback={null}>
+        <ChatTabs currentUser={currentUser} />
+      </Suspense>
+    </>
   );
 }

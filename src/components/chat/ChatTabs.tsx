@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import type { Socket } from "socket.io-client";
-import { Globe2, MessageCircle, Lock, Users2, ChevronRight } from "lucide-react";
+import { ArrowLeft, Globe2, Lock, MessageCircle, Users2 } from "lucide-react";
 import ChatRoom from "./ChatRoom";
 import MessagesPanel from "./MessagesPanel";
 import AllUsersPanel from "./AllUsersPanel";
+import { buttonClasses } from "@/components/ui/Button";
 
 interface CurrentUser {
   _id: string;
@@ -27,6 +28,10 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
   const dmParam = searchParams.get("dm");
   const [tab, setTab] = useState<"public" | "messages">(dmParam ? "messages" : "public");
   const [pendingDmUserId, setPendingDmUserId] = useState<string | null>(dmParam);
+  // On phones an open DM is full-screen — this header hides so the
+  // conversation gets every pixel.
+  const [dmOpen, setDmOpen] = useState(false);
+  const [unreadDms, setUnreadDms] = useState(0);
 
   // Members panel — lives up here (not inside ChatRoom) so the trigger stays
   // visible and working no matter which tab is active. Visibility rides on
@@ -34,29 +39,40 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
   // their profile, reopens it.
   const membersOpen = searchParams.get("members") === "1";
   const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
-  const [memberCount, setMemberCount] = useState<number | null>(null);
+  const [counts, setCounts] = useState<{ total: number; online: number } | null>(null);
 
-  useEffect(() => {
+  const loadCounts = useCallback(() => {
     fetch("/api/users/count")
       .then((r) => r.json())
       .then((d) => {
-        if (d.success) setMemberCount(d.total);
+        if (d.success) setCounts({ total: d.total, online: d.online ?? 0 });
       })
       .catch(() => {});
   }, []);
 
-  function openMembersPanel() {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("members", "1");
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  }
+  // Member/online counts — on mount and whenever the tab regains focus
+  // (cheap, and keeps "N online" honest without polling).
+  useEffect(() => {
+    loadCounts();
+    window.addEventListener("focus", loadCounts);
+    return () => window.removeEventListener("focus", loadCounts);
+  }, [loadCounts]);
 
-  function closeMembersPanel() {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("members");
-    const qs = params.toString();
-    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }
+  // Unread DM badge for the Messages tab (one request per chat visit).
+  useEffect(() => {
+    if (!currentUser) return;
+    fetch("/api/conversations")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.success) return;
+        const total = (d.conversations ?? []).reduce(
+          (sum: number, c: { unreadCount?: number }) => sum + (c.unreadCount ?? 0),
+          0
+        );
+        setUnreadDms(total);
+      })
+      .catch(() => {});
+  }, [currentUser]);
 
   // If the ?dm= param changes (e.g. clicking "Message" again from another
   // profile while already on this page), pick it up.
@@ -67,6 +83,19 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
       setPendingDmUserId(dmParam);
     }
   }, [dmParam]);
+
+  function openMembersPanel() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("members", "1");
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  const closeMembersPanel = useCallback(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("members");
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [searchParams, router, pathname]);
 
   function clearDmParam() {
     setPendingDmUserId(null);
@@ -79,80 +108,113 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
     }
   }
 
+  function switchTab(next: "public" | "messages") {
+    setTab(next);
+    // The Messages list shows per-conversation counts itself.
+    if (next === "messages") setUnreadDms(0);
+  }
+
   // "Message" from the public chat menu — switch tabs directly instead of
   // relying on a same-page URL change.
   function startDm(userId: string) {
     setPendingDmUserId(userId);
-    setTab("messages");
+    switchTab("messages");
   }
 
   const canUseMessages = !!currentUser;
+  const hideHeaderOnMobile = tab === "messages" && dmOpen;
+  const online = counts?.online ?? 0;
+
+  const tabClass = (active: boolean) =>
+    `flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[11px] px-2 text-[15px] whitespace-nowrap transition-colors ${
+      active ? "bg-surface font-bold text-text shadow-sm" : "font-semibold text-muted hover:text-text"
+    }`;
 
   return (
-    // Fills the <main> the chat layout gives it exactly (100% — that main
-    // is already viewport-locked). The fixed mobile bottom nav still
-    // overlays the bottom of this space, so on mobile we reserve room for
-    // it with padding-bottom (border-box keeps our own height unchanged),
-    // safe-area aware for notched/gesture-nav phones. Desktop has no bottom
-    // nav, so no reservation is needed there.
-    <div className="flex h-full flex-col pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
-      {/* Tab switcher — flex-nowrap + shrink-0 on every item + overflow-x-auto
-          as a last-resort escape hatch keep this row from ever wrapping
-          text inside a button on narrow screens; labels shorten instead. */}
-      <div className="flex shrink-0 flex-nowrap items-center gap-1 overflow-x-auto border-b border-border bg-surface px-2 py-1.5 sm:gap-1.5 sm:px-3">
-        <button
-          onClick={() => setTab("public")}
-          className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors sm:px-3 ${
-            tab === "public" ? "bg-primary text-white" : "text-muted hover:bg-primary/10"
-          }`}
+    <div className="flex h-full flex-col">
+      {/* Chat header — one compact row: back · Public/Messages · people.
+          On phones this replaces the site navbar (hidden in the chat layout). */}
+      <header
+        className={`${
+          hideHeaderOnMobile ? "hidden md:flex" : "flex"
+        } h-16 shrink-0 items-center gap-2 border-b border-border bg-surface px-2 sm:px-4`}
+      >
+        <Link
+          href="/"
+          aria-label="Back to home"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-text hover:bg-surface-2 md:hidden"
         >
-          <Globe2 size={13} />
-          <span className="sm:hidden">Public</span>
-          <span className="hidden sm:inline">Public Chat</span>
-        </button>
-        <button
-          onClick={() => canUseMessages && setTab("messages")}
-          disabled={!canUseMessages}
-          className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors sm:px-3 ${
-            tab === "messages" ? "bg-primary text-white" : "text-muted hover:bg-primary/10"
-          } ${!canUseMessages ? "cursor-not-allowed opacity-50" : ""}`}
-          title={!canUseMessages ? "Sign up to send direct messages" : undefined}
-        >
-          {canUseMessages ? <MessageCircle size={13} /> : <Lock size={11} />}
-          Messages
-        </button>
+          <ArrowLeft size={22} aria-hidden="true" />
+        </Link>
 
-        {/* Members — bordered, chevron-led pill so it visibly reads as a
-            tappable destination rather than a static count label. Collapses
-            to just the count on mobile so it can't force the row to wrap. */}
+        <div
+          role="tablist"
+          aria-label="Chat"
+          className="flex min-w-0 flex-1 gap-1 rounded-[14px] bg-surface-2 p-1 md:max-w-sm md:flex-none md:basis-80"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "public"}
+            onClick={() => switchTab("public")}
+            className={tabClass(tab === "public")}
+          >
+            <Globe2 size={17} aria-hidden="true" />
+            Public<span className="hidden min-[400px]:inline">&nbsp;chat</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "messages"}
+            onClick={() => (canUseMessages ? switchTab("messages") : router.push("/signup"))}
+            className={tabClass(tab === "messages")}
+            title={!canUseMessages ? "Sign up to send direct messages" : undefined}
+          >
+            {canUseMessages ? (
+              <MessageCircle size={17} aria-hidden="true" />
+            ) : (
+              <Lock size={15} aria-hidden="true" />
+            )}
+            Messages
+            {unreadDms > 0 && tab !== "messages" && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold text-on-primary">
+                {unreadDms > 9 ? "9+" : unreadDms}
+                <span className="sr-only"> unread</span>
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* People — online count doubles as live social proof */}
         <button
+          type="button"
           onClick={openMembersPanel}
-          className="group ml-auto flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-xs font-semibold text-primary-fg transition-colors hover:bg-primary/15 sm:gap-1.5 sm:px-3"
-          style={{
-            backgroundColor: "rgb(var(--primary) / 0.1)",
-            borderColor: "rgb(var(--primary) / 0.35)",
-          }}
           aria-haspopup="dialog"
           aria-expanded={membersOpen}
+          aria-label={
+            online > 0 ? `${online} people online — see everyone` : "See people in Dehradun"
+          }
+          className="flex h-11 shrink-0 items-center gap-1.5 rounded-[14px] bg-primary-soft px-3 text-sm font-bold text-primary-fg transition-colors hover:bg-primary hover:text-on-primary md:ml-auto"
         >
-          <Users2 size={13} />
-          <span className="hidden sm:inline">
-            {memberCount !== null ? `See ${memberCount} Dehradunis` : "See Dehradunis"}
+          {online > 0 ? (
+            <>
+              <span className="h-2 w-2 rounded-full bg-online" aria-hidden="true" />
+              <span>{online}</span>
+              <span className="hidden sm:inline">online</span>
+            </>
+          ) : (
+            <Users2 size={18} aria-hidden="true" />
+          )}
+          <span className="hidden md:inline">
+            · {counts ? `See ${counts.total} Dehradunis` : "See Dehradunis"}
           </span>
-          <span className="sm:hidden">{memberCount !== null ? memberCount : ""}</span>
-          <ChevronRight
-            size={13}
-            className="hidden transition-transform group-hover:translate-x-0.5 sm:block"
-          />
         </button>
-      </div>
+      </header>
 
       <div className="min-h-0 flex-1">
-        {tab === "public" && <ChatRoom
-            currentUser={currentUser}
-            onSocketChange={setSocketInstance}
-            onStartDm={startDm}
-          />}
+        {tab === "public" && (
+          <ChatRoom currentUser={currentUser} onSocketChange={setSocketInstance} onStartDm={startDm} />
+        )}
 
         {tab === "messages" &&
           (canUseMessages ? (
@@ -160,28 +222,30 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
               currentUser={currentUser}
               initialDmUserId={pendingDmUserId}
               onDmParamConsumed={clearDmParam}
+              onConversationOpenChange={setDmOpen}
             />
           ) : (
             <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-                <Lock size={22} className="text-primary-fg" />
-              </div>
+              <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-[18px] bg-primary-soft text-primary-fg">
+                <Lock size={24} aria-hidden="true" />
+              </span>
               <p className="font-bold">Sign up to message people</p>
-              <p className="mt-1 max-w-xs text-sm text-muted">
-                Create a free account to start one-on-one conversations with people you meet on
-                DoonMeet.
+              <p className="mt-1 max-w-xs text-[15px] text-muted">
+                Create a free account to start one-on-one conversations with people you meet on DoonMeet.
               </p>
-              <Link
-                href="/signup"
-                className="mt-4 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
-              >
+              <Link href="/signup" className={buttonClasses("primary", "md", "mt-4")}>
                 Sign up free
               </Link>
             </div>
           ))}
       </div>
 
-      <AllUsersPanel open={membersOpen} onClose={closeMembersPanel} socket={socketInstance} />
+      <AllUsersPanel
+        open={membersOpen}
+        onClose={closeMembersPanel}
+        socket={socketInstance}
+        canMessage={canUseMessages}
+      />
     </div>
   );
 }

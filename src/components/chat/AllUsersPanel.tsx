@@ -4,12 +4,16 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import type { Socket } from "socket.io-client";
 import { X, Search, Users, Loader2, UserX } from "lucide-react";
 import UserListItem, { type MemberUser } from "./UserListItem";
+import IconButton from "@/components/ui/IconButton";
+import { buttonClasses } from "@/components/ui/Button";
 import { getChatUsersState, setChatUsersState, resetChatUsersState } from "@/lib/chatUsersStore";
 
 interface AllUsersPanelProps {
   open: boolean;
   onClose: () => void;
   socket: Socket | null;
+  /** Logged-in viewers get a one-tap Message button on each member. */
+  canMessage?: boolean;
 }
 
 interface PresenceUpdate {
@@ -18,7 +22,7 @@ interface PresenceUpdate {
   lastSeenAt: string | null;
 }
 
-export default function AllUsersPanel({ open, onClose, socket }: AllUsersPanelProps) {
+export default function AllUsersPanel({ open, onClose, socket, canMessage = false }: AllUsersPanelProps) {
   // Read fresh from the store on every render (cheap — just an object read).
   // Capturing this once at module scope would freeze it at whatever the
   // store held on first import, breaking restoration on later navigations.
@@ -72,9 +76,10 @@ export default function AllUsersPanel({ open, onClose, socket }: AllUsersPanelPr
       if (requestId !== requestIdRef.current) return;
       setError(true);
     } finally {
-      if (requestId !== requestIdRef.current) return;
-      setLoading(false);
-      setLoadingMore(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
     }
   }, []);
 
@@ -172,6 +177,9 @@ export default function AllUsersPanel({ open, onClose, socket }: AllUsersPanelPr
     if (!open) return;
 
     const previouslyFocused = document.activeElement as HTMLElement | null;
+    // Restore the previous value on close — ChatViewportShell keeps body
+    // locked for the whole chat page, so resetting to "" would unlock it.
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     panelRef.current?.focus();
 
@@ -181,13 +189,12 @@ export default function AllUsersPanel({ open, onClose, socket }: AllUsersPanelPr
 
     document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = prevOverflow;
       document.removeEventListener("keydown", handleKeyDown);
       previouslyFocused?.focus();
     };
   }, [open, onClose]);
 
-  const onlineCount = useMemo(() => users.filter((u) => u.isOnline).length, [users]);
   const onlineUsers = useMemo(() => users.filter((u) => u.isOnline), [users]);
   const offlineUsers = useMemo(() => users.filter((u) => !u.isOnline), [users]);
 
@@ -200,129 +207,136 @@ export default function AllUsersPanel({ open, onClose, socket }: AllUsersPanelPr
 
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay — plain dim, no blur (expensive on low-end GPUs) */}
       <div
-        className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm"
+        className="composer-backdrop fixed inset-0 z-[60] bg-black/50"
         onClick={handleClose}
         aria-hidden="true"
       />
 
-      {/* Panel */}
+      {/* Panel — full screen on phones, right-hand sheet on desktop */}
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label="All community members"
+        aria-labelledby="members-panel-title"
         tabIndex={-1}
-        className="fixed right-0 top-0 z-[60] flex h-[100dvh] w-full flex-col border-l border-border bg-surface outline-none sm:top-16 sm:h-[calc(100dvh-4rem)] sm:w-96"
+        className="fixed top-0 right-0 z-[60] flex h-dvh w-full flex-col bg-surface outline-none md:top-16 md:h-[calc(100dvh-4rem)] md:w-96 md:border-l md:border-border"
       >
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3.5">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-              <Users size={17} className="text-primary-fg" />
-            </div>
-            <div>
-              <p className="text-sm font-bold leading-tight">Doon Community</p>
-              <p className="text-xs leading-tight text-muted">
-                {onlineCount > 0 ? `${onlineCount} online now` : "See who's around"}
-              </p>
-            </div>
+        <div className="flex h-14 shrink-0 items-center justify-between gap-2 px-4 md:h-16">
+          <div className="min-w-0">
+            <h2 id="members-panel-title" className="text-lg leading-tight font-extrabold">
+              People in Doon
+            </h2>
+            <p className="text-[13px] leading-tight text-muted">
+              {onlineUsers.length > 0 ? `${onlineUsers.length} online now` : "See who's around"}
+            </p>
           </div>
-          <button
-            onClick={handleClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-border"
-            aria-label="Close members panel"
-          >
-            <X size={15} />
-          </button>
+          <IconButton label="Close members list" onClick={handleClose}>
+            <X size={20} />
+          </IconButton>
         </div>
 
         {/* Search */}
-        <div className="shrink-0 border-b border-border px-4 py-3">
-          <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2">
-            <Search size={14} className="shrink-0 text-muted" />
+        <div className="shrink-0 px-4 pb-3">
+          <label htmlFor="members-search" className="sr-only">
+            Search members
+          </label>
+          <div className="flex h-12 items-center gap-2 rounded-[14px] border-[1.5px] border-transparent bg-surface-2 px-3.5 focus-within:border-primary focus-within:bg-surface">
+            <Search size={18} className="shrink-0 text-muted" aria-hidden="true" />
             <input
+              id="members-search"
+              type="search"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search members..."
-              className="w-full bg-transparent text-sm outline-none placeholder:text-muted"
+              placeholder="Search by name…"
+              className="w-full bg-transparent text-base text-text outline-none placeholder:text-muted"
               maxLength={50}
+              autoComplete="off"
             />
           </div>
         </div>
 
         {/* List */}
-        <div ref={listRef} onScroll={handleListScroll} className="flex-1 overflow-y-auto px-2 py-2">
+        <div
+          ref={listRef}
+          onScroll={handleListScroll}
+          className="flex-1 overflow-y-auto overscroll-contain border-t border-border px-2 pt-1 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+        >
           {loading ? (
-            <div className="space-y-1 px-1 py-1">
+            // Static skeleton rows — no pulse animation
+            <div className="flex flex-col gap-1 px-1 py-1" aria-label="Loading members">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-2xl px-3 py-2.5">
-                  <div className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-border" />
-                  <div className="flex-1 space-y-1.5">
-                    <div className="h-3 w-2/3 animate-pulse rounded bg-border" />
-                    <div className="h-2.5 w-1/3 animate-pulse rounded bg-border" />
+                <div key={i} className="flex items-center gap-3 px-3 py-2.5">
+                  <div className="h-[46px] w-[46px] shrink-0 rounded-full bg-surface-2" />
+                  <div className="flex-1">
+                    <div className="h-3.5 w-2/3 rounded bg-surface-2" />
+                    <div className="mt-2 h-3 w-1/3 rounded bg-surface-2" />
                   </div>
                 </div>
               ))}
             </div>
           ) : error ? (
             <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-              <UserX size={28} className="mb-2 text-muted" />
-              <p className="text-sm font-bold">Couldn&apos;t load members</p>
-              <p className="mt-1 text-xs text-muted">Check your connection and try again.</p>
+              <UserX size={28} className="mb-2 text-muted" aria-hidden="true" />
+              <p className="font-bold">Couldn&apos;t load members</p>
+              <p className="mt-1 text-sm text-muted">Check your connection and try again.</p>
               <button
+                type="button"
                 onClick={() => fetchUsers(1, search, true)}
-                className="mt-3 rounded-xl bg-primary px-4 py-1.5 text-xs font-semibold text-white"
+                className={buttonClasses("primary", "sm", "mt-4")}
               >
                 Retry
               </button>
             </div>
           ) : users.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-              <Users size={28} className="mb-2 text-muted" />
-              <p className="text-sm font-bold">
-                {search ? "No members match that search" : "No members yet"}
-              </p>
-              <p className="mt-1 text-xs text-muted">
-                {search ? "Try a different name." : "Be part of the first wave on DoonMeet."}
+              <Users size={28} className="mb-2 text-muted" aria-hidden="true" />
+              <p className="font-bold">{search ? "No one matches that name" : "No members yet"}</p>
+              <p className="mt-1 text-sm text-muted">
+                {search ? "Try a different spelling." : "Be part of the first wave on DoonMeet."}
               </p>
             </div>
           ) : (
             <>
               {onlineUsers.length > 0 && (
-                <>
-                  <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-widest text-muted">
+                <section aria-label="Online now">
+                  <p className="px-3 pt-3 pb-1 text-xs font-bold tracking-wider text-primary-fg uppercase">
                     Online now
                   </p>
-                  <div className="space-y-0.5">
+                  <ul className="flex flex-col gap-0.5">
                     {onlineUsers.map((u) => (
-                      <UserListItem key={u._id} user={u} />
+                      <li key={u._id}>
+                        <UserListItem user={u} canMessage={canMessage} />
+                      </li>
                     ))}
-                  </div>
-                </>
+                  </ul>
+                </section>
               )}
 
               {offlineUsers.length > 0 && (
-                <>
-                  <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-widest text-muted">
+                <section aria-label="All members">
+                  <p className="px-3 pt-4 pb-1 text-xs font-bold tracking-wider text-muted uppercase">
                     All members
                   </p>
-                  <div className="space-y-0.5">
+                  <ul className="flex flex-col gap-0.5">
                     {offlineUsers.map((u) => (
-                      <UserListItem key={u._id} user={u} />
+                      <li key={u._id}>
+                        <UserListItem user={u} canMessage={canMessage} />
+                      </li>
                     ))}
-                  </div>
-                </>
+                  </ul>
+                </section>
               )}
 
               {/* Infinite scroll sentinel */}
               <div ref={sentinelRef} className="flex h-10 items-center justify-center">
-                {loadingMore && <Loader2 size={16} className="animate-spin text-muted" />}
+                {loadingMore && <Loader2 size={18} className="animate-spin text-muted" aria-hidden="true" />}
               </div>
 
               {!hasMore && users.length > 0 && (
-                <p className="pb-2 pt-1 text-center text-xs text-muted">
+                <p className="pt-1 pb-2 text-center text-sm text-muted">
                   That&apos;s everyone — {users.length} member{users.length === 1 ? "" : "s"}
                 </p>
               )}

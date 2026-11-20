@@ -64,9 +64,10 @@ export const GET = withAuth(
         .populate("sender", "name avatar")
         .lean();
 
-      const ordered = messages.reverse(); // oldest → newest
-      const nextCursor =
-        messages.length === limit ? String(messages[messages.length - 1]._id) : null;
+      // oldest → newest. .reverse() mutates in place, so the oldest message
+      // (the cursor for "load earlier") is ordered[0], not the last element.
+      const ordered = messages.reverse();
+      const nextCursor = ordered.length === limit ? String(ordered[0]._id) : null;
 
       // Mark fetched messages as read
       const now = new Date();

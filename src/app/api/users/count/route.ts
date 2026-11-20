@@ -32,9 +32,14 @@ export const GET = withGuestAllowed(async (req: AuthenticatedRequest) => {
     // below it (which is an "other people" list, not "everyone").
     if (req.user) query._id = { $ne: req.user._id };
 
-    const total = await User.countDocuments(query);
+    // `online` powers the chat header's live "N online" pill. (The socket
+    // layer never broadcast a room online count, so this is the source.)
+    const [total, online] = await Promise.all([
+      User.countDocuments(query),
+      User.countDocuments({ ...query, isOnline: true }),
+    ]);
 
-    return NextResponse.json({ success: true, total }, { status: 200 });
+    return NextResponse.json({ success: true, total, online }, { status: 200 });
   } catch (error) {
     console.error("[GET /users/count] Error:", error);
     return NextResponse.json({ success: false, message: "Something went wrong." }, { status: 500 });

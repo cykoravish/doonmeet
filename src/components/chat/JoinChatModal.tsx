@@ -1,84 +1,79 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { X, MessageCircle } from "lucide-react";
+import IconButton from "@/components/ui/IconButton";
+import { buttonClasses } from "@/components/ui/Button";
 
 interface JoinChatModalProps {
   pendingMessage: string;
   onClose: () => void;
 }
 
+// Shown when a guest tries to send in the public chat.
 export default function JoinChatModal({ pendingMessage, onClose }: JoinChatModalProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  // Parent passes an inline arrow — keep the latest in a ref so the effect
+  // below runs once (focus isn't re-grabbed on every parent render).
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    panelRef.current?.focus();
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onCloseRef.current();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      previouslyFocused?.focus();
+    };
+  }, []);
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
+      <div className="composer-backdrop absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
       <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-t-3xl border p-6 sm:rounded-3xl animate-in slide-in-from-bottom-4 duration-200"
-        style={{
-          backgroundColor: "rgb(var(--surface))",
-          borderColor: "rgb(var(--border))",
-        }}
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="join-chat-title"
+        tabIndex={-1}
+        className="composer-sheet relative w-full max-w-md rounded-t-[28px] bg-surface p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] outline-none sm:rounded-[28px] sm:pb-5"
       >
-        {/* Close button */}
-        <div className="mb-4 flex items-start justify-between">
-          <div
-            className="flex h-11 w-11 items-center justify-center rounded-2xl"
-            style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}
-          >
-            <MessageCircle size={20} style={{ color: "rgb(var(--primary))" }} />
-          </div>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity hover:opacity-70"
-            style={{ backgroundColor: "rgb(var(--background))" }}
-          >
-            <X size={15} style={{ color: "rgb(var(--muted))" }} />
-          </button>
+        <div className="mb-3 flex items-start justify-between">
+          <span className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-primary-soft text-primary-fg">
+            <MessageCircle size={24} aria-hidden="true" />
+          </span>
+          <IconButton label="Close" onClick={onClose}>
+            <X size={20} />
+          </IconButton>
         </div>
 
-        <h2 className="text-lg font-bold" style={{ color: "rgb(var(--text))" }}>
+        <h2 id="join-chat-title" className="text-xl font-extrabold">
           Join the conversation
         </h2>
-        <p className="mt-1 text-sm" style={{ color: "rgb(var(--muted))" }}>
-          You need an account before sending messages to the Doon Public Chat.
+        <p className="mt-1 text-[15px] text-muted">
+          Free account banao aur Doon ke logon se baat karo — takes less than a minute.
         </p>
 
         {pendingMessage && (
-          <div
-            className="mt-3 rounded-xl border px-3 py-2.5 text-sm italic"
-            style={{
-              backgroundColor: "rgb(var(--background))",
-              borderColor: "rgb(var(--border))",
-              color: "rgb(var(--text))",
-            }}
-          >
-            “{pendingMessage}”
-          </div>
+          <p className="mt-3 rounded-[14px] bg-surface-2 px-3.5 py-2.5 text-[15px] break-words text-text italic">
+            &ldquo;{pendingMessage}&rdquo;
+          </p>
         )}
 
-        <div className="mt-5 space-y-2.5">
-          <a
-            href="/signup"
-            className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-white transition-opacity hover:opacity-90"
-            style={{ backgroundColor: "rgb(var(--primary))" }}
-          >
-            <div>
-              <p className="text-sm font-semibold">Create a free account</p>
-              <p className="text-xs" style={{ color: "rgb(255 255 255 / 0.8)" }}>
-                Join in seconds · save your profile
-              </p>
-            </div>
-          </a>
-
-          <a
-            href="/login"
-            className="flex w-full items-center justify-center rounded-xl border px-4 py-3 text-sm font-medium transition-opacity hover:opacity-85"
-            style={{ borderColor: "rgb(var(--border))", color: "rgb(var(--text))" }}
-          >
-            Already have an account? Log in
-          </a>
+        <div className="mt-5 flex flex-col gap-2">
+          <Link href="/signup" className={buttonClasses("primary", "lg", "w-full")}>
+            Create a free account
+          </Link>
+          <Link href="/login" className={buttonClasses("secondary", "lg", "w-full")}>
+            I already have an account
+          </Link>
         </div>
       </div>
     </div>

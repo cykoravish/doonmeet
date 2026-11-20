@@ -1,5 +1,6 @@
-import Image from "next/image";
+import { memo } from "react";
 import ChatUserActions from "./ChatUserActions";
+import Avatar from "@/components/ui/Avatar";
 
 interface ChatMessageProps {
   content: string;
@@ -7,94 +8,85 @@ interface ChatMessageProps {
   senderName: string;
   senderAvatar: string | null;
   isOwn: boolean;
-  createdAt: string;
-  showAvatar: boolean;
-  showName: boolean;
-  isLastInGroup: boolean;
+  /** Pre-formatted time string (computed once per message upstream). */
+  time: string;
+  /** "room" shows avatars + names for other people; "dm" shows bubbles only. */
+  variant?: "room" | "dm";
+  firstInGroup: boolean;
+  lastInGroup: boolean;
   onMessageUser?: (userId: string) => void;
 }
 
-export default function ChatMessage({
+// Two theme-aware name colours so neighbouring speakers are easy to tell
+// apart in a busy room. Stable per person.
+const NAME_COLORS = ["text-primary-fg", "text-accent-fg"];
+function nameColorFor(id: string) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  return NAME_COLORS[Math.abs(hash) % NAME_COLORS.length];
+}
+
+// memo: a new incoming message re-renders the list, but every existing
+// bubble's props are unchanged — skip them. Big win on long histories.
+function ChatMessage({
   content,
   senderId,
   senderName,
   senderAvatar,
   isOwn,
-  createdAt,
-  showAvatar,
-  showName,
-  isLastInGroup,
+  time,
+  variant = "room",
+  firstInGroup,
+  lastInGroup,
   onMessageUser,
 }: ChatMessageProps) {
-  const time = new Date(createdAt).toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const showAvatarColumn = variant === "room" && !isOwn;
+  const showName = variant === "room" && !isOwn && firstInGroup;
 
   return (
     <div
-      className={`flex gap-2.5 ${isOwn ? "flex-row-reverse" : "flex-row"} ${showAvatar ? "mb-2.5" : "mb-0.5"}`}
+      className={`flex items-end gap-2 ${isOwn ? "justify-end" : "justify-start"} ${
+        lastInGroup ? "mb-2.5" : "mb-0.5"
+      }`}
     >
-      {/* Avatar — only on the last message of a consecutive group */}
-      {showAvatar ? (
-        <ChatUserActions
-          userId={senderId}
-          isOwn={isOwn}
-          onMessage={onMessageUser}
-          align={isOwn ? "right" : "left"}
-          className="self-end shrink-0 rounded-full"
-        >
-          {senderAvatar ? (
-            <Image
-              src={senderAvatar}
-              alt={senderName}
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded-full object-cover"
-            />
-          ) : (
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
-              style={{ backgroundColor: "rgb(var(--primary))" }}
-            >
-              {senderName[0]?.toUpperCase()}
-            </div>
-          )}
-        </ChatUserActions>
-      ) : (
-        <div className="w-8 shrink-0" />
-      )}
+      {showAvatarColumn &&
+        (lastInGroup ? (
+          <ChatUserActions
+            userId={senderId}
+            onMessage={onMessageUser}
+            label={`Options for ${senderName}`}
+            className="shrink-0 rounded-full"
+          >
+            <Avatar name={senderName} src={senderAvatar} size={34} />
+          </ChatUserActions>
+        ) : (
+          <span className="w-[34px] shrink-0" aria-hidden="true" />
+        ))}
 
-      {/* Bubble */}
-      <div className={`max-w-[70%] ${isOwn ? "items-end" : "items-start"} flex flex-col gap-1`}>
-        {/* Name */}
+      <div className={`flex max-w-[80%] flex-col ${isOwn ? "items-end" : "items-start"}`}>
         {showName && (
-          <div className="flex items-center gap-1.5">
-            <ChatUserActions
-              userId={senderId}
-              isOwn={isOwn}
-              onMessage={onMessageUser}
-              align={isOwn ? "right" : "left"}
-              className="text-xs font-semibold"
-            >
-              {senderName}
-            </ChatUserActions>
-          </div>
+          <ChatUserActions
+            userId={senderId}
+            onMessage={onMessageUser}
+            label={`Options for ${senderName}`}
+            className={`mb-0.5 ml-1 max-w-full truncate text-[13px] font-bold ${nameColorFor(senderId)}`}
+          >
+            {senderName}
+          </ChatUserActions>
         )}
 
         <div
-          className="flex flex-wrap items-end gap-2 rounded-2xl px-4 py-2.5 text-sm leading-relaxed"
-          style={{
-            backgroundColor: isOwn ? "rgb(var(--primary))" : "rgb(var(--surface))",
-            color: isOwn ? "white" : "rgb(var(--text))",
-            borderBottomRightRadius: isOwn && isLastInGroup ? "4px" : undefined,
-            borderBottomLeftRadius: !isOwn && isLastInGroup ? "4px" : undefined,
-          }}
+          className={`rounded-[18px] px-3.5 py-2 text-[15px] leading-snug break-words whitespace-pre-wrap ${
+            isOwn
+              ? `bg-primary text-on-primary ${lastInGroup ? "rounded-br-[6px]" : ""}`
+              : `border border-border bg-surface text-text ${lastInGroup ? "rounded-bl-[6px]" : ""}`
+          }`}
         >
-          <span>{content}</span>
+          {content}
           <span
-            className="ml-auto shrink-0 text-[10px] leading-none"
-            style={{ color: isOwn ? "rgb(255 255 255 / 0.7)" : "rgb(var(--muted))" }}
+            className={`ml-2 inline-block translate-y-0.5 align-bottom text-[11px] leading-none ${
+              isOwn ? "text-on-primary/75" : "text-muted"
+            }`}
           >
             {time}
           </span>
@@ -103,3 +95,5 @@ export default function ChatMessage({
     </div>
   );
 }
+
+export default memo(ChatMessage);

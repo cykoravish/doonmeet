@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { MessageCircle } from "lucide-react";
+import Avatar from "@/components/ui/Avatar";
 
 export interface MemberUser {
   _id: string;
@@ -29,48 +29,42 @@ function formatLastSeen(dateStr: string): string {
 
 interface UserListItemProps {
   user: MemberUser;
+  /** Show a one-tap "Message" button (logged-in viewers only). */
+  canMessage?: boolean;
 }
 
-export default function UserListItem({ user }: UserListItemProps) {
+export default function UserListItem({ user, canMessage = false }: UserListItemProps) {
+  const firstName = user.name.split(" ")[0];
+
   return (
-    <Link
-      href={`/users/${user._id}`}
-      className="flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-colors hover:bg-primary/5"
-    >
-      {/* Avatar with online dot */}
-      <div className="relative shrink-0">
-        {user.avatar ? (
-          <Image
-            src={user.avatar}
-            alt={user.name}
-            width={44}
-            height={44}
-            className="h-11 w-11 rounded-full object-cover"
-          />
-        ) : (
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
-            {user.name[0]?.toUpperCase()}
-          </div>
-        )}
-        {user.isOnline && (
+    <div className="flex items-center gap-1 rounded-[16px] pr-1 transition-colors hover:bg-surface-2">
+      <Link href={`/users/${user._id}`} className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5">
+        <Avatar name={user.name} src={user.avatar} size={46} online={user.isOnline} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[15px] font-semibold text-text">{user.name}</span>
           <span
-            className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-surface bg-green-500"
-            aria-hidden="true"
-          />
-        )}
-      </div>
+            className={`block truncate text-[13px] ${
+              user.isOnline ? "font-semibold text-primary-fg" : "text-muted"
+            }`}
+          >
+            {user.isOnline ? "Online now" : formatLastSeen(user.lastSeenAt)}
+          </span>
+        </span>
+      </Link>
 
-      {/* Name + status */}
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{user.name}</p>
-        <p
-          className={`truncate text-xs ${user.isOnline ? "font-medium text-green-600 dark:text-green-400" : "text-muted"}`}
+      {canMessage && (
+        // Goes through ?dm= so ChatTabs switches to Messages and opens the
+        // conversation; dropping ?members=1 also closes this panel.
+        <Link
+          href={`/chat?dm=${user._id}`}
+          scroll={false}
+          aria-label={`Message ${user.name}`}
+          title={`Message ${firstName}`}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-primary-soft text-primary-fg transition-colors hover:bg-primary hover:text-on-primary"
         >
-          {user.isOnline ? "Online now" : formatLastSeen(user.lastSeenAt)}
-        </p>
-      </div>
-
-      <ChevronRight size={16} className="shrink-0 text-muted" />
-    </Link>
+          <MessageCircle size={20} aria-hidden="true" />
+        </Link>
+      )}
+    </div>
   );
 }

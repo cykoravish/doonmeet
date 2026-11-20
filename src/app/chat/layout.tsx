@@ -1,6 +1,5 @@
 import type { Viewport } from "next";
 import Navbar from "@/components/layout/Navbar";
-import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import ChatViewportShell from "@/components/chat/ChatViewportShell";
 import { getSessionUser } from "@/lib/getSessionUser";
 
@@ -15,17 +14,19 @@ export const viewport: Viewport = {
 export default async function ChatLayout({ children }: { children: React.ReactNode }) {
   const user = await getSessionUser();
   return (
-    // Chat is the one page that manages its own internal scrolling (message
-    // list scrolls, everything else stays put). Locking this shell to the
-    // viewport height with overflow-hidden means the page itself can never
-    // scroll — so an over-eager auto-scroll-to-bottom, or a mobile browser's
-    // shifting address bar, can no longer push the tab row behind the
-    // sticky navbar. Only /chat opts into this; every other route keeps
-    // normal page scrolling untouched.
+    // Chat manages its own internal scrolling (the message list scrolls,
+    // everything else stays put), locked to the visible viewport.
+    //
+    // Phones get a full-screen, app-style chat: the site navbar is hidden
+    // below md (ChatTabs has its own back button) and there is no bottom
+    // nav, so the keyboard + composer get the space instead of chrome.
+    // The navbar stays MOUNTED (just display:none) so its notifications
+    // socket keeps working — new-DM sounds still play while chatting.
     <ChatViewportShell>
-      <Navbar user={user} />
+      <div className="hidden md:block">
+        <Navbar user={user} />
+      </div>
       <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
-      <MobileBottomNav isLoggedIn={!!user} />
     </ChatViewportShell>
   );
 }
