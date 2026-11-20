@@ -9,6 +9,10 @@ export interface IPost extends Document {
   image: string | null;
   imagePublicId: string | null;
   commentCount: number;
+  /** Paid sponsorship end time — pinned as "Sponsored" in the feed while in the future. */
+  sponsoredUntil: Date | null;
+  /** Promotions already applied to sponsoredUntil (makes applying idempotent). */
+  sponsorPromotionIds: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,6 +30,9 @@ const PostSchema = new Schema<IPost>(
     image: { type: String, default: null },
     imagePublicId: { type: String, default: null },
     commentCount: { type: Number, default: 0 },
+    sponsoredUntil: { type: Date, default: null },
+    // Internal bookkeeping — never sent to clients by default.
+    sponsorPromotionIds: { type: [Schema.Types.ObjectId], default: [], select: false },
   },
   { timestamps: true }
 );
@@ -38,6 +45,8 @@ PostSchema.index({ author: 1, createdAt: -1 });
 PostSchema.index({ category: 1, _id: -1 });
 // Weekly free business-post limit check
 PostSchema.index({ author: 1, category: 1, createdAt: -1 });
+// Active sponsored posts for the top of the feed
+PostSchema.index({ sponsoredUntil: -1 });
 // Full-text search for future search support
 PostSchema.index({ content: "text" });
 

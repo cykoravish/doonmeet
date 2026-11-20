@@ -26,6 +26,8 @@ interface PostCardProps {
   isOwner?: boolean;
   /** Called after a successful delete so the parent list can drop this card locally. */
   onDeleted?: () => void;
+  /** Paid placement — shows a clear "Sponsored" label (ASCI disclosure). */
+  sponsored?: boolean;
 }
 
 export function timeAgo(dateStr: string) {
@@ -69,12 +71,22 @@ export default function PostCard({
   author,
   isOwner = false,
   onDeleted,
+  sponsored = false,
 }: PostCardProps) {
   const authorName = author?.name ?? "Deleted User";
   const categoryInfo = category && category !== "other" ? getPostCategory(category) : null;
 
   return (
-    <article className="overflow-hidden rounded-[20px] border border-border bg-surface">
+    <article
+      className={`overflow-hidden rounded-[20px] border bg-surface ${sponsored ? "border-accent/50" : "border-border"}`}
+    >
+      {sponsored && (
+        // Disclosure first, before anything else in the card.
+        <p className="flex items-center gap-1.5 bg-accent-soft px-4 py-1.5 text-xs font-bold tracking-wide text-accent-fg uppercase">
+          Sponsored
+          <span className="font-semibold tracking-normal normal-case">· Paid promotion</span>
+        </p>
+      )}
       <header className="flex items-center gap-3 px-4 pt-4">
         <UserLink userId={author?._id}>
           <UiAvatar name={authorName} src={author?.avatar} size={42} />

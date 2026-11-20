@@ -8,6 +8,7 @@ import { getPublicUser } from "@/lib/getPublicUser";
 import { connectDB } from "@/lib/db";
 import { Post } from "@/models/Post";
 import { pageMetadata } from "@/lib/seo";
+import { getActiveSponsoredPosts } from "@/lib/posts";
 import JsonLd from "@/components/seo/JsonLd";
 import { breadcrumbJsonLd } from "@/lib/seo";
 import {
@@ -68,10 +69,12 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
   const category = isPostCategory(rawCategory) ? rawCategory : undefined;
   const categoryInfo = category ? getPostCategory(category) : null;
 
-  const [{ posts, nextCursor }, currentUser, filteredUser] = await Promise.all([
+  const [{ posts, nextCursor }, currentUser, filteredUser, sponsoredPosts] = await Promise.all([
     getInitialFeed(isValidAuthor ? author : undefined, category),
     getSessionUser(),
     isValidAuthor ? getPublicUser(author) : Promise.resolve(null),
+    // Paid placements: on the main feed and on the post's own category feed.
+    isValidAuthor ? Promise.resolve([]) : getActiveSponsoredPosts({ category }).catch(() => []),
   ]);
 
   const breadcrumbs = [
@@ -128,6 +131,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
           isLoggedIn={!!currentUser}
           authorFilter={isValidAuthor ? author : undefined}
           categoryFilter={category}
+          sponsoredPosts={sponsoredPosts}
           currentUser={
             currentUser
               ? { _id: String(currentUser._id), name: currentUser.name, avatar: currentUser.avatar }

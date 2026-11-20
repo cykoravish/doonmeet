@@ -35,6 +35,8 @@ interface PostsFeedProps {
   authorFilter?: string;
   /** Active category filter (/posts?category=…). */
   categoryFilter?: PostCategory;
+  /** Paid posts pinned above the feed (server-picked, rotated per request). */
+  sponsoredPosts?: PostItem[];
   currentUser: { _id: string; name: string; avatar: string | null } | null;
 }
 
@@ -44,6 +46,7 @@ export default function PostsFeed({
   isLoggedIn,
   authorFilter,
   categoryFilter,
+  sponsoredPosts = [],
   currentUser,
 }: PostsFeedProps) {
   const [posts, setPosts] = useState<PostItem[]>(initialPosts);
@@ -128,6 +131,7 @@ export default function PostsFeed({
   }, [composerOpen]);
 
   const showComposer = isLoggedIn && currentUser && !authorFilter;
+  const sponsoredIds = new Set(sponsoredPosts.map((p) => p._id));
 
   // "Write a post" in the bottom-nav Create sheet links to /posts?compose=1 —
   // open the composer, then drop the param so a refresh/back doesn't reopen it.
@@ -183,6 +187,26 @@ export default function PostsFeed({
         </div>
       )}
 
+      {/* Sponsored posts — pinned on top, clearly labelled, not repeated below */}
+      {sponsoredPosts.length > 0 && (
+        <section aria-label="Sponsored posts" className="mb-3 flex flex-col gap-3">
+          {sponsoredPosts.map((post) => (
+            <PostCard
+              key={`sponsored-${post._id}`}
+              id={post._id}
+              content={post.content}
+              category={post.category}
+              image={post.image}
+              commentCount={post.commentCount}
+              createdAt={post.createdAt}
+              author={post.author}
+              sponsored
+              isOwner={!!currentUser && currentUser._id === post.author?._id}
+            />
+          ))}
+        </section>
+      )}
+
       {posts.length === 0 ? (
         <EmptyState
           icon={<Newspaper size={28} />}
@@ -206,27 +230,33 @@ export default function PostsFeed({
         />
       ) : (
         <div className="flex flex-col gap-3">
-          {posts.map((post) => (
-            <PostCard
-              key={post._id}
-              id={post._id}
-              content={post.content}
-              category={post.category}
-              image={post.image}
-              commentCount={post.commentCount}
-              createdAt={post.createdAt}
-              author={post.author}
-              isOwner={!!currentUser && currentUser._id === post.author?._id}
-              onDeleted={() => setPosts((prev) => prev.filter((p) => p._id !== post._id))}
-            />
-          ))}
+          {posts
+            .filter((post) => !sponsoredIds.has(post._id))
+            .map((post) => (
+              <PostCard
+                key={post._id}
+                id={post._id}
+                content={post.content}
+                category={post.category}
+                image={post.image}
+                commentCount={post.commentCount}
+                createdAt={post.createdAt}
+                author={post.author}
+                isOwner={!!currentUser && currentUser._id === post.author?._id}
+                onDeleted={() => setPosts((prev) => prev.filter((p) => p._id !== post._id))}
+              />
+            ))}
         </div>
       )}
 
       {nextCursor && (
         <div ref={sentinelRef} className="flex justify-center py-6">
           {loadingMore ? (
-            <Loader2 size={20} className="animate-spin text-muted" aria-label="Loading more posts" />
+            <Loader2
+              size={20}
+              className="animate-spin text-muted"
+              aria-label="Loading more posts"
+            />
           ) : (
             <button type="button" onClick={loadMore} className={buttonClasses("secondary", "sm")}>
               Load more

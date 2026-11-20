@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   CalendarPlus,
   ChevronRight,
+  Megaphone,
   MessageCircle,
   PenLine,
   Users,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import IconButton from "@/components/ui/IconButton";
 import { buttonClasses } from "@/components/ui/Button";
+import { PROMOTION_PLAN_LABEL } from "@/lib/promotionPlans";
 
 interface CreateSheetProps {
   open: boolean;
@@ -56,6 +58,13 @@ const OPTIONS: CreateOption[] = [
     description: "Find people who like what you like",
     href: "/communities",
     icon: Users,
+    requiresAuth: false,
+  },
+  {
+    title: "Promote your business",
+    description: `Pin a post on top for ${PROMOTION_PLAN_LABEL}`,
+    href: "/promote",
+    icon: Megaphone,
     requiresAuth: false,
   },
 ];

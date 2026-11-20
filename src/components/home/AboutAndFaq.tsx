@@ -10,7 +10,7 @@ const FAQS = [
   },
   {
     q: "Is DoonMeet free to use?",
-    a: "Yes, DoonMeet is free today. We may add optional paid features later, and the details will be spelled out in our Terms and Refund Policy before anything changes.",
+    a: "Yes — chatting, posting, events and communities are all free. The only paid option is Sponsored posts, which local businesses can use to pin a post at the top of the feed for a week. Details are in our Terms and Refund Policy.",
   },
   {
     q: "Do I need an account?",

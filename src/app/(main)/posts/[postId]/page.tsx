@@ -14,6 +14,8 @@ import { getPostById } from "@/lib/posts";
 import { getSessionUser } from "@/lib/getSessionUser";
 import PostComments from "@/components/posts/PostComments";
 import PostDetailView from "@/components/posts/PostDetailView";
+import { isPaymentsConfigured } from "@/lib/razorpay";
+import { eventShortDate } from "@/lib/dates";
 
 interface PostDetailPageProps {
   params: Promise<{ postId: string }>;
@@ -57,6 +59,8 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
   const author = post.author;
   const isOwner = !!currentUser && String(currentUser._id) === String(author._id);
   const startInEditMode = isOwner && edit === "1";
+  const sponsoredUntil = post.sponsoredUntil ? new Date(post.sponsoredUntil) : null;
+  const isSponsored = !!sponsoredUntil && sponsoredUntil.getTime() > new Date().getTime();
   const createdAtStr = new Date(post.createdAt).toISOString();
   const updatedAtStr = new Date(post.updatedAt).toISOString();
   const wasEdited = updatedAtStr !== createdAtStr;
@@ -99,6 +103,9 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
           author={author}
           isOwner={isOwner}
           startInEditMode={startInEditMode}
+          isSponsored={isSponsored}
+          sponsoredUntilLabel={isSponsored && sponsoredUntil ? eventShortDate(sponsoredUntil) : null}
+          paymentsEnabled={isOwner && isPaymentsConfigured()}
         />
 
         <PostComments

@@ -11,6 +11,7 @@ export interface PostListItem {
   _id: string;
   content: string;
   category?: PostCategory;
+  sponsoredUntil?: string | null;
   image: string | null;
   commentCount: number;
   createdAt: string;
@@ -91,4 +92,32 @@ export async function checkBusinessPostLimit(
 
   if (recent.length < BUSINESS_POSTS_PER_WINDOW) return null;
   return { nextAllowedAt: new Date(new Date(recent[0].createdAt).getTime() + BUSINESS_POST_WINDOW_MS) };
+}
+
+/**
+ * Currently sponsored posts for the top of the feed (optionally one category).
+ * Rotates fairly when more posts are sponsored than there are slots.
+ */
+export async function getActiveSponsoredPosts(
+  options: { category?: PostCategory; slots?: number } = {}
+): Promise<PostListItem[]> {
+  const { category, slots = 2 } = options;
+  await connectDB();
+  const query: Record<string, unknown> = {
+    ...(category ? categoryQuery(category) : {}),
+    sponsoredUntil: { $gt: new Date() },
+  };
+  const posts = await Post.find(query)
+    .sort({ sponsoredUntil: -1 })
+    .limit(12)
+    .populate("author", "name avatar")
+    .select("-imagePublicId -__v")
+    .lean();
+
+  // Fisher–Yates shuffle, then take the visible slots.
+  for (let i = posts.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [posts[i], posts[j]] = [posts[j], posts[i]];
+  }
+  return JSON.parse(JSON.stringify(posts.slice(0, slots)));
 }

@@ -9,7 +9,7 @@ export const metadata = pageMetadata({
   path: "/refund-policy",
 });
 
-const LAST_UPDATED = "17 July 2026";
+const LAST_UPDATED = "20 November 2026";
 
 const TOC = [
   { id: "overview", number: "01", label: "Overview" },
@@ -29,20 +29,19 @@ export default function RefundPolicyPage() {
     <LegalPageShell
       active="refund"
       title="Refund & Cancellation Policy"
-      description="DoonMeet is free today. This policy explains how payments will work once paid features launch, and what to expect if something goes wrong with a charge."
+      description="Using DoonMeet is free. This policy covers our optional paid features — currently Sponsored posts — and what to expect if something goes wrong with a charge."
       lastUpdated={LAST_UPDATED}
       toc={TOC}
     >
       <LegalSection id="overview" number="01" title="Overview">
         <p>
-          DoonMeet is currently <strong>free to use</strong> — there are no paid features today,
-          so there is nothing to refund. We&apos;re publishing this policy ahead of time so it&apos;s
-          clear and in place before we introduce paid features (such as premium account features,
-          paid event tools, or similar upgrades) on the platform.
+          Using DoonMeet — chatting, posting, events and communities — is <strong>free</strong>.
+          The only paid feature today is <strong>Sponsored posts</strong>: a one-time payment that
+          pins one of your posts at the top of the feed, with a &quot;Sponsored&quot; label, for a
+          fixed period shown before you pay. Payments are processed securely by Razorpay.
         </p>
         <p>
-          Once paid features go live, this policy will govern all payments made on DoonMeet,
-          alongside our{" "}
+          This policy governs all payments made on DoonMeet, alongside our{" "}
           <a href="/terms" className="font-semibold underline" style={{ color: "rgb(var(--primary-fg))" }}>
             Terms of Service
           </a>
@@ -70,8 +69,9 @@ export default function RefundPolicyPage() {
         <p>This no-refund policy applies to all current and future paid offerings on DoonMeet, including but not limited to:</p>
         <LegalList
           items={[
-            <>Premium account features or subscription plans.</>,
-            <>Paid tools for creating or promoting events (e.g. boosted listings, ticketing).</>,
+            <>Sponsored posts (pinning a post at the top of the feed for a set number of days).</>,
+            <>Premium account features or subscription plans, if introduced.</>,
+            <>Paid tools for creating or promoting events (e.g. boosted listings, ticketing), if introduced.</>,
             <>Any one-time purchase, add-on, or in-app upgrade we introduce.</>,
           ]}
         />
@@ -87,13 +87,14 @@ export default function RefundPolicyPage() {
           items={[
             <><strong>Duplicate charge</strong> — you were billed more than once for the same purchase due to a technical error.</>,
             <><strong>Unauthorised charge</strong> — a payment was made on your account without your authorisation, verified through our standard account-security process.</>,
-            <><strong>Complete non-delivery</strong> — you paid for a feature that never activated on your account due to a fault on our end, and it&apos;s confirmed not to be a user-side issue (e.g. browser cache, incorrect account).</>,
+            <><strong>Complete non-delivery</strong> — you paid for a feature that never activated on your account due to a fault on our end, and it&apos;s confirmed not to be a user-side issue (e.g. browser cache, incorrect account). For Sponsored posts, this includes a payment that went through but the post was never pinned.</>,
           ]}
         />
         <p>
           Outside of these cases — including simply not using a feature you paid for, forgetting
-          to cancel before renewal, or dissatisfaction with a feature that worked as described —
-          no refund will be issued. Approved exceptions are refunded to the original payment
+          to cancel before renewal, dissatisfaction with a feature that worked as described, or a
+          Sponsored post that you deleted, or that we removed for breaking our Terms — no refund
+          will be issued. Approved exceptions are refunded to the original payment
           method through our payment gateway and may take several business days to reflect.
         </p>
       </LegalSection>

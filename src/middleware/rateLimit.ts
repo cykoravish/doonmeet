@@ -140,6 +140,13 @@ export const reportLimiter = rateLimit({
   max: 10,
 });
 
+// Payments — creating orders / verifying payments.
+export const paymentLimiter = rateLimit({
+  keyPrefix: "payment",
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 20,
+});
+
 // Cleanup stale entries every 10 minutes to prevent memory leak
 setInterval(
   () => {

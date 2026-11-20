@@ -9,7 +9,7 @@ export const metadata = pageMetadata({
   path: "/terms",
 });
 
-const LAST_UPDATED = "17 July 2026";
+const LAST_UPDATED = "20 November 2026";
 
 const TOC = [
   { id: "acceptance", number: "01", label: "Acceptance of terms" },
@@ -20,7 +20,7 @@ const TOC = [
   { id: "content", number: "06", label: "Your content" },
   { id: "events", number: "07", label: "Events & meetups" },
   { id: "location-safety", number: "08", label: "Location & safety" },
-  { id: "paid-features", number: "09", label: "Paid features (upcoming)" },
+  { id: "paid-features", number: "09", label: "Paid features & Sponsored posts" },
   { id: "ip", number: "10", label: "Intellectual property" },
   { id: "termination", number: "11", label: "Suspension & termination" },
   { id: "disclaimers", number: "12", label: "Disclaimers" },
@@ -158,16 +158,23 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection id="paid-features" number="09" title="Paid features (upcoming)">
+      <LegalSection id="paid-features" number="09" title="Paid features & Sponsored posts">
         <p>
-          DoonMeet is currently free. We plan to introduce paid features (such as premium account
-          capabilities or paid event tools) in the future. Once available, pricing, billing terms,
-          and any subscription details will be shown clearly before you pay, and will be governed
-          by these Terms together with our{" "}
+          Using DoonMeet is free. We offer optional paid features — currently{" "}
+          <strong>Sponsored posts</strong>, which pin one of your own posts at the top of the feed
+          for a fixed period. The price and duration are shown clearly before you pay, and every
+          payment is governed by these Terms together with our{" "}
           <a href="/refund-policy" className="font-semibold underline" style={{ color: "rgb(var(--primary-fg))" }}>
             Refund &amp; Cancellation Policy
           </a>
-          . Payments will be processed through a licensed third-party payment gateway.
+          . Payments are processed by Razorpay, a licensed third-party payment gateway; we never
+          see or store your card or UPI details.
+        </p>
+        <p>
+          Sponsored posts are always shown with a &quot;Sponsored&quot; label. They must follow these
+          Terms like any other post — including being truthful about what you offer. We may remove a
+          Sponsored post that breaks these Terms without a refund. Sponsorship promotes a post&apos;s
+          placement only; it is not an endorsement by DoonMeet of the advertiser, product or service.
         </p>
       </LegalSection>
 
