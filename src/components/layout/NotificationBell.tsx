@@ -7,6 +7,34 @@ import Image from "next/image";
 import { NOTIFICATION_TYPE_CONFIG, getNotificationHref, timeAgo } from "@/lib/notificationTypeConfig";
 import { useNotifications } from "@/providers/notifications-provider";
 
+function UnreadBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      aria-hidden="true"
+      className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-background bg-danger px-1 text-[11px] font-bold text-white"
+    >
+      {count > 9 ? "9+" : count}
+    </span>
+  );
+}
+
+// Mobile: a plain link to the full notifications page — a dropdown is
+// cramped on a 360px screen, a full page is easier to read and tap.
+export function NotificationLink() {
+  const { unreadCount } = useNotifications();
+  return (
+    <Link
+      href="/notifications"
+      aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+      className="relative flex h-11 w-11 items-center justify-center rounded-[14px] bg-surface-2 text-text transition-colors hover:bg-border"
+    >
+      <Bell size={20} aria-hidden="true" />
+      <UnreadBadge count={unreadCount} />
+    </Link>
+  );
+}
+
 export default function NotificationBell() {
   const { notifications, unreadCount, loading, markOneRead, markAllRead } = useNotifications();
   const [open, setOpen] = useState(false);
@@ -47,16 +75,12 @@ export default function NotificationBell() {
     <div ref={panelRef} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        aria-label="Notifications"
+        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
         aria-expanded={open}
-        className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-surface transition-colors hover:opacity-80"
+        className="relative flex h-11 w-11 items-center justify-center rounded-[14px] bg-surface-2 text-text transition-colors hover:bg-border"
       >
-        <Bell size={17} />
-        {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
-            {unreadCount > 9 ? "9+" : unreadCount}
-          </span>
-        )}
+        <Bell size={20} aria-hidden="true" />
+        <UnreadBadge count={unreadCount} />
       </button>
 
       {open && (

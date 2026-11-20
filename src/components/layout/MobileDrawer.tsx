@@ -1,15 +1,29 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Menu, X, Settings, LogOut, Shield, Bell } from "lucide-react";
+import {
+  Bell,
+  CalendarDays,
+  FileText,
+  LogOut,
+  MapPin,
+  Menu,
+  Shield,
+  UserRound,
+  Users,
+  X,
+} from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { NavUser } from "@/types/user";
 import { useNotifications } from "@/providers/notifications-provider";
 import InstallAppMenuItem from "./InstallAppMenuItem";
+import ThemeToggle from "../theme/theme-toggle";
+import Avatar from "@/components/ui/Avatar";
+import IconButton from "@/components/ui/IconButton";
+import { buttonClasses } from "@/components/ui/Button";
 
-const TRANSITION_MS = 220;
+const TRANSITION_MS = 200;
 
 interface MobileDrawerProps {
   user: NavUser | null;
@@ -17,13 +31,13 @@ interface MobileDrawerProps {
 
 export default function MobileDrawer({ user }: MobileDrawerProps) {
   const [open, setOpen] = useState(false);
-  // Kept mounted for the duration of the close transition instead of
-  // unmounting instantly, so the panel/overlay can animate out smoothly.
+  // Kept mounted for the duration of the close transition so the panel can
+  // slide out instead of vanishing.
   const [rendered, setRendered] = useState(false);
   const router = useRouter();
-  const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const { unreadCount } = useNotifications();
+  const close = () => setOpen(false);
 
   useEffect(() => {
     if (open) {
@@ -41,8 +55,6 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
 
     const previouslyFocused = document.activeElement as HTMLElement | null;
     document.body.style.overflow = "hidden";
-    // Let the slide-in transition start before we yank focus, so it isn't
-    // interrupted by the browser scrolling the panel into view mid-animation.
     const focusTimeout = setTimeout(() => panelRef.current?.focus(), 50);
 
     function handleKeyDown(e: KeyboardEvent) {
@@ -50,17 +62,14 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
         setOpen(false);
         return;
       }
-
       // Basic focus trap
       if (e.key === "Tab" && panelRef.current) {
         const focusable = panelRef.current.querySelectorAll<HTMLElement>(
           'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
         );
         if (focusable.length === 0) return;
-
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
-
         if (e.shiftKey && document.activeElement === first) {
           e.preventDefault();
           last.focus();
@@ -72,7 +81,6 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
     }
 
     document.addEventListener("keydown", handleKeyDown);
-
     return () => {
       document.body.style.overflow = "";
       clearTimeout(focusTimeout);
@@ -92,192 +100,121 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
 
   return (
     <>
-      <button
-        ref={triggerRef}
-        onClick={() => setOpen(true)}
-        className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border"
-        aria-label={
-          unreadCount > 0 ? `Open menu, ${unreadCount} unread notifications` : "Open menu"
-        }
-        aria-expanded={open}
-      >
-        <Menu size={18} />
-        {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
-            {unreadCount > 9 ? "9+" : unreadCount}
-          </span>
-        )}
-      </button>
+      <IconButton label="Open menu" onClick={() => setOpen(true)} aria-expanded={open} aria-haspopup="dialog">
+        <Menu size={20} />
+      </IconButton>
 
       {rendered && (
         <>
-          {/* Overlay */}
+          {/* Overlay — plain dim, no blur (blur is expensive on cheap GPUs) */}
           <div
-            className={`fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm transition-opacity duration-[220ms] ease-out ${
+            className={`fixed inset-0 z-[60] bg-black/50 transition-opacity duration-200 ease-out ${
               open ? "opacity-100" : "opacity-0"
             }`}
-            onClick={() => setOpen(false)}
+            onClick={close}
             aria-hidden="true"
           />
 
-          {/* Drawer — spans the full viewport height from the very top, so
-              it fully covers the navbar underneath (instead of starting
-              below it and leaving a confusing blurred strip peeking out
-              above the panel). Slides in/out from the right. */}
           <div
             ref={panelRef}
             role="dialog"
             aria-modal="true"
             aria-label="Menu"
             tabIndex={-1}
-            className={`fixed right-0 top-0 z-[60] flex h-dvh w-72 max-w-[85vw] flex-col overflow-hidden border-l border-border bg-surface shadow-2xl outline-none transition-transform duration-[220ms] ease-out ${
+            className={`fixed top-0 right-0 z-[60] flex h-dvh w-80 max-w-[86vw] flex-col border-l border-border bg-surface outline-none transition-transform duration-200 ease-out ${
               open ? "translate-x-0" : "translate-x-full"
             }`}
           >
-            {/* Header */}
-            <div className="flex h-16 shrink-0 items-center justify-between border-b border-border px-5">
-              <Link
-                href="/"
-                className="flex items-center gap-2 group shrink-0"
-                onClick={() => setOpen(false)}
-              >
-                <Image
-                  src="/doonmeet-light.png"
-                  alt="DoonMeet"
-                  width={40}
-                  height={40}
-                  className="logo-light h-10 w-10 object-contain"
-                />
-                <Image
-                  src="/doonmeet-dark.png"
-                  alt="DoonMeet"
-                  width={40}
-                  height={40}
-                  className="logo-dark h-10 w-10 object-contain"
-                />
-              </Link>
-              <button
-                onClick={() => setOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-xl bg-border transition-transform active:scale-90"
-                aria-label="Close menu"
-              >
-                <X size={15} />
-              </button>
+            <div className="flex h-14 shrink-0 items-center justify-between px-4">
+              <span className="font-display text-lg font-extrabold">Menu</span>
+              <IconButton label="Close menu" onClick={close}>
+                <X size={20} />
+              </IconButton>
             </div>
 
-            {/* Scrollable section — user card + account links + Log out.
-                Log out sits inside this scroll area (not pinned as a rigid
-                fixed-height footer) with mt-auto: on tall screens it still
-                settles visually toward the bottom, but on short screens or
-                with more menu items it simply flows after the last link and
-                stays reachable via scroll instead of ever being clipped or
-                stranded behind an awkward empty gap. */}
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              <div className="flex min-h-full flex-col">
-                {/* User card */}
-                {user ? (
-                  <div className="mx-4 mt-4 rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/10 to-transparent p-4">
-                    <div className="flex items-center gap-3">
-                      {user.avatar ? (
-                        <Image
-                          src={user.avatar}
-                          alt={user.name}
-                          width={44}
-                          height={44}
-                          className="rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary font-bold text-white">
-                          {user.name[0]?.toUpperCase()}
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="truncate font-bold text-sm">{user.name}</p>
-                        {user.email && <p className="truncate text-xs text-muted">{user.email}</p>}
-                      </div>
-                    </div>
-
-                    <Link
-                      href="/profile"
-                      onClick={() => setOpen(false)}
-                      className="mt-3 block w-full rounded-xl bg-primary py-2 text-center text-xs font-semibold text-white"
-                    >
-                      View Profile
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="mx-4 mt-4 space-y-2">
-                    <Link
-                      href="/login"
-                      onClick={() => setOpen(false)}
-                      className="block w-full rounded-xl border border-border py-2.5 text-center text-sm font-medium"
-                    >
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+              {user ? (
+                <Link
+                  href="/profile"
+                  onClick={close}
+                  className="flex items-center gap-3 rounded-[20px] bg-primary-soft p-3.5"
+                >
+                  <Avatar name={user.name} src={user.avatar} size={48} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-bold text-text">{user.name}</span>
+                    <span className="block text-sm font-semibold text-primary-fg">View profile</span>
+                  </span>
+                </Link>
+              ) : (
+                <div className="rounded-[20px] bg-primary-soft p-4">
+                  <p className="font-semibold text-text">Doon ke logon se milo</p>
+                  <p className="mt-0.5 text-sm text-muted">Free account — chat, post and join events.</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <Link href="/login" onClick={close} className={buttonClasses("secondary", "md")}>
                       Log in
                     </Link>
-                    <Link
-                      href="/signup"
-                      onClick={() => setOpen(false)}
-                      className="block w-full rounded-xl bg-primary py-2.5 text-center text-sm font-semibold text-white"
-                    >
-                      Sign up free
+                    <Link href="/signup" onClick={close} className={buttonClasses("primary", "md")}>
+                      Sign up
                     </Link>
                   </div>
-                )}
-
-                {/* Settings links */}
-                <div className="mt-4 px-4 pb-4">
-                  <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-widest text-muted">
-                    Account
-                  </p>
-                  <div className="space-y-1">
-                    {user && (
-                      <>
-                        <DrawerLink
-                          href="/profile"
-                          icon={<Settings size={15} />}
-                          label="Settings"
-                          onClick={() => setOpen(false)}
-                        />
-                        <DrawerLink
-                          href="/notifications"
-                          icon={<Bell size={15} />}
-                          label="Notifications"
-                          badge={unreadCount > 0 ? unreadCount : undefined}
-                          onClick={() => setOpen(false)}
-                        />
-                      </>
-                    )}
-                    <InstallAppMenuItem onInstallPrompted={() => setOpen(false)} />
-                    <DrawerLink
-                      href="/privacy"
-                      icon={<Shield size={15} />}
-                      label="Privacy Policy"
-                      onClick={() => setOpen(false)}
-                    />
-                  </div>
                 </div>
+              )}
 
-                {/* Log out — visually anchored toward the bottom (mt-auto)
-                    but part of the natural document flow, so it never
-                    detaches from the rest of the menu with a big gap, and
-                    never gets clipped since it's inside the scroll area. */}
+              <DrawerSection title="Explore">
+                <DrawerLink href="/events" icon={<CalendarDays size={20} />} label="Events" onClick={close} />
+                <DrawerLink href="/communities" icon={<Users size={20} />} label="Communities" onClick={close} />
+                <DrawerLink href="/places" icon={<MapPin size={20} />} label="Places" onClick={close} />
+              </DrawerSection>
+
+              <DrawerSection title="Account">
                 {user && (
-                  <div className="mt-auto border-t border-border px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4">
-                    <button
-                      onClick={handleLogout}
-                      className="flex w-full items-center gap-2 rounded-xl border border-red-600/20 px-3 py-2.5 text-sm font-medium text-red-600 transition-opacity hover:opacity-80"
-                    >
-                      <LogOut size={15} />
-                      Log out
-                    </button>
-                  </div>
+                  <>
+                    <DrawerLink
+                      href="/notifications"
+                      icon={<Bell size={20} />}
+                      label="Notifications"
+                      badge={unreadCount > 0 ? unreadCount : undefined}
+                      onClick={close}
+                    />
+                    <DrawerLink href="/profile" icon={<UserRound size={20} />} label="Profile & settings" onClick={close} />
+                  </>
                 )}
-              </div>
+                <InstallAppMenuItem onInstallPrompted={close} />
+                <div className="flex min-h-12 items-center gap-3 rounded-[14px] px-3">
+                  <span className="flex-1 text-[15px] font-medium text-text">Dark mode</span>
+                  <ThemeToggle />
+                </div>
+              </DrawerSection>
+
+              <DrawerSection title="About">
+                <DrawerLink href="/privacy" icon={<Shield size={20} />} label="Privacy Policy" onClick={close} />
+                <DrawerLink href="/terms" icon={<FileText size={20} />} label="Terms of Service" onClick={close} />
+              </DrawerSection>
+
+              {user && (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-danger/10 text-[15px] font-semibold text-danger transition-colors hover:bg-danger/15"
+                >
+                  <LogOut size={18} aria-hidden="true" />
+                  Log out
+                </button>
+              )}
             </div>
           </div>
         </>
       )}
     </>
+  );
+}
+
+function DrawerSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-5">
+      <p className="mb-1 px-3 text-xs font-bold tracking-wider text-muted uppercase">{title}</p>
+      <div className="flex flex-col">{children}</div>
+    </div>
   );
 }
 
@@ -298,12 +235,14 @@ function DrawerLink({
     <Link
       href={href}
       onClick={onClick}
-      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-text transition-colors hover:opacity-80"
+      className="flex min-h-12 items-center gap-3 rounded-[14px] px-3 text-[15px] font-medium text-text transition-colors hover:bg-surface-2"
     >
-      <span className="text-muted">{icon}</span>
+      <span className="text-muted" aria-hidden="true">
+        {icon}
+      </span>
       <span className="flex-1">{label}</span>
       {!!badge && (
-        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-white">
+        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-[11px] font-bold text-white">
           {badge > 9 ? "9+" : badge}
         </span>
       )}

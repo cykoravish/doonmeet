@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Plus, X } from "lucide-react";
 import PostCard, { Avatar } from "./PostCard";
 import CreatePostForm from "./CreatePostForm";
@@ -116,14 +117,28 @@ export default function PostsFeed({
 
   const showComposer = isLoggedIn && currentUser && !authorFilter;
 
+  // "Write a post" in the bottom-nav Create sheet links to /posts?compose=1 —
+  // open the composer, then drop the param so a refresh/back doesn't reopen it.
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const wantsCompose = searchParams.get("compose") === "1";
+  useEffect(() => {
+    if (!wantsCompose) return;
+    if (showComposer) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setComposerOpen(true);
+    }
+    router.replace("/posts", { scroll: false });
+  }, [wantsCompose, showComposer, router]);
+
   return (
     <div className="mx-auto max-w-2xl">
-      {/* Desktop/tablet: a compact one-row trigger instead of a full form or a floating
-          button — clicking anywhere on it opens the same create-post sheet/modal. */}
+      {/* One-row trigger — opens the create-post sheet. The bottom-nav "+"
+          opens the same sheet via ?compose=1 on mobile. */}
       {showComposer && (
         <button
           onClick={() => setComposerOpen(true)}
-          className="btn-springy mb-3 hidden w-full items-center gap-2.5 rounded-2xl border p-2.5 text-left transition-shadow hover:shadow-md sm:flex"
+          className="mb-3 flex w-full items-center gap-2.5 rounded-2xl border p-2.5 text-left transition-colors hover:bg-surface-2"
           style={{ borderColor: "rgb(var(--border))", backgroundColor: "rgb(var(--surface))" }}
         >
           <Avatar name={currentUser!.name} avatar={currentUser!.avatar} size={34} />
@@ -190,18 +205,6 @@ export default function PostsFeed({
             </button>
           )}
         </div>
-      )}
-
-      {/* Instagram-style "+" FAB — mobile only. Desktop uses the inline trigger row above instead. */}
-      {showComposer && (
-        <button
-          onClick={() => setComposerOpen(true)}
-          aria-label="Create post"
-          className="btn-springy fixed bottom-[calc(env(safe-area-inset-bottom)+76px)] right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg sm:hidden"
-          style={{ backgroundColor: "rgb(var(--primary))" }}
-        >
-          <Plus size={26} strokeWidth={2.5} />
-        </button>
       )}
 
       {showComposer && composerOpen && (

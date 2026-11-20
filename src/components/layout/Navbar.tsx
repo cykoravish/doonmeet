@@ -1,11 +1,12 @@
 import Link from "next/link";
-import Image from "next/image";
 import NavLinks from "./NavLinks";
 import ThemeToggle from "../theme/theme-toggle";
 import MobileDrawer from "./MobileDrawer";
-import NotificationBell from "./NotificationBell";
+import NotificationBell, { NotificationLink } from "./NotificationBell";
 import type { NavUser } from "@/types/user";
 import Logo from "./get-logo/Logo";
+import Avatar from "@/components/ui/Avatar";
+import { buttonClasses } from "@/components/ui/Button";
 import { NotificationsProvider } from "@/providers/notifications-provider";
 
 interface NavbarProps {
@@ -17,67 +18,54 @@ export default function Navbar({ user }: NavbarProps) {
 
   return (
     <NotificationsProvider userId={notifUserId}>
-      <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-6">
-          {/* Logo */}
+      {/* Solid background, no backdrop-blur: a blurred sticky bar repaints on
+          every scroll frame, which stutters on low-end phones. */}
+      <header className="sticky top-0 z-50 border-b border-border bg-background">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4 sm:px-6 md:h-16">
           <Logo />
 
-          {/* Desktop nav links */}
-          <div className="hidden md:flex flex-1 items-center">
+          {/* Desktop nav */}
+          <div className="hidden flex-1 items-center md:flex">
             <NavLinks />
           </div>
 
-          {/* Desktop right actions */}
-          <div className="ml-auto hidden md:flex items-center gap-2">
+          {/* Desktop actions */}
+          <div className="ml-auto hidden items-center gap-2 md:flex">
             <ThemeToggle />
-
             {user ? (
               <>
                 <NotificationBell />
-
                 <Link
                   href="/profile"
-                  className="flex items-center gap-2 rounded-xl border border-border px-2 py-1.5 transition-opacity hover:opacity-80"
+                  className="flex h-11 items-center gap-2 rounded-[14px] pr-3 pl-1.5 transition-colors hover:bg-surface-2"
                 >
-                  {user.avatar ? (
-                    <Image
-                      src={user.avatar}
-                      alt={user.name}
-                      width={28}
-                      height={28}
-                      className="rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
-                      {user.name[0]?.toUpperCase()}
-                    </div>
-                  )}
-                  <span className="text-sm font-medium max-w-[100px] truncate">
+                  <Avatar name={user.name} src={user.avatar} size={32} />
+                  <span className="max-w-[110px] truncate text-[15px] font-semibold">
                     {user.name.split(" ")[0]}
                   </span>
                 </Link>
               </>
             ) : (
               <>
-                <Link
-                  href="/login"
-                  className="rounded-xl px-4 py-2 text-sm font-medium text-text transition-colors hover:opacity-80"
-                >
+                <Link href="/login" className={buttonClasses("ghost", "sm", "text-text")}>
                   Log in
                 </Link>
-                <Link
-                  href="/signup"
-                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                >
+                <Link href="/signup" className={buttonClasses("primary", "sm")}>
                   Sign up free
                 </Link>
               </>
             )}
           </div>
 
-          {/* Mobile right */}
-          <div className="ml-auto flex md:hidden items-center gap-2">
-            <ThemeToggle />
+          {/* Mobile actions — theme toggle lives inside the menu to keep this row uncluttered */}
+          <div className="ml-auto flex items-center gap-2 md:hidden">
+            {user ? (
+              <NotificationLink />
+            ) : (
+              <Link href="/signup" className={buttonClasses("primary", "sm")}>
+                Sign up
+              </Link>
+            )}
             <MobileDrawer user={user} />
           </div>
         </div>

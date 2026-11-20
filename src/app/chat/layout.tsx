@@ -25,7 +25,7 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
     <ChatViewportShell>
       <Navbar user={user} />
       <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
-      <MobileBottomNav />
+      <MobileBottomNav isLoggedIn={!!user} />
     </ChatViewportShell>
   );
 }

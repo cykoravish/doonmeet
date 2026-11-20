@@ -14,7 +14,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
       <Navbar user={user} />
       <main className="pb-20 md:pb-0">{children}</main>
       <Footer />
-      <MobileBottomNav />
+      <MobileBottomNav isLoggedIn={!!user} />
     </>
   );
 }

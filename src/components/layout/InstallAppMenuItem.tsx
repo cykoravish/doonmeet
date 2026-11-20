@@ -34,17 +34,17 @@ export default function InstallAppMenuItem({ onInstallPrompted }: InstallAppMenu
       <button
         type="button"
         onClick={handleClick}
-        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-text transition-colors hover:opacity-80"
+        className="flex min-h-12 w-full items-center gap-3 rounded-[14px] px-3 text-left text-[15px] font-medium text-text transition-colors hover:bg-surface-2"
       >
-        <span className="text-muted">
-          <Download size={15} />
+        <span className="text-muted" aria-hidden="true">
+          <Download size={20} />
         </span>
         <span className="flex-1">Install App</span>
       </button>
 
       {showIOSInstructions && (
         <div
-          className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center"
+          className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 sm:items-center"
           onClick={() => setShowIOSInstructions(false)}
         >
           <div

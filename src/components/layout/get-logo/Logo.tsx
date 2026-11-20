@@ -1,32 +1,42 @@
-"use client";
-
-import { useTheme } from "@/providers/theme-provider";
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-export default function Logo() {
-  const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+interface LogoProps {
+  /** Show the "DoonMeet" wordmark next to the mark. */
+  wordmark?: boolean;
+  size?: number;
+}
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-  }, []);
-
-  const isNight = mounted && resolvedTheme === "night";
-
+// Server component — both theme variants are rendered and CSS
+// (.logo-light / .logo-dark in globals.css) hides the wrong one, so there's
+// no client JS and no flash when the theme loads. The hidden image is
+// display:none + lazy, so the browser never downloads it.
+export default function Logo({ wordmark = true, size = 36 }: LogoProps) {
   return (
-    <Link href="/" className="flex items-center gap-2 group shrink-0" aria-label="DoonMeet home">
+    <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="DoonMeet home">
       <Image
-        src={isNight ? "/doonmeet-dark.png" : "/doonmeet-light.png"}
-        alt="DoonMeet — Meet People, Events & Communities in Dehradun"
-        width={52}
-        height={52}
-        className="h-13 w-13 object-contain transition-transform group-hover:scale-105"
-        priority
-        fetchPriority="high"
+        src="/doonmeet-light.png"
+        alt=""
+        width={size}
+        height={size}
+        sizes={`${size}px`}
+        className="logo-light object-contain"
+        style={{ width: size, height: size }}
       />
+      <Image
+        src="/doonmeet-dark.png"
+        alt=""
+        width={size}
+        height={size}
+        sizes={`${size}px`}
+        className="logo-dark object-contain"
+        style={{ width: size, height: size }}
+      />
+      {wordmark && (
+        <span className="font-display text-[21px] font-extrabold tracking-tight text-text">
+          DoonMeet
+        </span>
+      )}
     </Link>
   );
 }
