@@ -3,6 +3,7 @@
 // ============================================================
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
+import { isBlockedEitherWay } from "@/lib/safety";
 import { DirectMessage } from "@/models/DirectMessage";
 import { Conversation } from "@/models/Conversation";
 import { Notification } from "@/models/Notification";
@@ -173,6 +174,14 @@ export const POST = withAuth(
       const recipientId = conversation.participants.find(
         (p: string) => String(p) !== String(req.user._id)
       );
+
+      // Either side blocked the other → DMs are closed both ways.
+      if (recipientId && (await isBlockedEitherWay(String(req.user._id), String(recipientId)))) {
+        return NextResponse.json(
+          { success: false, code: "BLOCKED", message: "You can't message this person." },
+          { status: 403 }
+        );
+      }
 
       // Is the recipient already looking at this exact conversation right
       // now (their own socket has it joined)? If so, treat this message as

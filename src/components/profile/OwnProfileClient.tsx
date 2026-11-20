@@ -3,13 +3,25 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MapPin, Settings, Shield, Bell, KeyRound, LogOut, Check, X, Newspaper, ExternalLink } from "lucide-react";
+import {
+  MapPin,
+  Settings,
+  Shield,
+  Bell,
+  KeyRound,
+  LogOut,
+  Check,
+  X,
+  Newspaper,
+  ExternalLink,
+} from "lucide-react";
 import ProfileAvatar from "./ProfileAvatar";
 import EditProfileForm from "./EditProfileForm";
 import PrivacySettings from "./PrivacySettings";
 import NotificationSettings from "./NotificationSettings";
 import DeleteAccountSection from "./DeleteAccountSection";
 import MyPostsTab from "./MyPostsTab";
+import BlockedUsersList from "./BlockedUsersList";
 import Alert from "@/components/ui/Alert";
 import Button, { buttonClasses } from "@/components/ui/Button";
 import PasswordInput from "@/components/ui/PasswordInput";
@@ -44,7 +56,13 @@ interface User {
   hasPassword: boolean;
 }
 
-const TABS: { key: Tab; label: string; icon: React.ElementType; title: string; description?: string }[] = [
+const TABS: {
+  key: Tab;
+  label: string;
+  icon: React.ElementType;
+  title: string;
+  description?: string;
+}[] = [
   { key: "profile", label: "Edit profile", icon: Settings, title: "Edit profile" },
   { key: "posts", label: "My posts", icon: Newspaper, title: "My posts" },
   {
@@ -114,7 +132,9 @@ export default function OwnProfileClient({ user }: { user: User }) {
           </div>
         </div>
 
-        {currentUser.bio && <p className="mt-3 text-[15px] leading-relaxed break-words">{currentUser.bio}</p>}
+        {currentUser.bio && (
+          <p className="mt-3 text-[15px] leading-relaxed break-words">{currentUser.bio}</p>
+        )}
 
         {currentUser.interests?.length > 0 && (
           <ul className="mt-3 flex flex-wrap gap-1.5">
@@ -176,7 +196,11 @@ export default function OwnProfileClient({ user }: { user: User }) {
       </div>
 
       {/* Tab content */}
-      <section role="tabpanel" aria-label={active.title} className="mt-4 rounded-[20px] border border-border bg-surface p-4 sm:p-6">
+      <section
+        role="tabpanel"
+        aria-label={active.title}
+        className="mt-4 rounded-[20px] border border-border bg-surface p-4 sm:p-6"
+      >
         {active.description && (
           <div className="mb-4">
             <h2 className="text-lg font-extrabold">{active.title}</h2>
@@ -204,7 +228,12 @@ export default function OwnProfileClient({ user }: { user: User }) {
 
         {activeTab === "posts" && <MyPostsTab userId={currentUser._id} />}
 
-        {activeTab === "privacy" && <PrivacySettings initialPrivacy={currentUser.privacy} />}
+        {activeTab === "privacy" && (
+          <>
+            <PrivacySettings initialPrivacy={currentUser.privacy} />
+            <BlockedUsersList />
+          </>
+        )}
 
         {activeTab === "notifications" && <NotificationSettings />}
 
@@ -223,7 +252,13 @@ export default function OwnProfileClient({ user }: { user: User }) {
 }
 
 // Inline change / set password form
-function ChangePasswordForm({ hasPassword, onPasswordSet }: { hasPassword: boolean; onPasswordSet: () => void }) {
+function ChangePasswordForm({
+  hasPassword,
+  onPasswordSet,
+}: {
+  hasPassword: boolean;
+  onPasswordSet: () => void;
+}) {
   const router = useRouter();
   const [form, setForm] = useState({
     currentPassword: "",
@@ -241,7 +276,8 @@ function ChangePasswordForm({ hasPassword, onPasswordSet }: { hasPassword: boole
     { label: "One number (0–9)", valid: /[0-9]/.test(form.newPassword) },
   ];
   const allValid = rules.every((r) => r.valid);
-  const passwordsMatch = form.confirmPassword.length === 0 || form.newPassword === form.confirmPassword;
+  const passwordsMatch =
+    form.confirmPassword.length === 0 || form.newPassword === form.confirmPassword;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -344,7 +380,11 @@ function ChangePasswordForm({ hasPassword, onPasswordSet }: { hasPassword: boole
                 key={rule.label}
                 className={`flex items-center gap-1.5 text-sm ${rule.valid ? "text-primary-fg" : "text-muted"}`}
               >
-                {rule.valid ? <Check size={15} aria-hidden="true" /> : <X size={15} aria-hidden="true" />}
+                {rule.valid ? (
+                  <Check size={15} aria-hidden="true" />
+                ) : (
+                  <X size={15} aria-hidden="true" />
+                )}
                 {rule.label}
               </li>
             ))}
@@ -364,7 +404,11 @@ function ChangePasswordForm({ hasPassword, onPasswordSet }: { hasPassword: boole
           <p
             className={`mt-1.5 flex items-center gap-1.5 text-sm ${passwordsMatch ? "text-primary-fg" : "text-danger"}`}
           >
-            {passwordsMatch ? <Check size={15} aria-hidden="true" /> : <X size={15} aria-hidden="true" />}
+            {passwordsMatch ? (
+              <Check size={15} aria-hidden="true" />
+            ) : (
+              <X size={15} aria-hidden="true" />
+            )}
             {passwordsMatch ? "Passwords match" : "Passwords do not match"}
           </p>
         )}

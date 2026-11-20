@@ -3,6 +3,8 @@ import ChatUserActions from "./ChatUserActions";
 import Avatar from "@/components/ui/Avatar";
 
 interface ChatMessageProps {
+  /** Message id — attached to a report made from this message. */
+  messageId?: string;
   content: string;
   senderId: string;
   senderName: string;
@@ -29,6 +31,7 @@ function nameColorFor(id: string) {
 // memo: a new incoming message re-renders the list, but every existing
 // bubble's props are unchanged — skip them. Big win on long histories.
 function ChatMessage({
+  messageId,
   content,
   senderId,
   senderName,
@@ -54,6 +57,8 @@ function ChatMessage({
           <ChatUserActions
             userId={senderId}
             onMessage={onMessageUser}
+            userName={senderName}
+            messageId={messageId}
             label={`Options for ${senderName}`}
             className="shrink-0 rounded-full"
           >
@@ -68,6 +73,8 @@ function ChatMessage({
           <ChatUserActions
             userId={senderId}
             onMessage={onMessageUser}
+            userName={senderName}
+            messageId={messageId}
             label={`Options for ${senderName}`}
             className={`mb-0.5 ml-1 max-w-full truncate text-[13px] font-bold ${nameColorFor(senderId)}`}
           >

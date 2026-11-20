@@ -133,6 +133,13 @@ export const otpVerifyLimiter = rateLimit({
   max: 8,
 });
 
+// User reports — generous for genuine use, stops report-spamming.
+export const reportLimiter = rateLimit({
+  keyPrefix: "report",
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+});
+
 // Cleanup stale entries every 10 minutes to prevent memory leak
 setInterval(
   () => {

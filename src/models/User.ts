@@ -54,6 +54,10 @@ export interface IUser extends Document {
   // Cooldown trackers for automated emails — see src/lib/email.ts
   lastDmEmailAt: Date | null;
   lastInactivityEmailAt: Date | null;
+  // Safety — set automatically when several people report this user in a
+  // short window (see src/lib/safety.ts). While in the future, the user
+  // can't post in the public chat. Null / past = not muted.
+  chatMutedUntil: Date | null;
   // Methods
   comparePassword(password: string): Promise<boolean>;
 }
@@ -178,6 +182,9 @@ const UserSchema = new Schema<IUser>(
     lastDmEmailAt: { type: Date, default: null },
     // Last time this user was sent an inactivity re-engagement email.
     lastInactivityEmailAt: { type: Date, default: null },
+
+    // --- Safety ---
+    chatMutedUntil: { type: Date, default: null },
   },
   {
     timestamps: true, // adds createdAt, updatedAt

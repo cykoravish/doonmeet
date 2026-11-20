@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
+import { getChatMutedUntil } from "@/lib/safety";
 import { RoomMessage } from "@/models/RoomMessage";
 import { withAuth, AuthenticatedRequest } from "@/middleware/auth";
 import { withGuestAllowed } from "@/middleware/auth";
@@ -76,6 +77,20 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
 
   try {
     await connectDB();
+
+    // Auto-muted after several reports — same rule as the socket handler.
+    const mutedUntil = await getChatMutedUntil(String(req.user._id));
+    if (mutedUntil) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "CHAT_MUTED",
+          until: mutedUntil.toISOString(),
+          message: "You're temporarily muted from the public chat.",
+        },
+        { status: 403 }
+      );
+    }
 
     // Create message
     const message = await RoomMessage.create({

@@ -9,6 +9,7 @@ import { Notification } from "@/models/Notification";
 import { User } from "@/models/User";
 import { maybeSendDmNotificationEmail, maybeSendGlobalChatNotificationEmail } from "@/lib/email";
 import { sendPushToUser } from "@/lib/push";
+import { getChatMutedUntil, isBlockedEitherWay } from "@/lib/safety";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
 
@@ -141,6 +142,14 @@ export function initSocket(httpServer: HttpServer): SocketServer {
         const content = data.content.replace(/<[^>]*>/g, "").trim();
         if (!content || content.length > 500) return;
 
+        // Auto-muted after several reports (src/lib/safety.ts). Checked per
+        // message — the mute can start while the socket is already open.
+        const mutedUntil = await getChatMutedUntil(socket.userId);
+        if (mutedUntil) {
+          socket.emit("room:muted", { until: mutedUntil.toISOString() });
+          return;
+        }
+
         const message = await RoomMessage.create({
           sender: socket.userId,
           content,
@@ -268,6 +277,12 @@ export function initSocket(httpServer: HttpServer): SocketServer {
         );
 
         if (!recipientId) return;
+
+        // Either side blocked the other → DMs are closed both ways.
+        if (await isBlockedEitherWay(socket.userId, String(recipientId))) {
+          socket.emit("dm:blocked", { conversationId: data.conversationId });
+          return;
+        }
 
         const dmRoom = `dm:${data.conversationId}`;
         // Is the recipient already looking at this exact conversation right

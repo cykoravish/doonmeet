@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { MessageCircle, UserRound } from "lucide-react";
+import { Ban, Flag, MessageCircle, UserRound } from "lucide-react";
+import SafetySheet from "@/components/safety/SafetySheet";
 
 interface ChatUserActionsProps {
   userId: string;
@@ -13,6 +14,10 @@ interface ChatUserActionsProps {
   label?: string;
   // When provided, "Message" opens the DM in-place (no URL round trip).
   onMessage?: (userId: string) => void;
+  /** Needed for Report / Block. */
+  userName?: string;
+  /** The public-chat message this menu was opened from (attached to a report). */
+  messageId?: string;
   children: ReactNode;
 }
 
@@ -25,9 +30,12 @@ export default function ChatUserActions({
   className,
   label,
   onMessage,
+  userName,
+  messageId,
   children,
 }: ChatUserActionsProps) {
   const [open, setOpen] = useState(false);
+  const [sheet, setSheet] = useState<"report" | "block" | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -114,7 +122,46 @@ export default function ChatUserActions({
             <UserRound size={18} className="text-primary-fg" aria-hidden="true" />
             View profile
           </button>
+          {!isOwn && userName && (
+            <>
+              <div className="my-1 h-px bg-border" role="separator" />
+              <button
+                role="menuitem"
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  setSheet("report");
+                }}
+                className="flex min-h-11 w-full items-center gap-2.5 px-3.5 text-left text-[15px] font-medium text-danger hover:bg-danger/10"
+              >
+                <Flag size={18} aria-hidden="true" />
+                Report
+              </button>
+              <button
+                role="menuitem"
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  setSheet("block");
+                }}
+                className="flex min-h-11 w-full items-center gap-2.5 px-3.5 text-left text-[15px] font-medium text-danger hover:bg-danger/10"
+              >
+                <Ban size={18} aria-hidden="true" />
+                Block
+              </button>
+            </>
+          )}
         </div>
+      )}
+
+      {sheet && userName && (
+        <SafetySheet
+          mode={sheet}
+          user={{ _id: userId, name: userName }}
+          context="room_message"
+          refId={messageId}
+          onClose={() => setSheet(null)}
+        />
       )}
     </div>
   );

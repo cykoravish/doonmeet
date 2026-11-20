@@ -7,7 +7,8 @@ export type EmailType =
   | "inactivity_reminder"
   | "admin_manual"
   | "post_comment"
-  | "global_chat_message";
+  | "global_chat_message"
+  | "user_report";
 
 export interface IEmailLog extends Document {
   recipient: mongoose.Types.ObjectId | null;
@@ -33,6 +34,7 @@ const EmailLogSchema = new Schema<IEmailLog>(
         "admin_manual",
         "post_comment",
         "global_chat_message",
+        "user_report",
       ],
       required: true,
     },

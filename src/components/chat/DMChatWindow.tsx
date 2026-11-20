@@ -1,14 +1,25 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { io, Socket } from "socket.io-client";
-import { ArrowDown, ArrowLeft, ChevronUp, Loader2, Send } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowLeft,
+  Ban,
+  ChevronUp,
+  Flag,
+  Loader2,
+  MoreVertical,
+  Send,
+} from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import Avatar from "@/components/ui/Avatar";
 import IconButton from "@/components/ui/IconButton";
 import { appendUnique, buildChatRows, prependUnique } from "./chatUtils";
 import { useChatScroll } from "./useChatScroll";
+import SafetySheet from "@/components/safety/SafetySheet";
+import { fetchBlockStatus, setBlocked, type BlockStatus } from "@/lib/safety-client";
 
 interface DMMessage {
   _id: string;
@@ -70,6 +81,41 @@ export default function DMChatWindow({
   const [sending, setSending] = useState(false);
   // Everything up to and including this message id has been seen by the other person.
   const [seenThroughId, setSeenThroughId] = useState<string | null>(null);
+  // Safety: block status between the two of us, and the report/block sheet.
+  const [blockStatus, setBlockStatus] = useState<BlockStatus | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [sheet, setSheet] = useState<"report" | "block" | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const refreshBlockStatus = useCallback(() => {
+    fetchBlockStatus(otherParticipant._id).then((s) => s && setBlockStatus(s));
+  }, [otherParticipant._id]);
+
+  useEffect(() => {
+    refreshBlockStatus();
+  }, [refreshBlockStatus]);
+
+  // Close the ⋮ menu on outside tap / Escape.
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onDown(e: PointerEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
+  async function handleUnblock() {
+    const ok = await setBlocked(otherParticipant._id, false);
+    if (ok) refreshBlockStatus();
+  }
 
   const socketRef = useRef<Socket | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -154,6 +200,11 @@ export default function DMChatWindow({
     });
     socket.on("typing:stop", () => setOtherTyping(false));
 
+    // Server refused a message because one of us blocked the other.
+    socket.on("dm:blocked", (data: { conversationId: string }) => {
+      if (data.conversationId === conversationId) refreshBlockStatus();
+    });
+
     return () => {
       if (typingClearRef.current) clearTimeout(typingClearRef.current);
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -215,6 +266,8 @@ export default function DMChatWindow({
         if (d.success) {
           latestIdRef.current = d.message._id;
           setMessages((prev) => appendUnique(prev, d.message));
+        } else if (d.code === "BLOCKED") {
+          refreshBlockStatus();
         }
       }
     } finally {
@@ -222,6 +275,16 @@ export default function DMChatWindow({
       inputRef.current?.focus();
     }
   }
+
+  // Latest message from the other person — attached as evidence when reporting.
+  const lastTheirMessageId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].sender._id !== currentUser._id) return messages[i]._id;
+    }
+    return null;
+  }, [messages, currentUser._id]);
+
+  const isBlocked = !!blockStatus && (blockStatus.blockedByMe || blockStatus.blockedMe);
 
   // "Seen" / "Sent" under your latest message, WhatsApp-style.
   const receipt = useMemo(() => {
@@ -245,7 +308,12 @@ export default function DMChatWindow({
       {/* Header */}
       <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-surface px-2 sm:px-4 md:h-16">
         {onBack && (
-          <IconButton label="Back to messages" variant="ghost" onClick={onBack} className="md:hidden">
+          <IconButton
+            label="Back to messages"
+            variant="ghost"
+            onClick={onBack}
+            className="md:hidden"
+          >
             <ArrowLeft size={22} />
           </IconButton>
         )}
@@ -264,7 +332,80 @@ export default function DMChatWindow({
             </span>
           </span>
         </Link>
+
+        {/* Safety menu — report / block */}
+        <div ref={menuRef} className="relative">
+          <IconButton
+            label="More options"
+            variant="ghost"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+          >
+            <MoreVertical size={20} />
+          </IconButton>
+          {menuOpen && (
+            <div
+              role="menu"
+              className="absolute top-full right-0 z-20 mt-1 w-52 overflow-hidden rounded-[16px] border border-border bg-surface py-1 shadow-lg"
+            >
+              <button
+                role="menuitem"
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setSheet("report");
+                }}
+                className="flex min-h-11 w-full items-center gap-2.5 px-3.5 text-left text-[15px] font-medium text-danger hover:bg-danger/10"
+              >
+                <Flag size={18} aria-hidden="true" />
+                Report {firstName}
+              </button>
+              {blockStatus?.blockedByMe ? (
+                <button
+                  role="menuitem"
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    handleUnblock();
+                  }}
+                  className="flex min-h-11 w-full items-center gap-2.5 px-3.5 text-left text-[15px] font-medium text-text hover:bg-surface-2"
+                >
+                  <Ban size={18} aria-hidden="true" />
+                  Unblock {firstName}
+                </button>
+              ) : (
+                <button
+                  role="menuitem"
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setSheet("block");
+                  }}
+                  className="flex min-h-11 w-full items-center gap-2.5 px-3.5 text-left text-[15px] font-medium text-danger hover:bg-danger/10"
+                >
+                  <Ban size={18} aria-hidden="true" />
+                  Block {firstName}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </header>
+
+      {sheet && (
+        <SafetySheet
+          mode={sheet}
+          user={{ _id: otherParticipant._id, name: otherParticipant.name }}
+          context="direct_message"
+          refId={lastTheirMessageId}
+          alreadyBlocked={!!blockStatus?.blockedByMe}
+          onClose={() => setSheet(null)}
+          onBlocked={() =>
+            setBlockStatus((prev) => ({ blockedMe: prev?.blockedMe ?? false, blockedByMe: true }))
+          }
+        />
+      )}
 
       {/* Messages */}
       <div
@@ -323,7 +464,9 @@ export default function DMChatWindow({
                   lastInGroup={row.lastInGroup}
                 />
                 {receipt?.afterId === row.msg._id && (
-                  <p className="-mt-1.5 mb-2 pr-1 text-right text-xs font-medium text-muted">{receipt.label}</p>
+                  <p className="-mt-1.5 mb-2 pr-1 text-right text-xs font-medium text-muted">
+                    {receipt.label}
+                  </p>
                 )}
               </div>
             ))}
@@ -342,37 +485,57 @@ export default function DMChatWindow({
         </button>
       )}
 
-      {/* Composer */}
-      <form
-        onSubmit={handleSend}
-        className="flex items-center gap-2 border-t border-border bg-surface px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:px-6 md:pb-3"
-      >
-        <label htmlFor={`dm-input-${conversationId}`} className="sr-only">
-          Message {otherParticipant.name}
-        </label>
-        <input
-          id={`dm-input-${conversationId}`}
-          ref={inputRef}
-          value={content}
-          onChange={(e) => {
-            setContent(e.target.value);
-            handleTyping();
-          }}
-          placeholder={`Message ${firstName}…`}
-          maxLength={1000}
-          autoComplete="off"
-          enterKeyHint="send"
-          className="h-12 min-w-0 flex-1 rounded-[16px] border-[1.5px] border-transparent bg-surface-2 px-4 text-base text-text outline-none placeholder:text-muted focus:border-primary focus:bg-surface"
-        />
-        <button
-          type="submit"
-          disabled={!content.trim() || sending}
-          aria-label="Send message"
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] bg-primary text-on-primary transition-colors hover:bg-primary/90 disabled:opacity-40"
+      {/* Composer — replaced by a notice when either side has blocked the other */}
+      {isBlocked ? (
+        <div className="flex items-center gap-3 border-t border-border bg-surface px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:pb-3">
+          <Ban size={20} className="shrink-0 text-muted" aria-hidden="true" />
+          <p className="min-w-0 flex-1 text-[15px] text-muted">
+            {blockStatus?.blockedByMe
+              ? `You blocked ${firstName}. Neither of you can send messages.`
+              : "You can't reply to this conversation."}
+          </p>
+          {blockStatus?.blockedByMe && (
+            <button
+              type="button"
+              onClick={handleUnblock}
+              className="h-10 shrink-0 rounded-[12px] bg-surface-2 px-3.5 text-sm font-semibold text-text hover:bg-border"
+            >
+              Unblock
+            </button>
+          )}
+        </div>
+      ) : (
+        <form
+          onSubmit={handleSend}
+          className="flex items-center gap-2 border-t border-border bg-surface px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:px-6 md:pb-3"
         >
-          <Send size={19} aria-hidden="true" />
-        </button>
-      </form>
+          <label htmlFor={`dm-input-${conversationId}`} className="sr-only">
+            Message {otherParticipant.name}
+          </label>
+          <input
+            id={`dm-input-${conversationId}`}
+            ref={inputRef}
+            value={content}
+            onChange={(e) => {
+              setContent(e.target.value);
+              handleTyping();
+            }}
+            placeholder={`Message ${firstName}…`}
+            maxLength={1000}
+            autoComplete="off"
+            enterKeyHint="send"
+            className="h-12 min-w-0 flex-1 rounded-[16px] border-[1.5px] border-transparent bg-surface-2 px-4 text-base text-text outline-none placeholder:text-muted focus:border-primary focus:bg-surface"
+          />
+          <button
+            type="submit"
+            disabled={!content.trim() || sending}
+            aria-label="Send message"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] bg-primary text-on-primary transition-colors hover:bg-primary/90 disabled:opacity-40"
+          >
+            <Send size={19} aria-hidden="true" />
+          </button>
+        </form>
+      )}
     </div>
   );
 }

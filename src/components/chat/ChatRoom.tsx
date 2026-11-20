@@ -42,6 +42,17 @@ export default function ChatRoom({ currentUser, onSocketChange, onStartDm }: Cha
   const [hasMore, setHasMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  // Set when the server rejects a message because this user was auto-muted
+  // after several reports (ISO timestamp of when the mute ends).
+  const [mutedUntil, setMutedUntil] = useState<string | null>(null);
+
+  // Hide the mute notice automatically once the mute has expired.
+  useEffect(() => {
+    if (!mutedUntil) return;
+    const ms = new Date(mutedUntil).getTime() - Date.now();
+    const timer = setTimeout(() => setMutedUntil(null), Math.max(0, ms));
+    return () => clearTimeout(timer);
+  }, [mutedUntil]);
 
   const socketRef = useRef<Socket | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -99,6 +110,10 @@ export default function ChatRoom({ currentUser, onSocketChange, onStartDm }: Cha
 
     socket.on("room:message", (message: Message) => {
       setMessages((prev) => appendUnique(prev, message));
+    });
+
+    socket.on("room:muted", (data: { until: string }) => {
+      setMutedUntil(data.until);
     });
 
     return () => {
@@ -185,6 +200,7 @@ export default function ChatRoom({ currentUser, onSocketChange, onStartDm }: Cha
                   </div>
                 )}
                 <ChatMessage
+                  messageId={row.msg._id}
                   content={row.msg.content}
                   senderId={row.msg.sender._id}
                   senderName={row.msg.sender.name}
@@ -217,6 +233,17 @@ export default function ChatRoom({ currentUser, onSocketChange, onStartDm }: Cha
         {!currentUser && (
           <p className="mb-2 text-center text-sm text-muted">
             <span className="font-semibold text-primary-fg">Sign up free</span> to send messages
+          </p>
+        )}
+        {mutedUntil && (
+          <p role="alert" className="mb-2 rounded-[12px] bg-danger/10 px-3 py-2 text-center text-sm font-medium text-danger">
+            You&apos;ve been muted from the public chat until{" "}
+            {new Date(mutedUntil).toLocaleString("en-IN", {
+              weekday: "short",
+              hour: "numeric",
+              minute: "2-digit",
+            })}{" "}
+            after reports from other members. Direct messages still work.
           </p>
         )}
         <form onSubmit={handleSend} className="flex items-center gap-2">

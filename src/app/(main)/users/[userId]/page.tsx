@@ -22,6 +22,7 @@ import { getSessionUser } from "@/lib/getSessionUser";
 import { getPosts } from "@/lib/posts";
 import ProfileBanner from "@/components/profile/ProfileBanner";
 import { buttonClasses } from "@/components/ui/Button";
+import ProfileSafetyMenu from "@/components/safety/ProfileSafetyMenu";
 import PostCard from "@/components/posts/PostCard";
 
 const LOOKING_FOR_LABELS: Record<string, string> = {
@@ -38,9 +39,7 @@ interface UserProfilePageProps {
   params: Promise<{ userId: string }>;
 }
 
-export async function generateMetadata({
-  params,
-}: UserProfilePageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: UserProfilePageProps): Promise<Metadata> {
   const { userId } = await params;
   const user = await getPublicUser(userId);
   if (!user) return { title: "User Not Found", robots: { index: false, follow: false } };
@@ -56,10 +55,7 @@ export async function generateMetadata({
 export default async function PublicProfilePage({ params }: UserProfilePageProps) {
   const { userId } = await params;
 
-  const [user, currentUser] = await Promise.all([
-    getPublicUser(userId),
-    getSessionUser(),
-  ]);
+  const [user, currentUser] = await Promise.all([getPublicUser(userId), getSessionUser()]);
 
   if (!user) notFound();
 
@@ -75,8 +71,7 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
   // Ring trick: the box-shadow "border" matches the page background so the
   // avatar reads as cleanly punched through the banner, in both themes.
   const avatarRingStyle = {
-    boxShadow:
-      "0 0 0 4px rgb(var(--background)), 0 12px 28px -10px rgb(0 0 0 / 0.35)",
+    boxShadow: "0 0 0 4px rgb(var(--background)), 0 12px 28px -10px rgb(0 0 0 / 0.35)",
   };
 
   return (
@@ -125,7 +120,9 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
 
         {/* Identity block — always below the avatar, normal flow. */}
         <div className="mt-4 text-center sm:text-left">
-          <h1 className="text-[28px] leading-tight font-extrabold break-words sm:text-4xl">{user.name}</h1>
+          <h1 className="text-[28px] leading-tight font-extrabold break-words sm:text-4xl">
+            {user.name}
+          </h1>
           {user.bio && (
             <p className="mx-auto mt-2 max-w-xl text-[16px] leading-relaxed text-text sm:mx-0">
               {user.bio}
@@ -180,7 +177,12 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
         </div>
 
         {/* Public info */}
-        {(user.gender || user.email || user.occupation || user.website || user.dob || user.lookingFor) && (
+        {(user.gender ||
+          user.email ||
+          user.occupation ||
+          user.website ||
+          user.dob ||
+          user.lookingFor) && (
           <div className="mt-4 mb-8 rounded-[20px] border border-border bg-surface p-4 sm:p-5">
             <h2 className="mb-1 text-lg font-extrabold">About</h2>
             {user.occupation && (
@@ -190,7 +192,12 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
               <InfoRow icon={Compass} label="Vibe" value={LOOKING_FOR_LABELS[user.lookingFor]} />
             )}
             {user.gender && (
-              <InfoRow icon={UserRound} label="Gender" value={user.gender.replace("_", " ")} capitalize />
+              <InfoRow
+                icon={UserRound}
+                label="Gender"
+                value={user.gender.replace("_", " ")}
+                capitalize
+              />
             )}
             {user.dob && (
               <InfoRow
@@ -211,9 +218,7 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
                 href={user.website}
               />
             )}
-            {user.email && (
-              <InfoRow icon={Mail} label="Email" value={user.email} />
-            )}
+            {user.email && <InfoRow icon={Mail} label="Email" value={user.email} />}
           </div>
         )}
         {/* Posts */}
@@ -247,9 +252,13 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
           </div>
         )}
 
-        {!user.gender && !user.email && !user.occupation && !user.website && !user.dob && !user.lookingFor && posts.length === 0 && (
-          <div className="pb-10" />
-        )}
+        {!user.gender &&
+          !user.email &&
+          !user.occupation &&
+          !user.website &&
+          !user.dob &&
+          !user.lookingFor &&
+          posts.length === 0 && <div className="pb-10" />}
       </div>
     </div>
   );
@@ -327,10 +336,7 @@ function ProfileAction({
 
   if (isOwnProfile) {
     return (
-      <Link
-        href="/profile"
-        className={buttonClasses("secondary", "md", widthClass)}
-      >
+      <Link href="/profile" className={buttonClasses("secondary", "md", widthClass)}>
         <Pencil size={17} aria-hidden="true" />
         Edit profile
       </Link>
@@ -338,22 +344,23 @@ function ProfileAction({
   }
 
   if (currentUserId) {
+    // Message + a ⋯ menu for Report / Block.
     return (
-      <Link
-        href={`/chat?dm=${userId}`}
-        className={buttonClasses("primary", "md", widthClass)}
-      >
-        <MessageCircle size={17} aria-hidden="true" />
-        Message {name.split(" ")[0]}
-      </Link>
+      <div className={`flex items-center gap-2 ${fullWidth ? "w-full max-w-xs" : ""}`}>
+        <Link
+          href={`/chat?dm=${userId}`}
+          className={buttonClasses("primary", "md", "min-w-0 flex-1")}
+        >
+          <MessageCircle size={17} aria-hidden="true" />
+          Message {name.split(" ")[0]}
+        </Link>
+        <ProfileSafetyMenu user={{ _id: userId, name }} />
+      </div>
     );
   }
 
   return (
-    <Link
-      href="/login"
-      className={buttonClasses("primary", "md", widthClass)}
-    >
+    <Link href="/login" className={buttonClasses("primary", "md", widthClass)}>
       <MessageCircle size={17} aria-hidden="true" />
       Log in to message
     </Link>

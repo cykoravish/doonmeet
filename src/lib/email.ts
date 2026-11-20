@@ -317,3 +317,78 @@ export async function maybeSendGlobalChatNotificationEmail(
     console.error("[email] maybeSendGlobalChatNotificationEmail failed:", err);
   }
 }
+
+// -------------------------------------------------------
+// Safety — user report alert to the admin
+// -------------------------------------------------------
+
+// Everything in a report is user-written — escape it so a report can't
+// inject HTML/links into the admin inbox.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+const REPORT_REASON_LABELS: Record<string, string> = {
+  harassment: "Harassment or bullying",
+  inappropriate: "Inappropriate or sexual content",
+  spam: "Spam or scam",
+  fake_profile: "Fake profile",
+  other: "Something else",
+};
+
+const REPORT_CONTEXT_LABELS: Record<string, string> = {
+  room_message: "Public chat message",
+  direct_message: "Direct message",
+  profile: "Profile",
+  post: "Post",
+};
+
+export async function sendUserReportEmail(report: {
+  reporterName: string;
+  reporterId: string;
+  reportedName: string;
+  reportedId: string;
+  context: string;
+  reason: string;
+  details: string;
+  snapshot: string | null;
+  distinctReporters24h: number;
+  autoMuted: boolean;
+}): Promise<void> {
+  const reported = escapeHtml(report.reportedName);
+  const reporter = escapeHtml(report.reporterName);
+  const reason = REPORT_REASON_LABELS[report.reason] ?? escapeHtml(report.reason);
+  const where = REPORT_CONTEXT_LABELS[report.context] ?? escapeHtml(report.context);
+
+  await sendAndLog({
+    to: ADMIN_EMAIL,
+    type: "user_report",
+    subject: `${report.autoMuted ? "[AUTO-MUTED] " : ""}Report: ${report.reportedName} — ${reason}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:520px;margin:auto">
+        <h2 style="color:#b42318">New user report</h2>
+        ${
+          report.autoMuted
+            ? `<p style="background:#fde8e6;border-radius:8px;padding:10px 14px;color:#7a1a12"><strong>${reported}</strong> was automatically muted from the public chat for 24 hours (${report.distinctReporters24h} different people reported them in 24h).</p>`
+            : ""
+        }
+        <p><strong>Reported:</strong> <a href="${APP_URL}/users/${report.reportedId}">${reported}</a></p>
+        <p><strong>By:</strong> <a href="${APP_URL}/users/${report.reporterId}">${reporter}</a></p>
+        <p><strong>Where:</strong> ${where}</p>
+        <p><strong>Reason:</strong> ${reason}</p>
+        ${report.details ? `<p><strong>Details:</strong> ${escapeHtml(report.details)}</p>` : ""}
+        ${
+          report.snapshot
+            ? `<p><strong>Reported content:</strong></p><p style="background:#f5f5f5;border-radius:8px;padding:12px 16px;color:#333;white-space:pre-wrap">${escapeHtml(report.snapshot)}</p>`
+            : ""
+        }
+        <p style="color:#888;margin-top:24px;font-size:13px">Reports against this user in the last 24h (different people): ${report.distinctReporters24h}</p>
+      </div>
+    `,
+  });
+}
