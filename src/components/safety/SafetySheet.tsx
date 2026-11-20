@@ -229,7 +229,7 @@ export default function SafetySheet({
                         value={r.value}
                         checked={checked}
                         onChange={() => setReason(r.value)}
-                        className="h-5 w-5 shrink-0 accent-[rgb(var(--primary))]"
+                        className="h-5 w-5 shrink-0 accent-primary"
                       />
                       <span className="min-w-0">
                         <span className="block text-[15px] font-semibold text-text">{r.label}</span>

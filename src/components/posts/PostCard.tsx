@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MessageCircle, Pencil } from "lucide-react";
 import UserLink from "@/components/shared/UserLink";
-import UiAvatar from "@/components/ui/Avatar";
+import Avatar from "@/components/ui/Avatar";
 import ShareButton from "@/components/events/ShareButton";
 import DeletePostButton from "./DeletePostButton";
 import { getPostCategory, type PostCategory } from "@/lib/postCategories";
@@ -42,19 +42,6 @@ export function timeAgo(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
-/** Kept for existing imports — delegates to the shared ui/Avatar. */
-export function Avatar({
-  name,
-  avatar,
-  size = 40,
-}: {
-  name: string;
-  avatar: string | null;
-  size?: number;
-}) {
-  return <UiAvatar name={name} src={avatar} size={size} />;
-}
-
 // Long posts are clamped in the feed; show an explicit "Read more" so users
 // know there's more (and crawlers get a real link to the full post).
 function isLong(content: string) {
@@ -89,7 +76,7 @@ export default function PostCard({
       )}
       <header className="flex items-center gap-3 px-4 pt-4">
         <UserLink userId={author?._id}>
-          <UiAvatar name={authorName} src={author?.avatar} size={42} />
+          <Avatar name={authorName} src={author?.avatar} size={42} />
         </UserLink>
         <div className="min-w-0 flex-1 leading-tight">
           <p className="truncate text-base font-bold text-text">

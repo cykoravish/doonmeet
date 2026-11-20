@@ -11,6 +11,7 @@ export interface LegalTocItem {
 export default function LegalToc({ items }: { items: LegalTocItem[] }) {
   const [activeId, setActiveId] = useState(items[0]?.id ?? "");
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const chipRowRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const headings = items
@@ -30,7 +31,8 @@ export default function LegalToc({ items }: { items: LegalTocItem[] }) {
           setActiveId(topMost.target.id);
         }
       },
-      { rootMargin: "-96px 0px -70% 0px", threshold: 0 }
+      // Top margin clears the sticky navbar + the phone chip row (~118px).
+      { rootMargin: "-120px 0px -70% 0px", threshold: 0 }
     );
 
     headings.forEach((h) => observerRef.current?.observe(h));
@@ -38,11 +40,25 @@ export default function LegalToc({ items }: { items: LegalTocItem[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.map((i) => i.id).join(",")]);
 
-  function handleClick(id: string) {
+  // Phones: keep the active chip in view as the reader scrolls the document.
+  // Only the chip row scrolls (sideways, instantly) — never the page.
+  useEffect(() => {
+    const row = chipRowRef.current;
+    if (!row || row.offsetParent === null) return; // hidden on desktop
+    const chip = row.querySelector<HTMLElement>(`[data-toc-id="${CSS.escape(activeId)}"]`);
+    if (!chip) return;
+    row.scrollTo({ left: Math.max(0, chip.offsetLeft - (row.clientWidth - chip.offsetWidth) / 2) });
+  }, [activeId]);
+
+  // Real #anchor links (crawlable, shareable); JS only adds the smooth scroll.
+  // LegalSection's scroll-margin keeps the heading clear of the sticky bars.
+  function handleClick(e: React.MouseEvent<HTMLAnchorElement>, id: string) {
     const el = document.getElementById(id);
     if (!el) return;
-    const y = el.getBoundingClientRect().top + window.scrollY - 88;
-    window.scrollTo({ top: y, behavior: "smooth" });
+    e.preventDefault();
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    window.history.replaceState(null, "", `#${id}`);
     setActiveId(id);
   }
 
@@ -53,62 +69,54 @@ export default function LegalToc({ items }: { items: LegalTocItem[] }) {
         className="sticky top-24 hidden max-h-[calc(100vh-7rem)] shrink-0 basis-56 flex-col gap-0.5 overflow-y-auto pb-10 lg:flex"
         aria-label="Document sections"
       >
-        <p
-          className="mb-2 px-3 text-xs font-semibold uppercase tracking-widest"
-          style={{ color: "rgb(var(--muted))" }}
-        >
-          On this page
-        </p>
+        <p className="mb-2 px-3 text-xs font-semibold tracking-widest text-muted uppercase">On this page</p>
         {items.map((item) => {
           const isActive = item.id === activeId;
           return (
-            <button
+            <a
               key={item.id}
-              onClick={() => handleClick(item.id)}
-              className="flex items-start gap-2 rounded-lg px-3 py-1.5 text-left text-xs leading-snug transition-colors"
-              style={{
-                backgroundColor: isActive ? "rgb(var(--primary) / 0.08)" : "transparent",
-                color: isActive ? "rgb(var(--primary))" : "rgb(var(--muted))",
-                fontWeight: isActive ? 600 : 400,
-              }}
+              href={`#${item.id}`}
+              onClick={(e) => handleClick(e, item.id)}
+              aria-current={isActive ? "true" : undefined}
+              className={`flex items-baseline gap-2 rounded-lg px-3 py-1.5 text-sm leading-snug transition-colors ${
+                isActive ? "bg-primary-soft font-semibold text-primary-fg" : "text-muted hover:bg-surface-2 hover:text-text"
+              }`}
             >
-              <span className="font-[family-name:var(--font-geist-mono)] shrink-0 opacity-70">
-                {item.number}
-              </span>
+              <span className="shrink-0 font-mono text-xs opacity-70">{item.number}</span>
               {item.label}
-            </button>
+            </a>
           );
         })}
       </nav>
 
-      {/* Mobile — sticky horizontal chip row */}
-      <div
-        className="sticky top-16 z-30 -mx-6 mb-6 overflow-x-auto border-b px-6 py-3 backdrop-blur-md lg:hidden"
-        style={{
-          borderColor: "rgb(var(--border))",
-          backgroundColor: "rgb(var(--background) / 0.92)",
-        }}
+      {/* Phones/tablets — chip row stuck right under the navbar (56px tall
+          below md, 64px from md). Solid background: a blurred sticky bar
+          repaints on every scroll frame on cheap phones. */}
+      <nav
+        ref={chipRowRef}
+        aria-label="Document sections"
+        className="sticky top-14 z-30 -mx-4 overflow-x-auto border-b border-border bg-background px-4 py-2.5 sm:-mx-6 sm:px-6 md:top-16 lg:hidden"
       >
         <div className="flex w-max gap-2">
           {items.map((item) => {
             const isActive = item.id === activeId;
             return (
-              <button
+              <a
                 key={item.id}
-                onClick={() => handleClick(item.id)}
-                className="shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-all"
-                style={{
-                  backgroundColor: isActive ? "rgb(var(--primary))" : "rgb(var(--surface))",
-                  borderColor: isActive ? "rgb(var(--primary))" : "rgb(var(--border))",
-                  color: isActive ? "white" : "rgb(var(--muted))",
-                }}
+                href={`#${item.id}`}
+                data-toc-id={item.id}
+                onClick={(e) => handleClick(e, item.id)}
+                aria-current={isActive ? "true" : undefined}
+                className={`flex h-10 shrink-0 items-center rounded-full px-4 text-sm font-semibold transition-colors ${
+                  isActive ? "bg-primary text-on-primary" : "bg-surface-2 text-muted hover:text-text"
+                }`}
               >
                 {item.label}
-              </button>
+              </a>
             );
           })}
         </div>
-      </div>
+      </nav>
     </>
   );
 }

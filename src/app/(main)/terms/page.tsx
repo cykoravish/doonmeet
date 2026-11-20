@@ -1,3 +1,4 @@
+import Link from "next/link";
 import LegalPageShell from "@/components/legal/LegalPageShell";
 import { LegalSection, LegalCallout, LegalList, LegalContact } from "@/components/legal/LegalSection";
 import { pageMetadata } from "@/lib/seo";
@@ -46,9 +47,9 @@ export default function TermsPage() {
           DoonMeet governing your access to and use of doonmeet.in and any related apps
           (collectively, the &quot;Service&quot;). By creating an account or
           otherwise using the Service, you agree to these Terms and to our{" "}
-          <a href="/privacy" className="font-semibold underline" style={{ color: "rgb(var(--primary-fg))" }}>
+          <Link href="/privacy" className="font-semibold text-primary-fg underline">
             Privacy Policy
-          </a>
+          </Link>
           .
         </p>
       </LegalSection>
@@ -164,9 +165,9 @@ export default function TermsPage() {
           <strong>Sponsored posts</strong>, which pin one of your own posts at the top of the feed
           for a fixed period. The price and duration are shown clearly before you pay, and every
           payment is governed by these Terms together with our{" "}
-          <a href="/refund-policy" className="font-semibold underline" style={{ color: "rgb(var(--primary-fg))" }}>
+          <Link href="/refund-policy" className="font-semibold text-primary-fg underline">
             Refund &amp; Cancellation Policy
-          </a>
+          </Link>
           . Payments are processed by Razorpay, a licensed third-party payment gateway; we never
           see or store your card or UPI details.
         </p>
@@ -247,9 +248,9 @@ export default function TermsPage() {
         <p>
           To report content or conduct that breaks these Terms, use the in-app Report option or see
           our{" "}
-          <a href="/grievance" className="font-semibold underline" style={{ color: "rgb(var(--primary-fg))" }}>
+          <Link href="/grievance" className="font-semibold text-primary-fg underline">
             Grievance Redressal
-          </a>{" "}
+          </Link>{" "}
           page for the Grievance Officer&apos;s details, timelines and how to appeal.
         </p>
       </LegalSection>

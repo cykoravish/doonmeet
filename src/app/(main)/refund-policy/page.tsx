@@ -1,3 +1,4 @@
+import Link from "next/link";
 import LegalPageShell from "@/components/legal/LegalPageShell";
 import { LegalSection, LegalCallout, LegalList, LegalContact } from "@/components/legal/LegalSection";
 import { pageMetadata } from "@/lib/seo";
@@ -42,9 +43,9 @@ export default function RefundPolicyPage() {
         </p>
         <p>
           This policy governs all payments made on DoonMeet, alongside our{" "}
-          <a href="/terms" className="font-semibold underline" style={{ color: "rgb(var(--primary-fg))" }}>
+          <Link href="/terms" className="font-semibold text-primary-fg underline">
             Terms of Service
-          </a>
+          </Link>
           .
         </p>
       </LegalSection>
@@ -115,9 +116,9 @@ export default function RefundPolicyPage() {
           If DoonMeet introduces paid event tickets in the future, please note that event
           cancellations, rescheduling, and refunds for the event itself are the responsibility of
           the individual event organiser, not DoonMeet — consistent with Section 7 of our{" "}
-          <a href="/terms" className="font-semibold underline" style={{ color: "rgb(var(--primary-fg))" }}>
+          <Link href="/terms" className="font-semibold text-primary-fg underline">
             Terms of Service
-          </a>
+          </Link>
           , which explains that DoonMeet is a listing platform and not the organiser of user-created
           events. Any platform fee charged by DoonMeet itself for facilitating a paid event follows
           the no-refund policy in Section 2.

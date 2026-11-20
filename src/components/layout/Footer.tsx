@@ -29,38 +29,23 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <Logo />
-            <p
-              className="mb-4 max-w-xs text-sm leading-relaxed"
-              style={{ color: "rgb(var(--muted))" }}
-            >
+            <p className="mb-4 max-w-xs text-sm leading-relaxed text-muted">
               Dehradun&apos;s own social platform. Connect with locals, discover events and explore
               the Doon Valley together.
             </p>
-            <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-              © {new Date().getFullYear()} DoonMeet · doonmeet.in
-            </p>
+            <p className="text-[13px] text-muted">© {new Date().getFullYear()} DoonMeet · doonmeet.in</p>
           </div>
 
           {/* Links */}
           {Object.entries(links).map(([section, items]) => (
             <div key={section}>
-              <p
-                className="mb-4 inline-block border-b-2 pb-2 text-xs font-bold uppercase tracking-widest"
-                style={{
-                  color: "rgb(var(--muted))",
-                  borderColor: "rgb(var(--primary))",
-                }}
-              >
+              <p className="mb-4 inline-block border-b-2 border-primary pb-2 text-xs font-bold tracking-widest text-muted uppercase">
                 {section}
               </p>
               <ul className="space-y-2">
                 {items.map((item) => (
                   <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className="text-sm transition-opacity hover:opacity-80"
-                      style={{ color: "rgb(var(--text))" }}
-                    >
+                    <Link href={item.href} className="text-sm text-text transition-colors hover:text-primary-fg">
                       {item.label}
                     </Link>
                   </li>

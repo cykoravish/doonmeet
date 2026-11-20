@@ -27,7 +27,7 @@ export default function LegalPageShell({
         lastUpdated={lastUpdated}
       />
 
-      <div className="mx-auto max-w-5xl px-6 py-10 md:py-14">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 md:py-14">
         <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
           <LegalToc items={toc} />
           <div className="min-w-0 flex-1 space-y-10 md:space-y-12">{children}</div>

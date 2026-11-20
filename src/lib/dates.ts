@@ -11,6 +11,7 @@ const fmt = (options: Intl.DateTimeFormatOptions) =>
 
 const dayFmt = fmt({ day: "2-digit" });
 const monthFmt = fmt({ month: "short" });
+const weekdayFmt = fmt({ weekday: "short" });
 const shortDateFmt = fmt({ weekday: "short", day: "numeric", month: "short" });
 const longDateFmt = fmt({ weekday: "long", day: "numeric", month: "long", year: "numeric" });
 const timeFmt = fmt({ hour: "numeric", minute: "2-digit" });
@@ -22,6 +23,8 @@ const toDate = (d: DateInput) => (d instanceof Date ? d : new Date(d));
 export const eventDay = (d: DateInput) => dayFmt.format(toDate(d));
 /** "Oct" */
 export const eventMonth = (d: DateInput) => monthFmt.format(toDate(d));
+/** "Sat" */
+export const eventWeekday = (d: DateInput) => weekdayFmt.format(toDate(d));
 /** "Sat, 12 Oct" */
 export const eventShortDate = (d: DateInput) => shortDateFmt.format(toDate(d));
 /** "Saturday, 12 October 2026" */

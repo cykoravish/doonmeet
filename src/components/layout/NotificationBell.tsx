@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Bell, CheckCheck, Loader2 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import Avatar from "@/components/ui/Avatar";
 import { NOTIFICATION_TYPE_CONFIG, getNotificationHref, timeAgo } from "@/lib/notificationTypeConfig";
 import { useNotifications } from "@/providers/notifications-provider";
 
@@ -74,6 +74,7 @@ export default function NotificationBell() {
   return (
     <div ref={panelRef} className="relative">
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
         aria-expanded={open}
@@ -85,15 +86,16 @@ export default function NotificationBell() {
 
       {open && (
         <div className="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-border bg-surface shadow-xl sm:w-96">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <p className="text-sm font-bold">Notifications</p>
+          <div className="flex min-h-13 items-center justify-between border-b border-border px-4 py-2">
+            <p className="font-bold">Notifications</p>
             {unreadCount > 0 && (
               <button
+                type="button"
                 onClick={handleMarkAllRead}
                 disabled={marking}
-                className="flex items-center gap-1 text-xs font-semibold text-primary-fg transition-opacity hover:opacity-70 disabled:opacity-50"
+                className="flex h-9 items-center gap-1.5 rounded-[10px] px-2.5 text-sm font-semibold text-primary-fg transition-colors hover:bg-primary-soft disabled:opacity-50"
               >
-                <CheckCheck size={12} />
+                <CheckCheck size={16} aria-hidden="true" />
                 Mark all read
               </button>
             )}
@@ -101,14 +103,15 @@ export default function NotificationBell() {
 
           <div className="max-h-96 overflow-y-auto">
             {loading ? (
-              <div className="flex items-center justify-center py-10">
-                <Loader2 size={18} className="animate-spin text-muted" />
+              <div className="flex items-center justify-center py-10" role="status">
+                <Loader2 size={20} className="animate-spin text-muted" aria-hidden="true" />
+                <span className="sr-only">Loading notifications</span>
               </div>
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
-                <Bell size={22} className="mb-2 text-muted" />
-                <p className="text-sm font-semibold">All caught up!</p>
-                <p className="mt-0.5 text-xs text-muted">No notifications yet.</p>
+                <Bell size={24} className="mb-2 text-muted" aria-hidden="true" />
+                <p className="font-semibold">All caught up!</p>
+                <p className="mt-0.5 text-sm text-muted">No notifications yet.</p>
               </div>
             ) : (
               notifications.map((notif) => {
@@ -121,43 +124,25 @@ export default function NotificationBell() {
                       setOpen(false);
                       if (!notif.isRead) markOneRead(notif._id);
                     }}
-                    className={`flex items-start gap-3 border-b border-border/60 px-4 py-3 transition-colors last:border-b-0 hover:bg-primary/5 ${
-                      notif.isRead ? "" : "bg-primary/[0.04]"
+                    className={`flex items-start gap-3 border-b border-border/60 px-4 py-3 transition-colors last:border-b-0 ${
+                      notif.isRead ? "hover:bg-surface-2" : "bg-primary-soft hover:bg-primary-soft/70"
                     }`}
                   >
-                    <div className="relative shrink-0">
-                      {notif.actor.avatar ? (
-                        <Image
-                          src={notif.actor.avatar}
-                          alt={notif.actor.name}
-                          width={36}
-                          height={36}
-                          className="h-9 w-9 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
-                          {notif.actor.name[0]?.toUpperCase()}
-                        </div>
-                      )}
-                    </div>
+                    <Avatar name={notif.actor.name} src={notif.actor.avatar} size={40} />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs leading-snug">
-                        <span className={notif.isRead ? "font-medium" : "font-bold"}>
-                          {notif.actor.name}
-                        </span>{" "}
+                      <p className="text-sm leading-snug">
+                        <span className={notif.isRead ? "font-semibold" : "font-bold"}>{notif.actor.name}</span>{" "}
                         <span className="text-muted">{config.label}</span>
                       </p>
                       {notif.preview && (
-                        <p className="mt-0.5 truncate text-xs text-muted">
-                          &ldquo;{notif.preview}&rdquo;
-                        </p>
+                        <p className="mt-0.5 truncate text-sm text-muted">&ldquo;{notif.preview}&rdquo;</p>
                       )}
-                      <p className="mt-0.5 text-[11px] font-medium" style={{ color: config.color }}>
-                        {timeAgo(notif.createdAt)}
-                      </p>
+                      <p className="mt-0.5 text-[13px] text-muted">{timeAgo(notif.createdAt)}</p>
                     </div>
                     {!notif.isRead && (
-                      <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary">
+                        <span className="sr-only">Unread</span>
+                      </span>
                     )}
                   </Link>
                 );
@@ -168,7 +153,7 @@ export default function NotificationBell() {
           <Link
             href="/notifications"
             onClick={() => setOpen(false)}
-            className="block border-t border-border px-4 py-2.5 text-center text-xs font-semibold text-primary-fg transition-colors hover:bg-primary/5"
+            className="flex h-11 items-center justify-center border-t border-border text-sm font-semibold text-primary-fg transition-colors hover:bg-primary-soft"
           >
             View all notifications
           </Link>

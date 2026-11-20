@@ -160,13 +160,6 @@
   animation: toast-in 0.18s ease-out;
 }
 
-/* Kept as no-ops so existing markup doesn't break; remove usages as
-   each page is redesigned. */
-.reveal-on-scroll,
-.stagger-grid > * {
-  animation: none;
-}
-
 /* Tap feedback only — no hover scaling (it jitters on cheap GPUs). */
 .btn-springy {
   transition: transform 0.12s ease-out;

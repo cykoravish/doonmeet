@@ -1,28 +1,13 @@
 import Link from "next/link";
 import { CalendarPlus, MapPin } from "lucide-react";
 import type { HomeEvent } from "@/lib/home";
+import { eventDay, eventMonth, eventTime, eventWeekday } from "@/lib/dates";
 import { buttonClasses } from "@/components/ui/Button";
 import SectionHeader from "./SectionHeader";
 
 interface UpcomingEventsProps {
   events: HomeEvent[];
   isLoggedIn: boolean;
-}
-
-const TZ = "Asia/Kolkata";
-
-function dateParts(iso: string) {
-  const d = new Date(iso);
-  return {
-    day: d.toLocaleDateString("en-IN", { day: "2-digit", timeZone: TZ }),
-    month: d.toLocaleDateString("en-IN", { month: "short", timeZone: TZ }),
-    full: d.toLocaleString("en-IN", {
-      weekday: "short",
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: TZ,
-    }),
-  };
 }
 
 export default function UpcomingEvents({ events, isLoggedIn }: UpcomingEventsProps) {
@@ -50,7 +35,10 @@ export default function UpcomingEvents({ events, isLoggedIn }: UpcomingEventsPro
       ) : (
         <ul className="flex flex-col gap-2.5">
           {events.map((event) => {
-            const { day, month, full } = dateParts(event.date);
+            // Always IST (see src/lib/dates.ts) — the server may run in UTC.
+            const day = eventDay(event.date);
+            const month = eventMonth(event.date);
+            const when = `${eventWeekday(event.date)} · ${eventTime(event.date)}`;
             return (
               <li key={event._id}>
                 <Link
@@ -66,7 +54,7 @@ export default function UpcomingEvents({ events, isLoggedIn }: UpcomingEventsPro
                   </time>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-text">{event.title}</p>
-                    <p className="text-sm text-muted">{full}</p>
+                    <p className="text-sm text-muted">{when}</p>
                     {event.location?.name && (
                       <p className="flex items-center gap-1 truncate text-sm text-muted">
                         <MapPin size={14} className="shrink-0" aria-hidden="true" />

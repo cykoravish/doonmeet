@@ -22,8 +22,6 @@ const TOC = [
   { id: "appeal", number: "06", label: "Appeal" },
 ];
 
-const linkStyle = { color: "rgb(var(--primary-fg))" };
-
 export default function GrievancePage() {
   const t = GRIEVANCE_TIMELINES;
 
@@ -46,7 +44,7 @@ export default function GrievancePage() {
             <strong>Name:</strong> {GRIEVANCE_OFFICER.name}
             <br />
             <strong>Email:</strong>{" "}
-            <a href={`mailto:${GRIEVANCE_OFFICER.email}`} className="font-semibold underline" style={linkStyle}>
+            <a href={`mailto:${GRIEVANCE_OFFICER.email}`} className="font-semibold text-primary-fg underline">
               {GRIEVANCE_OFFICER.email}
             </a>
             <br />
@@ -85,7 +83,7 @@ export default function GrievancePage() {
       <LegalSection id="how-to-complain" number="03" title="How to file a complaint">
         <p>
           You can also email the Grievance Officer at{" "}
-          <a href={`mailto:${GRIEVANCE_OFFICER.email}`} className="font-semibold underline" style={linkStyle}>
+          <a href={`mailto:${GRIEVANCE_OFFICER.email}`} className="font-semibold text-primary-fg underline">
             {GRIEVANCE_OFFICER.email}
           </a>
           . You don&apos;t need an account to complain. To help us act quickly, please include:
@@ -139,18 +137,18 @@ export default function GrievancePage() {
           If you&apos;re not satisfied with the Grievance Officer&apos;s decision, you can appeal to
           the Government of India&apos;s <strong>Grievance Appellate Committee</strong> within{" "}
           <strong>{t.appealDays} days</strong> of receiving our decision, through{" "}
-          <a href={GAC_PORTAL_URL} target="_blank" rel="noopener noreferrer" className="font-semibold underline" style={linkStyle}>
+          <a href={GAC_PORTAL_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary-fg underline">
             gac.gov.in
           </a>
           .
         </p>
         <p>
           See also our{" "}
-          <Link href="/terms" className="font-semibold underline" style={linkStyle}>
+          <Link href="/terms" className="font-semibold text-primary-fg underline">
             Terms of Service
           </Link>{" "}
           and{" "}
-          <Link href="/privacy" className="font-semibold underline" style={linkStyle}>
+          <Link href="/privacy" className="font-semibold text-primary-fg underline">
             Privacy Policy
           </Link>
           .
