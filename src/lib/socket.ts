@@ -256,6 +256,18 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     });
 
     // -------------------------------------------------------
+    // DMs — leave conversation room
+    // Clients now share ONE socket per tab, so closing a conversation no
+    // longer disconnects. Leaving explicitly matters: isUserActiveInRoom()
+    // treats anyone still in the room as "looking at it right now" — new
+    // messages would be auto-marked read and their notification skipped.
+    // -------------------------------------------------------
+    socket.on("dm:leave", (data: { conversationId: string }) => {
+      if (!/^[a-f\d]{24}$/i.test(data?.conversationId)) return;
+      socket.leave(`dm:${data.conversationId}`);
+    });
+
+    // -------------------------------------------------------
     // DMs — send message
     // -------------------------------------------------------
     socket.on("dm:message", async (data: { conversationId: string; content: string }) => {
@@ -396,6 +408,7 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     socket.on("typing:start", (data: { conversationId: string }) => {
       if (!/^[a-f\d]{24}$/i.test(data?.conversationId)) return;
       socket.to(`dm:${data.conversationId}`).emit("typing:start", {
+        conversationId: data.conversationId,
         userId: socket.userId,
         name: socket.name,
       });
@@ -404,6 +417,7 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     socket.on("typing:stop", (data: { conversationId: string }) => {
       if (!/^[a-f\d]{24}$/i.test(data?.conversationId)) return;
       socket.to(`dm:${data.conversationId}`).emit("typing:stop", {
+        conversationId: data.conversationId,
         userId: socket.userId,
       });
     });

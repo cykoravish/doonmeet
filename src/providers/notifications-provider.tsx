@@ -6,10 +6,9 @@ import {
   useState,
   useEffect,
   useCallback,
-  useRef,
   type ReactNode,
 } from "react";
-import { io, Socket } from "socket.io-client";
+import { useSocket } from "@/lib/socket-client";
 import type { NotificationItem } from "@/lib/notificationTypeConfig";
 import { playMessageSound } from "@/lib/notificationSound";
 
@@ -37,7 +36,6 @@ export function NotificationsProvider({
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(!!userId);
-  const socketRef = useRef<Socket | null>(null);
 
   const refresh = useCallback(() => {
     if (!userId) return;
@@ -51,6 +49,10 @@ export function NotificationsProvider({
       .finally(() => setLoading(false));
   }, [userId]);
 
+  // The tab's shared socket (see src/lib/socket-client.ts) — no extra
+  // connection just for notifications.
+  const socket = useSocket(userId);
+
   useEffect(() => {
     if (!userId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -60,10 +62,17 @@ export function NotificationsProvider({
 
     refresh();
 
-    const socket = io({ withCredentials: true });
-    socketRef.current = socket;
+    function handleFocus() {
+      refresh();
+    }
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [userId, refresh]);
 
-    socket.on("notification:new", (notif: NotificationItem) => {
+  useEffect(() => {
+    if (!socket) return;
+
+    function handleNew(notif: NotificationItem) {
       setUnreadCount((prev) => prev + 1);
       setNotifications((prev) => [notif, ...prev].slice(0, 8));
 
@@ -72,23 +81,23 @@ export function NotificationsProvider({
       if (notif.type === "new_dm") {
         playMessageSound();
       }
-    });
+    }
 
     // We don't know exactly which ones were marked read from wherever this
     // came from (another tab, opening a DM, "mark all read") — a light
     // refetch keeps both the count and the preview list accurate.
-    socket.on("notification:read_bulk", () => refresh());
-
-    function handleFocus() {
+    function handleReadBulk() {
       refresh();
     }
-    window.addEventListener("focus", handleFocus);
 
+    socket.on("notification:new", handleNew);
+    socket.on("notification:read_bulk", handleReadBulk);
     return () => {
-      socket.disconnect();
-      window.removeEventListener("focus", handleFocus);
+      // Remove only OUR handlers — other features share this socket.
+      socket.off("notification:new", handleNew);
+      socket.off("notification:read_bulk", handleReadBulk);
     };
-  }, [userId, refresh]);
+  }, [socket, refresh]);
 
   async function markOneRead(id: string) {
     setNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));

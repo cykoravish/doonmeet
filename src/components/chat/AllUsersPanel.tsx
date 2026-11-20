@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import type { Socket } from "socket.io-client";
+import { onConnected, useSocket } from "@/lib/socket-client";
 import { X, Search, Users, Loader2, UserX } from "lucide-react";
 import UserListItem, { type MemberUser } from "./UserListItem";
 import IconButton from "@/components/ui/IconButton";
@@ -11,7 +11,8 @@ import { getChatUsersState, setChatUsersState, resetChatUsersState } from "@/lib
 interface AllUsersPanelProps {
   open: boolean;
   onClose: () => void;
-  socket: Socket | null;
+  /** Logged-in viewer's id — enables live presence over the shared socket. */
+  currentUserId?: string | null;
   /** Logged-in viewers get a one-tap Message button on each member. */
   canMessage?: boolean;
 }
@@ -22,7 +23,7 @@ interface PresenceUpdate {
   lastSeenAt: string | null;
 }
 
-export default function AllUsersPanel({ open, onClose, socket, canMessage = false }: AllUsersPanelProps) {
+export default function AllUsersPanel({ open, onClose, currentUserId = null, canMessage = false }: AllUsersPanelProps) {
   // Read fresh from the store on every render (cheap — just an object read).
   // Capturing this once at module scope would freeze it at whatever the
   // store held on first import, breaking restoration on later navigations.
@@ -41,6 +42,8 @@ export default function AllUsersPanel({ open, onClose, socket, canMessage = fals
   const listRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
+  // Shared socket; only taken while the panel is open (null otherwise).
+  const socket = useSocket(open ? currentUserId : null);
 
   // -------------------------------------------------------
   // Fetch a page of members. `replace` is true for a fresh search/first
@@ -152,8 +155,6 @@ export default function AllUsersPanel({ open, onClose, socket, canMessage = fals
   useEffect(() => {
     if (!open || !socket) return;
 
-    socket.emit("presence:join");
-
     function handlePresenceUpdate(update: PresenceUpdate) {
       setUsers((prev) =>
         prev.map((u) =>
@@ -165,10 +166,13 @@ export default function AllUsersPanel({ open, onClose, socket, canMessage = fals
     }
 
     socket.on("presence:update", handlePresenceUpdate);
+    // Subscribe now (if connected) and again after any reconnect.
+    const stopRejoining = onConnected(socket, () => socket.emit("presence:join"));
 
     return () => {
-      socket.emit("presence:leave");
+      stopRejoining();
       socket.off("presence:update", handlePresenceUpdate);
+      socket.emit("presence:leave");
     };
   }, [open, socket]);
 

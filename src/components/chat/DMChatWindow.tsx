@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { io, Socket } from "socket.io-client";
+import { onConnected, useSocket } from "@/lib/socket-client";
 import {
   ArrowDown,
   ArrowLeft,
@@ -117,9 +117,11 @@ export default function DMChatWindow({
     if (ok) refreshBlockStatus();
   }
 
-  const socketRef = useRef<Socket | null>(null);
+  // The tab's shared socket — this window only joins/leaves its dm room.
+  const socket = useSocket(currentUser._id);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingEmitRef = useRef(0);
   const typingClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Newest message id, updated synchronously wherever a message is added —
   // a dm:read event can arrive before React has re-rendered with the
@@ -162,18 +164,13 @@ export default function DMChatWindow({
     };
   }, [conversationId, otherParticipant._id]);
 
-  // Socket connection scoped to this conversation (this component remounts
-  // per conversation via key={conversationId}, so disconnecting on unmount
-  // also leaves the server-side dm room).
+  // Live updates for THIS conversation over the shared socket. The window
+  // remounts per conversation (key={conversationId}); on unmount it leaves
+  // the dm room explicitly — the socket itself stays open for other features.
   useEffect(() => {
-    const socket = io({ withCredentials: true });
-    socketRef.current = socket;
+    if (!socket) return;
 
-    socket.on("connect", () => {
-      socket.emit("dm:join", { conversationId });
-    });
-
-    socket.on("dm:message", (message: DMMessage) => {
+    function handleMessage(message: DMMessage) {
       if (message.conversationId !== conversationId) return;
       latestIdRef.current = message._id;
       setMessages((prev) => appendUnique(prev, message));
@@ -183,35 +180,60 @@ export default function DMChatWindow({
         setSeenThroughId(message._id);
         onMessageSent?.(conversationId, message);
       }
-    });
+    }
 
     // The other person opened the conversation / read a message live —
     // everything currently in the list is now seen.
-    socket.on("dm:read", (data: { conversationId: string; readBy: string }) => {
+    function handleRead(data: { conversationId: string; readBy: string }) {
       if (data.conversationId !== conversationId || data.readBy !== otherParticipant._id) return;
       if (latestIdRef.current) setSeenThroughId(latestIdRef.current);
-    });
+    }
 
-    socket.on("typing:start", () => {
+    // Typing events carry conversationId (older servers didn't — accept those too).
+    function handleTypingStart(data?: { conversationId?: string }) {
+      if (data?.conversationId && data.conversationId !== conversationId) return;
       setOtherTyping(true);
       // Safety net in case the matching typing:stop never arrives.
       if (typingClearRef.current) clearTimeout(typingClearRef.current);
       typingClearRef.current = setTimeout(() => setOtherTyping(false), 5000);
-    });
-    socket.on("typing:stop", () => setOtherTyping(false));
+    }
+    function handleTypingStop(data?: { conversationId?: string }) {
+      if (data?.conversationId && data.conversationId !== conversationId) return;
+      setOtherTyping(false);
+    }
 
     // Server refused a message because one of us blocked the other.
-    socket.on("dm:blocked", (data: { conversationId: string }) => {
+    function handleBlocked(data: { conversationId: string }) {
       if (data.conversationId === conversationId) refreshBlockStatus();
-    });
+    }
+
+    socket.on("dm:message", handleMessage);
+    socket.on("dm:read", handleRead);
+    socket.on("typing:start", handleTypingStart);
+    socket.on("typing:stop", handleTypingStop);
+    socket.on("dm:blocked", handleBlocked);
+    // Join now (if connected) and again after any reconnect.
+    const stopRejoining = onConnected(socket, () => socket.emit("dm:join", { conversationId }));
 
     return () => {
+      stopRejoining();
+      socket.off("dm:message", handleMessage);
+      socket.off("dm:read", handleRead);
+      socket.off("typing:start", handleTypingStart);
+      socket.off("typing:stop", handleTypingStop);
+      socket.off("dm:blocked", handleBlocked);
       if (typingClearRef.current) clearTimeout(typingClearRef.current);
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      socket.disconnect();
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        // Don't leave the other person seeing "typing…" after we close.
+        socket.emit("typing:stop", { conversationId });
+      }
+      // Leave the room — otherwise the server would still treat us as
+      // "looking at this conversation" (auto-read, no notifications).
+      socket.emit("dm:leave", { conversationId });
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationId]);
+  }, [socket, conversationId]);
 
   async function loadOlder() {
     if (!nextCursor || loadingMore) return;
@@ -233,12 +255,19 @@ export default function DMChatWindow({
   }
 
   function handleTyping() {
-    if (!socketRef.current) return;
-    socketRef.current.emit("typing:start", { conversationId });
+    if (!socket) return;
+    // Throttled: one typing:start per ~3s instead of one per keystroke (the
+    // receiver's indicator auto-clears after 5s, so 3s keeps it steady).
+    const now = Date.now();
+    if (!typingTimeoutRef.current || now - lastTypingEmitRef.current > 3000) {
+      lastTypingEmitRef.current = now;
+      socket.emit("typing:start", { conversationId });
+    }
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      socketRef.current?.emit("typing:stop", { conversationId });
+      typingTimeoutRef.current = null;
+      socket.emit("typing:stop", { conversationId });
     }, 1500);
   }
 
@@ -250,11 +279,12 @@ export default function DMChatWindow({
     setSending(true);
     setContent("");
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    socketRef.current?.emit("typing:stop", { conversationId });
+    typingTimeoutRef.current = null;
+    socket?.emit("typing:stop", { conversationId });
 
     try {
-      if (socketRef.current?.connected) {
-        socketRef.current.emit("dm:message", { conversationId, content: trimmed });
+      if (socket?.connected) {
+        socket.emit("dm:message", { conversationId, content: trimmed });
       } else {
         // REST fallback if the socket connection is down
         const res = await fetch(`/api/conversations/${conversationId}/messages`, {

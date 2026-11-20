@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import type { Socket } from "socket.io-client";
 import { ArrowLeft, Globe2, Lock, MessageCircle, Users2 } from "lucide-react";
 import ChatRoom from "./ChatRoom";
 import MessagesPanel from "./MessagesPanel";
@@ -38,7 +37,6 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
   // the URL (?members=1) so the back button, after following a member to
   // their profile, reopens it.
   const membersOpen = searchParams.get("members") === "1";
-  const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
   const [counts, setCounts] = useState<{ total: number; online: number } | null>(null);
 
   const loadCounts = useCallback(() => {
@@ -213,7 +211,7 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
 
       <div className="min-h-0 flex-1">
         {tab === "public" && (
-          <ChatRoom currentUser={currentUser} onSocketChange={setSocketInstance} onStartDm={startDm} />
+          <ChatRoom currentUser={currentUser} onStartDm={startDm} />
         )}
 
         {tab === "messages" &&
@@ -243,7 +241,7 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
       <AllUsersPanel
         open={membersOpen}
         onClose={closeMembersPanel}
-        socket={socketInstance}
+        currentUserId={currentUser?._id ?? null}
         canMessage={canUseMessages}
       />
     </div>

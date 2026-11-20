@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { io, Socket } from "socket.io-client";
+import { onConnected, useSocket } from "@/lib/socket-client";
 import { ArrowDown, ChevronUp, Loader2, MessagesSquare, Send, ShieldCheck } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import JoinChatModal from "./JoinChatModal";
@@ -27,14 +27,11 @@ interface CurrentUser {
 
 interface ChatRoomProps {
   currentUser: CurrentUser | null;
-  // The members panel lives in ChatTabs (so it's reachable from any tab)
-  // but presence updates still need this room's live socket.
-  onSocketChange?: (socket: Socket | null) => void;
   // Open a DM with this user (switches to the Messages tab).
   onStartDm?: (userId: string) => void;
 }
 
-export default function ChatRoom({ currentUser, onSocketChange, onStartDm }: ChatRoomProps) {
+export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
@@ -54,7 +51,8 @@ export default function ChatRoom({ currentUser, onSocketChange, onStartDm }: Cha
     return () => clearTimeout(timer);
   }, [mutedUntil]);
 
-  const socketRef = useRef<Socket | null>(null);
+  // The tab's shared socket (logged-in users only — the server requires auth).
+  const socket = useSocket(currentUser?._id);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { scrollRef, onScroll, scrollToBottom, beginPrepend, unseenCount } = useChatScroll({
@@ -96,33 +94,30 @@ export default function ChatRoom({ currentUser, onSocketChange, onStartDm }: Cha
     }
   }
 
-  // Socket connection (logged-in users only — the server requires auth)
+  // Live public-room updates over the shared socket.
   useEffect(() => {
-    if (!currentUser) return;
+    if (!socket) return;
 
-    const socket = io({ withCredentials: true });
-    socketRef.current = socket;
-
-    socket.on("connect", () => {
-      onSocketChange?.(socket);
-      socket.emit("room:join");
-    });
-
-    socket.on("room:message", (message: Message) => {
+    function handleMessage(message: Message) {
       setMessages((prev) => appendUnique(prev, message));
-    });
-
-    socket.on("room:muted", (data: { until: string }) => {
+    }
+    function handleMuted(data: { until: string }) {
       setMutedUntil(data.until);
-    });
+    }
+
+    socket.on("room:message", handleMessage);
+    socket.on("room:muted", handleMuted);
+    // Join now (if connected) and again after any reconnect.
+    const stopRejoining = onConnected(socket, () => socket.emit("room:join"));
 
     return () => {
+      stopRejoining();
+      socket.off("room:message", handleMessage);
+      socket.off("room:muted", handleMuted);
+      // The socket stays open for other features — just leave the room.
       socket.emit("room:leave");
-      socket.disconnect();
-      onSocketChange?.(null);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
+  }, [socket]);
 
   function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -134,9 +129,9 @@ export default function ChatRoom({ currentUser, onSocketChange, onStartDm }: Cha
       return;
     }
 
-    if (!socketRef.current) return;
+    if (!socket) return;
 
-    socketRef.current.emit("room:message", { content: content.trim() });
+    socket.emit("room:message", { content: content.trim() });
     setContent("");
     inputRef.current?.focus();
   }
