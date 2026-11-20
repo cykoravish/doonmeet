@@ -5,13 +5,38 @@ on:
     branches:
       - main
 
+# The workflow only reads the repo.
+permissions:
+  contents: read
+
+# Never run two deploys at the same time.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
 jobs:
+  # Scans the pushed commit for injected code (scripts/check-injection.mjs)
+  # before anything reaches the server. This repo was hit by the PolinRider
+  # malware in Sep 2026: payload hidden in config files, force-pushed to main,
+  # auto-deployed.
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Supply-chain guard
+        run: node scripts/check-injection.mjs
+
   deploy:
+    needs: guard
     runs-on: ubuntu-latest
 
     steps:
       - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1.0.3
+        # Pinned to a commit so a moved tag can't change what runs with our SSH key.
+        uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262 # v1.0.3
         with:
           host: 72.61.227.248
           username: ${{ secrets.SSH_USER }}
@@ -27,12 +52,15 @@ jobs:
 
             echo "Pulling latest code..."
             git fetch origin
-            git reset --hard origin/main
+            # Deploy exactly the commit the guard checked, not whatever main
+            # points to by now (a later force-push could swap it).
+            git reset --hard ${{ github.sha }}
 
             echo "Installing dependencies..."
             npm ci
 
             echo "Building application..."
+            # prebuild runs the supply-chain guard again on the server.
             npm run build
 
             echo "Restarting PM2..."

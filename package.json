@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "tsx server.ts",
-    "build": "next build",
+    "dev": "node scripts/check-injection.mjs && tsx server.ts",
+    "build": "node scripts/check-injection.mjs && next build",
+    "check:injection": "node scripts/check-injection.mjs",
     "start": "NODE_ENV=production tsx server.ts",
     "lint": "eslint",
     "format": "prettier --write .",
