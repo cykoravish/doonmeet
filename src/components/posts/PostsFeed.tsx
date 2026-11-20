@@ -10,6 +10,7 @@ import EmptyState from "@/components/shared/EmptyState";
 import Avatar from "@/components/ui/Avatar";
 import IconButton from "@/components/ui/IconButton";
 import { buttonClasses } from "@/components/ui/Button";
+import type { PostCategory } from "@/lib/postCategories";
 
 interface Author {
   _id: string;
@@ -20,6 +21,7 @@ interface Author {
 interface PostItem {
   _id: string;
   content: string;
+  category?: PostCategory | null;
   image: string | null;
   commentCount: number;
   createdAt: string;
@@ -31,6 +33,8 @@ interface PostsFeedProps {
   initialNextCursor: string | null;
   isLoggedIn: boolean;
   authorFilter?: string;
+  /** Active category filter (/posts?category=…). */
+  categoryFilter?: PostCategory;
   currentUser: { _id: string; name: string; avatar: string | null } | null;
 }
 
@@ -39,6 +43,7 @@ export default function PostsFeed({
   initialNextCursor,
   isLoggedIn,
   authorFilter,
+  categoryFilter,
   currentUser,
 }: PostsFeedProps) {
   const [posts, setPosts] = useState<PostItem[]>(initialPosts);
@@ -53,11 +58,12 @@ export default function PostsFeed({
     (cursor?: string) => {
       const params = new URLSearchParams();
       if (authorFilter) params.set("author", authorFilter);
+      if (categoryFilter) params.set("category", categoryFilter);
       if (cursor) params.set("cursor", cursor);
       const qs = params.toString();
       return `/api/posts${qs ? `?${qs}` : ""}`;
     },
-    [authorFilter]
+    [authorFilter, categoryFilter]
   );
 
   const refreshFeed = useCallback(() => {
@@ -205,6 +211,7 @@ export default function PostsFeed({
               key={post._id}
               id={post._id}
               content={post.content}
+              category={post.category}
               image={post.image}
               commentCount={post.commentCount}
               createdAt={post.createdAt}
@@ -258,6 +265,7 @@ export default function PostsFeed({
             <div className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-5 sm:pb-5">
               <CreatePostForm
                 currentUser={currentUser!}
+                initialCategory={categoryFilter}
                 onPosted={() => {
                   refreshFeed();
                   setComposerOpen(false);

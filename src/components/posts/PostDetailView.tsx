@@ -10,6 +10,8 @@ import { timeAgo } from "./PostCard";
 import EditPostForm from "./EditPostForm";
 import ShareButton from "@/components/events/ShareButton";
 import DeletePostButton from "./DeletePostButton";
+import { getPostCategory, type PostCategory } from "@/lib/postCategories";
+import Link from "next/link";
 
 interface Author {
   _id: string;
@@ -21,6 +23,7 @@ interface PostDetailViewProps {
   postId: string;
   initialContent: string;
   initialImage: string | null;
+  initialCategory?: PostCategory | null;
   createdAt: string;
   wasEdited: boolean;
   author: Author;
@@ -32,6 +35,7 @@ export default function PostDetailView({
   postId,
   initialContent,
   initialImage,
+  initialCategory,
   createdAt,
   wasEdited,
   author,
@@ -40,6 +44,7 @@ export default function PostDetailView({
 }: PostDetailViewProps) {
   const [content, setContent] = useState(initialContent);
   const [image, setImage] = useState(initialImage);
+  const [category, setCategory] = useState<PostCategory | null | undefined>(initialCategory);
   const [editing, setEditing] = useState(startInEditMode);
   const [edited, setEdited] = useState(wasEdited);
   const authorName = author?.name ?? "Deleted User";
@@ -50,10 +55,12 @@ export default function PostDetailView({
         postId={postId}
         initialContent={content}
         initialImage={image}
+        initialCategory={category ?? undefined}
         onCancel={() => setEditing(false)}
         onSaved={(post) => {
           setContent(post.content);
           setImage(post.image);
+          setCategory(post.category);
           setEdited(true);
           setEditing(false);
         }}
@@ -81,6 +88,16 @@ export default function PostDetailView({
               {edited && " · edited"}
             </p>
           </div>
+          {category && category !== "other" && (
+            <Link
+              href={`/posts?category=${category}`}
+              className={`flex h-8 shrink-0 items-center rounded-full px-3 text-xs font-bold ${
+                category === "business" ? "bg-accent-soft text-accent-fg" : "bg-primary-soft text-primary-fg"
+              }`}
+            >
+              {getPostCategory(category).label}
+            </Link>
+          )}
         </header>
 
         <div className="px-4 pb-4">

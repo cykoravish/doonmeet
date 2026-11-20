@@ -6,13 +6,16 @@ import Image from "next/image";
 import { ImagePlus, X, Loader2, Check } from "lucide-react";
 import { buttonClasses } from "@/components/ui/Button";
 import { compressImage } from "@/lib/imageCompression";
+import CategoryPicker from "./CategoryPicker";
+import { DEFAULT_POST_CATEGORY, type PostCategory } from "@/lib/postCategories";
 
 interface EditPostFormProps {
   postId: string;
   initialContent: string;
   initialImage: string | null;
+  initialCategory?: PostCategory;
   onCancel: () => void;
-  onSaved: (post: { content: string; image: string | null }) => void;
+  onSaved: (post: { content: string; image: string | null; category: PostCategory }) => void;
 }
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -22,11 +25,13 @@ export default function EditPostForm({
   postId,
   initialContent,
   initialImage,
+  initialCategory,
   onCancel,
   onSaved,
 }: EditPostFormProps) {
   const router = useRouter();
   const [content, setContent] = useState(initialContent);
+  const [category, setCategory] = useState<PostCategory>(initialCategory ?? DEFAULT_POST_CATEGORY);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(initialImage);
   const [imageRemoved, setImageRemoved] = useState(false);
@@ -74,6 +79,7 @@ export default function EditPostForm({
 
     const formData = new FormData();
     formData.append("content", content.trim());
+    formData.append("category", category);
     if (imageFile) formData.append("image", imageFile);
     if (imageRemoved) formData.append("removeImage", "true");
 
@@ -90,7 +96,7 @@ export default function EditPostForm({
         return;
       }
 
-      onSaved({ content: data.post.content, image: data.post.image });
+      onSaved({ content: data.post.content, image: data.post.image, category: data.post.category ?? category });
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -114,6 +120,8 @@ export default function EditPostForm({
         autoFocus
         className="w-full resize-none rounded-[16px] border-[1.5px] border-transparent bg-surface-2 px-4 py-3 text-base leading-relaxed text-text outline-none focus:border-primary focus:bg-surface"
       />
+
+      <CategoryPicker value={category} onChange={setCategory} idPrefix={`edit-${postId}`} />
 
       {compressing && (
         <p className="flex items-center gap-1.5 text-sm text-muted">

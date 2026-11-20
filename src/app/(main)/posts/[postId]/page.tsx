@@ -93,6 +93,7 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
           postId={postId}
           initialContent={post.content}
           initialImage={post.image}
+          initialCategory={post.category ?? null}
           createdAt={createdAtStr}
           wasEdited={wasEdited}
           author={author}

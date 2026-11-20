@@ -1,9 +1,16 @@
 import { connectDB } from "@/lib/db";
 import { Post } from "@/models/Post";
+import {
+  BUSINESS_POST_WINDOW_MS,
+  BUSINESS_POSTS_PER_WINDOW,
+  categoryQuery,
+  type PostCategory,
+} from "@/lib/postCategories";
 
 export interface PostListItem {
   _id: string;
   content: string;
+  category?: PostCategory;
   image: string | null;
   commentCount: number;
   createdAt: string;
@@ -14,12 +21,12 @@ export interface PostListItem {
 // Shared by the /posts page (direct DB call for the first server-rendered
 // page) and reused for SEO metadata / sitemap generation.
 export async function getPosts(
-  options: { limit?: number; author?: string } = {}
+  options: { limit?: number; author?: string; category?: PostCategory } = {}
 ): Promise<PostListItem[]> {
   await connectDB();
-  const { limit = 20, author } = options;
+  const { limit = 20, author, category } = options;
 
-  const query: Record<string, unknown> = {};
+  const query: Record<string, unknown> = category ? categoryQuery(category) : {};
   if (author) query.author = author;
 
   const posts = await Post.find(query)
@@ -56,4 +63,32 @@ export async function getPostStats() {
     Post.distinct("author"),
   ]);
   return { totalPosts, authorCount: authors.length };
+}
+
+/**
+ * Free business promotion limit: a user may publish BUSINESS_POSTS_PER_WINDOW
+ * "business" posts per rolling 7 days. Returns null if allowed, otherwise
+ * when the next one is allowed. Pass excludePostId when editing a post.
+ */
+export async function checkBusinessPostLimit(
+  userId: string,
+  excludePostId?: string
+): Promise<{ nextAllowedAt: Date } | null> {
+  await connectDB();
+  const since = new Date(Date.now() - BUSINESS_POST_WINDOW_MS);
+  const query: Record<string, unknown> = {
+    author: userId,
+    category: "business",
+    createdAt: { $gte: since },
+  };
+  if (excludePostId) query._id = { $ne: excludePostId };
+
+  const recent = await Post.find(query)
+    .sort({ createdAt: 1 })
+    .limit(BUSINESS_POSTS_PER_WINDOW)
+    .select("createdAt")
+    .lean<{ createdAt: Date }[]>();
+
+  if (recent.length < BUSINESS_POSTS_PER_WINDOW) return null;
+  return { nextAllowedAt: new Date(new Date(recent[0].createdAt).getTime() + BUSINESS_POST_WINDOW_MS) };
 }

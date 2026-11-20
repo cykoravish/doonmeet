@@ -6,18 +6,23 @@ import { ImagePlus, X, Loader2, Send } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
 import { buttonClasses } from "@/components/ui/Button";
 import { compressImage } from "@/lib/imageCompression";
+import CategoryPicker from "./CategoryPicker";
+import { DEFAULT_POST_CATEGORY, type PostCategory } from "@/lib/postCategories";
 
 interface CreatePostFormProps {
   currentUser: { _id: string; name: string; avatar: string | null };
   onPosted?: () => void;
+  /** Pre-selected category (e.g. when composing from the Jobs filter). */
+  initialCategory?: PostCategory;
 }
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_LENGTH = 3000;
 
-export default function CreatePostForm({ currentUser, onPosted }: CreatePostFormProps) {
+export default function CreatePostForm({ currentUser, onPosted, initialCategory }: CreatePostFormProps) {
   const [content, setContent] = useState("");
+  const [category, setCategory] = useState<PostCategory>(initialCategory ?? DEFAULT_POST_CATEGORY);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
@@ -63,6 +68,7 @@ export default function CreatePostForm({ currentUser, onPosted }: CreatePostForm
 
     const formData = new FormData();
     formData.append("content", content.trim());
+    formData.append("category", category);
     if (imageFile) formData.append("image", imageFile);
 
     try {
@@ -113,6 +119,8 @@ export default function CreatePostForm({ currentUser, onPosted }: CreatePostForm
         autoFocus
         className="min-h-32 w-full resize-none rounded-[16px] border-[1.5px] border-transparent bg-surface-2 px-4 py-3 text-base leading-relaxed text-text outline-none placeholder:text-muted focus:border-primary focus:bg-surface"
       />
+
+      <CategoryPicker value={category} onChange={setCategory} idPrefix="create" />
 
       {compressing && (
         <p className="flex items-center gap-1.5 text-sm text-muted">

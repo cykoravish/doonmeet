@@ -241,6 +241,7 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
                   key={post._id}
                   id={post._id}
                   content={post.content}
+                  category={post.category}
                   image={post.image}
                   commentCount={post.commentCount}
                   createdAt={post.createdAt}

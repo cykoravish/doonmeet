@@ -5,6 +5,7 @@ import UserLink from "@/components/shared/UserLink";
 import UiAvatar from "@/components/ui/Avatar";
 import ShareButton from "@/components/events/ShareButton";
 import DeletePostButton from "./DeletePostButton";
+import { getPostCategory, type PostCategory } from "@/lib/postCategories";
 
 interface Author {
   _id: string;
@@ -15,6 +16,8 @@ interface Author {
 interface PostCardProps {
   id: string;
   content: string;
+  /** Missing on older posts → treated as "other" (no badge). */
+  category?: PostCategory | null;
   image: string | null;
   commentCount: number;
   createdAt: string;
@@ -59,6 +62,7 @@ function isLong(content: string) {
 export default function PostCard({
   id,
   content,
+  category,
   image,
   commentCount,
   createdAt,
@@ -67,6 +71,7 @@ export default function PostCard({
   onDeleted,
 }: PostCardProps) {
   const authorName = author?.name ?? "Deleted User";
+  const categoryInfo = category && category !== "other" ? getPostCategory(category) : null;
 
   return (
     <article className="overflow-hidden rounded-[20px] border border-border bg-surface">
@@ -82,6 +87,16 @@ export default function PostCard({
             <time dateTime={createdAt}>{timeAgo(createdAt)}</time>
           </p>
         </div>
+        {categoryInfo && (
+          <Link
+            href={`/posts?category=${categoryInfo.value}`}
+            className={`flex h-8 shrink-0 items-center rounded-full px-3 text-xs font-bold ${
+              categoryInfo.value === "business" ? "bg-accent-soft text-accent-fg" : "bg-primary-soft text-primary-fg"
+            }`}
+          >
+            {categoryInfo.label}
+          </Link>
+        )}
       </header>
 
       <div className="px-4 pt-2.5 pb-3">

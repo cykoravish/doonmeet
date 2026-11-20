@@ -6,6 +6,7 @@ import { Loader2, Newspaper } from "lucide-react";
 import PostCard from "@/components/posts/PostCard";
 import EmptyState from "@/components/shared/EmptyState";
 import { buttonClasses } from "@/components/ui/Button";
+import type { PostCategory } from "@/lib/postCategories";
 
 interface Author {
   _id: string;
@@ -16,6 +17,7 @@ interface Author {
 interface PostItem {
   _id: string;
   content: string;
+  category?: PostCategory | null;
   image: string | null;
   commentCount: number;
   createdAt: string;
@@ -89,6 +91,7 @@ export default function MyPostsTab({ userId }: { userId: string }) {
               key={post._id}
               id={post._id}
               content={post.content}
+              category={post.category}
               image={post.image}
               commentCount={post.commentCount}
               createdAt={post.createdAt}

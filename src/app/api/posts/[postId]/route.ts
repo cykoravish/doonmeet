@@ -10,6 +10,7 @@ import { PostComment } from "@/models/PostComment";
 import { withGuestAllowed, requireVerified, AuthenticatedRequest } from "@/middleware/auth";
 import { generalLimiter, postLimiter } from "@/middleware/rateLimit";
 import { updatePostSchema } from "@/validations/post";
+import { checkBusinessPostLimit } from "@/lib/posts";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -70,7 +71,7 @@ export const PATCH = requireVerified(
     try {
       await connectDB();
 
-      const post = await Post.findById(postId).select("author image imagePublicId");
+      const post = await Post.findById(postId).select("author image imagePublicId category");
       if (!post) {
         return NextResponse.json({ success: false, message: "Post not found." }, { status: 404 });
       }
@@ -86,6 +87,7 @@ export const PATCH = requireVerified(
       const parsed = updatePostSchema.safeParse({
         content: formData.get("content"),
         removeImage: formData.get("removeImage"),
+        category: formData.get("category"),
       });
 
       if (!parsed.success) {
@@ -95,7 +97,23 @@ export const PATCH = requireVerified(
         );
       }
 
-      const { content, removeImage } = parsed.data;
+      const { content, removeImage, category } = parsed.data;
+
+      // Switching INTO Local Business counts against the weekly free limit.
+      if (category === "business" && post.category !== "business") {
+        const limit = await checkBusinessPostLimit(String(req.user._id), postId);
+        if (limit) {
+          return NextResponse.json(
+            {
+              success: false,
+              code: "BUSINESS_POST_LIMIT",
+              nextAllowedAt: limit.nextAllowedAt.toISOString(),
+              message: "You can share 1 free Local Business post per week.",
+            },
+            { status: 429 }
+          );
+        }
+      }
       const imageFile = formData.get("image") as File | null;
 
       let newImageUrl = post.image;
@@ -147,6 +165,7 @@ export const PATCH = requireVerified(
       }
 
       post.content = content;
+      if (category) post.category = category;
       post.image = newImageUrl;
       post.imagePublicId = newImagePublicId;
       await post.save();

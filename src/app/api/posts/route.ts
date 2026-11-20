@@ -13,6 +13,8 @@ import {
 import { validateBody, validateQuery } from "@/middleware/validate";
 import { generalLimiter, postLimiter } from "@/middleware/rateLimit";
 import { createPostSchema, getPostsSchema } from "@/validations/post";
+import { categoryQuery } from "@/lib/postCategories";
+import { checkBusinessPostLimit } from "@/lib/posts";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -23,6 +25,24 @@ cloudinary.config({
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
+function businessLimitResponse(nextAllowedAt: Date) {
+  const when = nextAllowedAt.toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "Asia/Kolkata",
+  });
+  return NextResponse.json(
+    {
+      success: false,
+      code: "BUSINESS_POST_LIMIT",
+      nextAllowedAt: nextAllowedAt.toISOString(),
+      message: `You can share 1 free Local Business post per week. Your next one is available on ${when}.`,
+    },
+    { status: 429 }
+  );
+}
+
 // GET /api/posts
 export const GET = withGuestAllowed(async (req: AuthenticatedRequest) => {
   const limited = generalLimiter(req, String(req.user?._id ?? "guest"));
@@ -30,12 +50,12 @@ export const GET = withGuestAllowed(async (req: AuthenticatedRequest) => {
 
   const queryResult = validateQuery(req, getPostsSchema);
   if (queryResult instanceof NextResponse) return queryResult;
-  const { cursor, limit, author } = queryResult.data;
+  const { cursor, limit, author, category } = queryResult.data;
 
   try {
     await connectDB();
 
-    const query: Record<string, unknown> = {};
+    const query: Record<string, unknown> = category ? categoryQuery(category) : {};
     if (author) query.author = author;
 
     if (cursor) {
@@ -78,18 +98,25 @@ export const POST = requireVerified(async (req: AuthenticatedRequest) => {
   try {
     const formData = await req.formData();
     const content = formData.get("content");
+    const category = formData.get("category") || undefined;
 
     const result = await validateBody(
       new Request("http://localhost", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, category }),
       }) as unknown as NextRequest,
       createPostSchema
     );
     if (result instanceof NextResponse) return result;
 
     await connectDB();
+
+    // Free business promotion: 1 "Local Business" post per user per week.
+    if (result.data.category === "business") {
+      const limit = await checkBusinessPostLimit(String(req.user._id));
+      if (limit) return businessLimitResponse(limit.nextAllowedAt);
+    }
 
     let imageUrl: string | null = null;
     let imagePublicId: string | null = null;
@@ -139,6 +166,7 @@ export const POST = requireVerified(async (req: AuthenticatedRequest) => {
     const post = await Post.create({
       author: req.user._id,
       content: result.data.content,
+      category: result.data.category,
       image: imageUrl,
       imagePublicId,
     });

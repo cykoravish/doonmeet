@@ -5,6 +5,7 @@ import { Event } from "@/models/Event";
 import { Post } from "@/models/Post";
 import { Place } from "@/models/Place";
 import { MIN_INDEXABLE_POST_LENGTH, SITE_URL } from "@/lib/seo";
+import { POST_CATEGORIES } from "@/lib/postCategories";
 
 // Without this the sitemap is generated once at build time and never again,
 // so new events/places/posts would not show up until the next deploy.
@@ -20,6 +21,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: route === "" ? 1 : 0.7,
     })
   );
+
+  // Category feeds double as landing pages ("PG in Dehradun", "jobs in Dehradun").
+  const postCategoryRoutes = POST_CATEGORIES.filter((c) => c.value !== "other").map((c) => ({
+    url: `${base}/posts?category=${c.value}`,
+    changeFrequency: "daily" as const,
+    priority: 0.6,
+  }));
 
   const legalRoutes = ["/privacy", "/terms", "/refund-policy", "/grievance"].map((route) => ({
     url: `${base}${route}`,
@@ -88,5 +96,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error("[sitemap] Failed to fetch dynamic routes:", err);
   }
 
-  return [...staticRoutes, ...legalRoutes, ...placeRoutes, ...communityRoutes, ...eventRoutes, ...postRoutes];
+  return [...staticRoutes, ...postCategoryRoutes, ...legalRoutes, ...placeRoutes, ...communityRoutes, ...eventRoutes, ...postRoutes];
 }
