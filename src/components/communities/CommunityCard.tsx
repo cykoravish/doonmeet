@@ -1,26 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Users } from "lucide-react";
-
-const CATEGORY_ICONS: Record<string, string> = {
-  tech:         "💻",
-  nature:       "🌿",
-  food:         "🍜",
-  photography:  "📸",
-  sports:       "⚽",
-  arts:         "🎨",
-  general:      "🏙️",
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  tech:         "rgb(100 120 220)",
-  nature:       "rgb(var(--primary))",
-  food:         "rgb(220 80 60)",
-  photography:  "rgb(160 100 200)",
-  sports:       "rgb(var(--accent))",
-  arts:         "rgb(220 120 60)",
-  general:      "rgb(var(--primary-light))",
-};
+import { ChevronRight, Users } from "lucide-react";
+import CategoryIcon from "@/components/shared/CategoryIcon";
 
 interface CommunityCardProps {
   name: string;
@@ -32,99 +13,37 @@ interface CommunityCardProps {
   memberCount: number;
 }
 
-export default function CommunityCard({
-  name,
-  slug,
-  description,
-  banner,
-  icon,
-  category,
-  memberCount,
-}: CommunityCardProps) {
-  const color = CATEGORY_COLORS[category] ?? "rgb(var(--primary))";
-  const emoji = CATEGORY_ICONS[category] ?? "🏙️";
-
+// Compact row-style card: icon, name, one-line pitch, member count.
+// Fits more communities on a phone screen than tall banner cards.
+export default function CommunityCard({ name, slug, description, icon, category, memberCount }: CommunityCardProps) {
   return (
     <Link
       href={`/communities/${slug}`}
-      className="reveal-on-scroll group flex flex-col overflow-hidden rounded-2xl border transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
-      style={{
-        backgroundColor: "rgb(var(--surface))",
-        borderColor: "rgb(var(--border))",
-      }}
+      className="flex h-full items-center gap-3.5 rounded-[20px] border border-border bg-surface p-4 transition-colors hover:bg-surface-2"
     >
-      {/* Banner / colored header */}
-      <div className="relative h-20 w-full overflow-hidden sm:h-24">
-        {banner ? (
-          <Image
-            src={banner}
-            alt={name}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-          />
+      <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[16px] bg-primary-soft text-primary-fg">
+        {icon ? (
+          <Image src={icon} alt="" width={56} height={56} sizes="56px" className="h-full w-full object-cover" />
         ) : (
-          <div
-            className="absolute inset-0"
-            style={{
-              background: `linear-gradient(135deg, ${color}30 0%, ${color}10 100%)`,
-              borderBottom: `2px solid ${color}20`,
-            }}
-          />
+          <CategoryIcon category={category} size={26} />
         )}
+      </span>
 
-        {/* Category badge */}
-        <div className="absolute right-3 top-3">
-          <span
-            className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize sm:text-xs"
-            style={{ backgroundColor: `${color}20`, color }}
-          >
-            {category}
+      <div className="min-w-0 flex-1">
+        <h2 className="truncate text-base font-bold text-text">{name}</h2>
+        {description && <p className="mt-0.5 line-clamp-2 text-sm text-muted">{description}</p>}
+        <p className="mt-1.5 flex items-center gap-2 text-[13px]">
+          <span className="flex items-center gap-1 font-semibold text-primary-fg">
+            <Users size={14} aria-hidden="true" />
+            {memberCount > 0
+              ? `${memberCount.toLocaleString()} ${memberCount === 1 ? "member" : "members"}`
+              : "Be the first to join"}
           </span>
-        </div>
-      </div>
-
-      {/* Icon — overlaps banner */}
-      <div className="relative px-4 pb-4 sm:px-5">
-        <div
-          className="-mt-5 mb-3 flex h-11 w-11 items-center justify-center rounded-2xl border-2 text-lg shadow-sm sm:h-12 sm:w-12 sm:text-xl"
-          style={{
-            backgroundColor: "rgb(var(--surface))",
-            borderColor: "rgb(var(--border))",
-          }}
-        >
-          {icon ? (
-            <Image src={icon} alt={name} width={28} height={28} className="rounded-lg" />
-          ) : (
-            <span>{emoji}</span>
-          )}
-        </div>
-
-        <h3 className="mb-1.5 text-[13px] font-bold leading-snug sm:text-base">{name}</h3>
-        <p
-          className="mb-4 text-[11px] leading-relaxed line-clamp-2 sm:text-xs"
-          style={{ color: "rgb(var(--muted))" }}
-        >
-          {description}
+          <span className="text-muted capitalize">· {category}</span>
         </p>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between">
-          <div
-            className="flex items-center gap-1.5 text-[11px] sm:text-xs"
-            style={{ color: "rgb(var(--muted))" }}
-          >
-            <Users size={12} />
-            <span>{memberCount.toLocaleString()} members</span>
-          </div>
-          <span
-            className="text-[11px] font-semibold sm:text-xs"
-            style={{ color }}
-          >
-            View →
-          </span>
-        </div>
       </div>
+
+      <ChevronRight size={18} className="shrink-0 text-muted" aria-hidden="true" />
     </Link>
   );
 }

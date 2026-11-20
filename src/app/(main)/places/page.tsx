@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { getAllPlacesWithRatings } from "@/lib/places";
 import PlacesExplorer from "@/components/places/PlacesExplorer";
+import PageHeader from "@/components/shared/PageHeader";
 import { pageMetadata } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import { breadcrumbJsonLd } from "@/lib/seo";
@@ -18,25 +19,17 @@ export default async function PlacesPage() {
   const places = await getAllPlacesWithRatings();
 
   return (
-    <div>
+    <div className="mx-auto max-w-6xl px-4 pt-5 pb-8 sm:px-6 sm:pt-8">
       <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Places", path: "/places" }])} />
-      <section className="mx-auto max-w-7xl px-6 py-16">
-        <p
-          className="mb-2 text-sm font-semibold uppercase tracking-widest"
-          style={{ color: "rgb(var(--primary))" }}
-        >
-          Discover
-        </p>
-        <h1 className="text-4xl font-black md:text-5xl">Explore Places in Dehradun</h1>
-        <p className="mt-3 max-w-2xl" style={{ color: "rgb(var(--muted))" }}>
-          Clock Tower, Robber&apos;s Cave, hidden cafes, weekend nature spots — rated and reviewed
-          by people who&apos;ve actually been there.
-        </p>
 
-        <Suspense fallback={null}>
-          <PlacesExplorer places={places} />
-        </Suspense>
-      </section>
+      <PageHeader
+        title="Places in Dehradun"
+        description="Clock Tower, Robber's Cave, cafes and weekend spots — reviewed by people who've been there."
+      />
+
+      <Suspense fallback={null}>
+        <PlacesExplorer places={places} />
+      </Suspense>
     </div>
   );
 }

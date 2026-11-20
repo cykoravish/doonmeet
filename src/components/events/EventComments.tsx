@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
-import { Send, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Send, Loader2, MessageCircle } from "lucide-react";
 import UserLink from "@/components/shared/UserLink";
+import Avatar from "@/components/ui/Avatar";
+import { buttonClasses } from "@/components/ui/Button";
 
 interface Comment {
   _id: string;
@@ -15,19 +17,22 @@ interface Comment {
 interface EventCommentsProps {
   eventId: string;
   commentCount: number;
+  isLoggedIn?: boolean;
 }
 
-export default function EventComments({ eventId, commentCount }: EventCommentsProps) {
+export default function EventComments({ eventId, commentCount, isLoggedIn = true }: EventCommentsProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [count, setCount] = useState(commentCount);
 
   useEffect(() => {
     fetch(`/api/events/${eventId}/comments`)
       .then((r) => r.json())
       .then((d) => setComments(d.comments ?? []))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [eventId]);
 
@@ -51,6 +56,7 @@ export default function EventComments({ eventId, commentCount }: EventCommentsPr
       }
 
       setComments((prev) => [...prev, data.comment]);
+      setCount((c) => c + 1);
       setContent("");
     } catch {
       setError("Network error. Please try again.");
@@ -60,102 +66,97 @@ export default function EventComments({ eventId, commentCount }: EventCommentsPr
   }
 
   return (
-    <div>
-      <h2 className="mb-5 text-xl font-bold">
-        Comments{" "}
-        <span style={{ color: "rgb(var(--muted))" }}>({commentCount})</span>
+    <section aria-labelledby="event-comments-title">
+      <h2 id="event-comments-title" className="mb-3 text-xl font-extrabold">
+        Questions & comments <span className="text-muted">({count})</span>
       </h2>
 
-      {/* Input */}
-      <form onSubmit={handleSubmit} className="mb-6">
-        <div
-          className="flex gap-3 rounded-2xl border p-3"
-          style={{
-            borderColor: "rgb(var(--border))",
-            backgroundColor: "rgb(var(--surface))",
-          }}
-        >
-          <textarea
+      {isLoggedIn ? (
+        <form onSubmit={handleSubmit} className="mb-4 flex gap-2">
+          <label htmlFor="event-comment-input" className="sr-only">
+            Ask a question or leave a comment
+          </label>
+          <input
+            id="event-comment-input"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Share your thoughts about this event..."
-            rows={2}
+            placeholder="Ask the host something…"
             maxLength={500}
-            className="flex-1 resize-none bg-transparent text-sm outline-none"
-            style={{ color: "rgb(var(--text))" }}
+            className="h-12 min-w-0 flex-1 rounded-[14px] border-[1.5px] border-transparent bg-surface-2 px-4 text-base text-text outline-none placeholder:text-muted focus:border-primary focus:bg-surface"
           />
           <button
             type="submit"
             disabled={submitting || !content.trim()}
-            className="self-end flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-opacity disabled:opacity-40"
-            style={{ backgroundColor: "rgb(var(--primary))" }}
+            aria-label="Post comment"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary text-on-primary transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             {submitting ? (
-              <Loader2 size={14} className="animate-spin text-white" />
+              <Loader2 size={18} className="animate-spin" aria-hidden="true" />
             ) : (
-              <Send size={14} className="text-white" />
+              <Send size={18} aria-hidden="true" />
             )}
           </button>
-        </div>
-        {error && (
-          <p className="mt-1.5 text-xs" style={{ color: "rgb(220 38 38)" }}>
-            {error}
-          </p>
-        )}
-      </form>
-
-      {/* List */}
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <Loader2 size={20} className="animate-spin" style={{ color: "rgb(var(--muted))" }} />
-        </div>
-      ) : comments.length === 0 ? (
-        <p className="py-8 text-center text-sm" style={{ color: "rgb(var(--muted))" }}>
-          No comments yet. Be the first!
-        </p>
+        </form>
       ) : (
-        <div className="space-y-4">
-          {comments.map((comment) => (
-            <div key={comment._id} className="flex gap-3">
-              <UserLink userId={comment.author._id} className="shrink-0">
-                {comment.author.avatar ? (
-                  <Image
-                    src={comment.author.avatar}
-                    alt={comment.author.name}
-                    width={36}
-                    height={36}
-                    className="rounded-full object-cover"
-                  />
-                ) : (
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white"
-                    style={{ backgroundColor: "rgb(var(--primary))" }}
-                  >
-                    {comment.author.name[0]}
-                  </div>
-                )}
-              </UserLink>
-              <div
-                className="flex-1 rounded-2xl rounded-tl-none px-4 py-3"
-                style={{ backgroundColor: "rgb(var(--surface))" }}
-              >
-                <div className="mb-1 flex items-center gap-2">
-                  <UserLink userId={comment.author._id} className="text-xs font-semibold">
-                    {comment.author.name}
-                  </UserLink>
-                  <span className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-                    {new Date(comment.createdAt).toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                    })}
-                  </span>
-                </div>
-                <p className="text-sm leading-relaxed">{comment.content}</p>
-              </div>
+        <div className="mb-4 flex items-center gap-3 rounded-[18px] bg-primary-soft p-3.5">
+          <p className="min-w-0 flex-1 text-[15px]">Log in to ask the host a question.</p>
+          <Link href="/login" className={buttonClasses("primary", "sm", "shrink-0")}>
+            Log in
+          </Link>
+        </div>
+      )}
+
+      {error && (
+        <p role="alert" className="mb-3 text-sm text-danger">
+          {error}
+        </p>
+      )}
+
+      {loading ? (
+        <div className="flex flex-col gap-3" aria-label="Loading comments">
+          {[0, 1].map((i) => (
+            <div key={i} className="flex gap-2.5">
+              <div className="h-9 w-9 shrink-0 rounded-full bg-surface-2" />
+              <div className="h-16 flex-1 rounded-[16px] bg-surface-2" />
             </div>
           ))}
         </div>
+      ) : comments.length === 0 ? (
+        <div className="flex flex-col items-center py-8 text-center">
+          <MessageCircle size={24} className="mb-2 text-muted" aria-hidden="true" />
+          <p className="text-[15px] text-muted">No comments yet. Got a question? Ask away!</p>
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {comments.map((comment) => {
+            const name = comment.author?.name ?? "Deleted User";
+            return (
+              <li key={comment._id} className="flex gap-2.5">
+                <UserLink userId={comment.author?._id} className="shrink-0">
+                  <Avatar name={name} src={comment.author?.avatar} size={36} />
+                </UserLink>
+                <div className="min-w-0 flex-1 rounded-[16px] rounded-tl-[6px] bg-surface-2 px-3.5 py-2.5">
+                  <p className="text-sm">
+                    <UserLink userId={comment.author?._id} className="font-bold">
+                      {name}
+                    </UserLink>{" "}
+                    <span className="text-muted">
+                      ·{" "}
+                      {new Date(comment.createdAt).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </span>
+                  </p>
+                  <p className="mt-0.5 text-[15px] leading-relaxed break-words whitespace-pre-line">
+                    {comment.content}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
-    </div>
+    </section>
   );
 }

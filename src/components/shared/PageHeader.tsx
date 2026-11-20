@@ -1,38 +1,20 @@
 interface PageHeaderProps {
-  eyebrow?: string;
   title: string;
   description?: string;
+  /** Usually a primary "Create" link — sits beside the title, stays visible on phones. */
   action?: React.ReactNode;
 }
 
-export default function PageHeader({
-  eyebrow,
-  title,
-  description,
-  action,
-}: PageHeaderProps) {
+// Standard top-of-page header for list pages (Events, Communities, Places…).
+// The page's single <h1>.
+export default function PageHeader({ title, description, action }: PageHeaderProps) {
   return (
-    <div className="flex items-end justify-between gap-4 mb-10">
-      <div>
-        {eyebrow && (
-          <p
-            className="mb-2 text-sm font-semibold uppercase tracking-widest"
-            style={{ color: "rgb(var(--primary))" }}
-          >
-            {eyebrow}
-          </p>
-        )}
-        <h1 className="text-3xl font-black md:text-4xl">{title}</h1>
-        {description && (
-          <p
-            className="mt-2 max-w-xl text-sm leading-relaxed"
-            style={{ color: "rgb(var(--muted))" }}
-          >
-            {description}
-          </p>
-        )}
+    <header className="mb-4 flex items-start justify-between gap-3 sm:mb-6">
+      <div className="min-w-0">
+        <h1 className="text-[28px] leading-tight font-extrabold sm:text-4xl">{title}</h1>
+        {description && <p className="mt-1 max-w-xl text-[15px] text-muted sm:text-base">{description}</p>}
       </div>
-      {action && <div className="shrink-0">{action}</div>}
-    </div>
+      {action && <div className="shrink-0 pt-0.5">{action}</div>}
+    </header>
   );
 }

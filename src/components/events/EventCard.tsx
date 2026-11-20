@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin, Users } from "lucide-react";
+import { CalendarDays, Clock, MapPin } from "lucide-react";
+import { eventDay, eventMonth, eventShortDate, eventTime } from "@/lib/dates";
 
 interface EventCardProps {
   slug: string;
@@ -14,128 +15,56 @@ interface EventCardProps {
   tags: string[];
 }
 
-export default function EventCard({
-  slug,
-  title,
-  description,
-  banner,
-  date,
-  location,
-  creator,
-  commentCount,
-  tags,
-}: EventCardProps) {
-  const eventDate = new Date(date);
-  const day = eventDate.toLocaleDateString("en-IN", { day: "2-digit" });
-  const month = eventDate.toLocaleDateString("en-IN", { month: "short" });
+export default function EventCard({ slug, title, banner, date, location, creator, tags }: EventCardProps) {
+  const place = location?.name || location?.address || "Dehradun";
 
   return (
     <Link
       href={`/events/${slug}`}
-      className="reveal-on-scroll group flex flex-col overflow-hidden rounded-2xl border transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
-      style={{
-        backgroundColor: "rgb(var(--surface))",
-        borderColor: "rgb(var(--border))",
-      }}
+      className="flex flex-col overflow-hidden rounded-[20px] border border-border bg-surface transition-colors hover:bg-surface-2"
     >
-      {/* Banner */}
-      <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-green-900 to-green-700 sm:h-48">
+      <div className="relative aspect-[16/9] w-full bg-primary-soft">
         {banner ? (
           <Image
             src={banner}
-            alt={title}
+            alt=""
             fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover"
           />
         ) : (
-          // Fallback pattern when no banner
-          <div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ backgroundColor: "rgb(var(--primary) / 0.15)" }}
-          >
-            <span className="text-5xl opacity-30">📍</span>
-          </div>
+          <span className="absolute inset-0 flex items-center justify-center text-primary-fg" aria-hidden="true">
+            <CalendarDays size={40} strokeWidth={1.5} />
+          </span>
         )}
 
-        {/* Date chip */}
-        <div className="absolute left-3 top-3 flex flex-col items-center rounded-xl bg-white px-2.5 py-1 shadow-md sm:px-3 sm:py-1.5">
-          <span className="text-[10px] font-bold uppercase sm:text-xs" style={{ color: "rgb(var(--primary))" }}>
-            {month}
-          </span>
-          <span className="text-base font-black leading-none sm:text-lg" style={{ color: "rgb(var(--text))" }}>
-            {day}
-          </span>
-        </div>
-
-        {/* Tags */}
-        {tags.length > 0 && (
-          <div className="absolute bottom-3 left-3 flex gap-1.5">
-            {tags.slice(0, 2).map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold text-white sm:text-xs"
-                style={{ backgroundColor: "rgb(var(--primary) / 0.85)" }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
+        {/* Date tile — readable at a glance, the thing people scan for */}
+        <span className="absolute top-3 left-3 flex h-14 w-12 flex-col items-center justify-center rounded-[12px] bg-surface text-text shadow-sm">
+          <span className="text-[11px] font-bold text-primary-fg uppercase">{eventMonth(date)}</span>
+          <span className="text-xl leading-none font-extrabold">{eventDay(date)}</span>
+        </span>
       </div>
 
-      {/* Content */}
-      <div className="flex flex-1 flex-col p-4 sm:p-5">
-        <h3 className="mb-1.5 text-[13px] font-bold leading-snug line-clamp-2 sm:text-base">{title}</h3>
-        <p
-          className="mb-4 text-[11px] leading-relaxed line-clamp-2 sm:text-xs"
-          style={{ color: "rgb(var(--muted))" }}
-        >
-          {description}
-        </p>
+      <div className="flex flex-1 flex-col p-4">
+        {tags.length > 0 && (
+          <p className="mb-1 text-xs font-bold tracking-wide text-primary-fg uppercase">{tags.slice(0, 2).join(" · ")}</p>
+        )}
+        <h2 className="line-clamp-2 text-[17px] leading-snug font-bold text-text">{title}</h2>
 
-        {/* Meta */}
-        <div className="mt-auto space-y-1.5">
-          <div className="flex items-center gap-1.5 text-[11px] sm:text-xs" style={{ color: "rgb(var(--muted))" }}>
-            <MapPin size={12} />
-            <span className="line-clamp-1">{location.name || location.address || "Dehradun"}</span>
-          </div>
+        <ul className="mt-2 flex flex-col gap-1 text-sm text-muted">
+          <li className="flex items-center gap-1.5">
+            <Clock size={15} className="shrink-0" aria-hidden="true" />
+            <time dateTime={new Date(date).toISOString()}>
+              {eventShortDate(date)} · {eventTime(date)}
+            </time>
+          </li>
+          <li className="flex items-center gap-1.5">
+            <MapPin size={15} className="shrink-0" aria-hidden="true" />
+            <span className="truncate">{place}</span>
+          </li>
+        </ul>
 
-          {/* Footer row */}
-          <div
-            className="flex items-center justify-between border-t pt-2"
-            style={{ borderColor: "rgb(var(--border))" }}
-          >
-            {/* Creator */}
-            <div className="flex items-center gap-1.5">
-              {creator.avatar ? (
-                <Image
-                  src={creator.avatar}
-                  alt={creator.name}
-                  width={20}
-                  height={20}
-                  className="rounded-full object-cover"
-                />
-              ) : (
-                <div
-                  className="flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold text-white"
-                  style={{ backgroundColor: "rgb(var(--primary))" }}
-                >
-                  {creator.name[0]}
-                </div>
-              )}
-              <span className="text-[11px] sm:text-xs" style={{ color: "rgb(var(--muted))" }}>
-                {creator.name}
-              </span>
-            </div>
-
-            {/* Comment count */}
-            <div className="flex items-center gap-1 text-[11px] sm:text-xs" style={{ color: "rgb(var(--muted))" }}>
-              <Users size={11} />
-              <span>{commentCount}</span>
-            </div>
-          </div>
-        </div>
+        {creator?.name && <p className="mt-auto pt-3 text-[13px] text-muted">Hosted by {creator.name}</p>}
       </div>
     </Link>
   );

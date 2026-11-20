@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, Loader2 } from "lucide-react";
+import { buttonClasses } from "@/components/ui/Button";
 
 interface RSVPButtonProps {
   slug: string;
@@ -11,25 +13,16 @@ interface RSVPButtonProps {
   isLoggedIn: boolean;
 }
 
-export default function RSVPButton({
-  slug,
-  isGoing: initialIsGoing,
-  isFull,
-  isLoggedIn,
-}: RSVPButtonProps) {
+export default function RSVPButton({ slug, isGoing: initialIsGoing, isFull, isLoggedIn }: RSVPButtonProps) {
   const router = useRouter();
   const [isGoing, setIsGoing] = useState(initialIsGoing);
   const [loading, setLoading] = useState(false);
 
   if (!isLoggedIn) {
     return (
-      
-       <a href="/login"
-        className="block w-full rounded-xl py-3 text-center text-sm font-semibold text-white transition-opacity hover:opacity-90"
-        style={{ backgroundColor: "rgb(var(--primary))" }}
-      >
+      <Link href="/login" className={buttonClasses("primary", "lg", "w-full")}>
         Log in to RSVP
-      </a>
+      </Link>
     );
   }
 
@@ -50,11 +43,7 @@ export default function RSVPButton({
 
   if (!isGoing && isFull) {
     return (
-      <button
-        disabled
-        className="w-full cursor-not-allowed rounded-xl border py-3 text-center text-sm font-semibold"
-        style={{ borderColor: "rgb(var(--border))", color: "rgb(var(--muted))" }}
-      >
+      <button type="button" disabled className={buttonClasses("secondary", "lg", "w-full")}>
         Event full
       </button>
     );
@@ -62,17 +51,18 @@ export default function RSVPButton({
 
   return (
     <button
+      type="button"
       onClick={handleClick}
       disabled={loading}
-      className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-opacity disabled:opacity-60"
-      style={
-        isGoing
-          ? { backgroundColor: "rgb(var(--surface))", border: "1px solid rgb(var(--primary))", color: "rgb(var(--primary))" }
-          : { backgroundColor: "rgb(var(--primary))", color: "white" }
-      }
+      aria-pressed={isGoing}
+      className={buttonClasses(isGoing ? "outline" : "primary", "lg", "w-full")}
     >
-      {loading ? <Loader2 size={15} className="animate-spin" /> : isGoing ? <Check size={15} /> : null}
-      {isGoing ? "You're going" : "RSVP — I'm going"}
+      {loading ? (
+        <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+      ) : isGoing ? (
+        <Check size={18} aria-hidden="true" />
+      ) : null}
+      {isGoing ? "You're going · tap to cancel" : "RSVP — I'm going"}
     </button>
   );
 }

@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Star, MessageSquareOff, Loader2 } from "lucide-react";
 import StarRatingInput from "./StarRatingInput";
 import UserLink from "@/components/shared/UserLink";
+import Avatar from "@/components/ui/Avatar";
+import { buttonClasses } from "@/components/ui/Button";
 
 interface Review {
   _id: string;
@@ -36,41 +40,46 @@ function timeAgo(dateStr: string) {
   return `${Math.floor(months / 12)} yr ago`;
 }
 
-export default function PlaceReviews({
-  slug,
-  currentUser,
-  initialRating,
-  initialReviewCount,
-}: PlaceReviewsProps) {
+function Stars({ value, size }: { value: number; size: number }) {
+  return (
+    <span className="flex gap-0.5" role="img" aria-label={`${value} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star key={n} size={size} className={`text-accent ${value >= n ? "fill-accent" : ""}`} aria-hidden="true" />
+      ))}
+    </span>
+  );
+}
+
+export default function PlaceReviews({ slug, currentUser, initialRating, initialReviewCount }: PlaceReviewsProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState(0);
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+  const router = useRouter();
 
   const loadReviews = useCallback(() => {
     fetch(`/api/places/${slug}/reviews`)
       .then((r) => r.json())
       .then((d) => {
         setReviews(d.reviews ?? []);
-        setLoading(false);
-        const mine = (d.reviews ?? []).find(
-          (r: Review) => r.user._id === currentUser?._id
-        );
+        const mine = (d.reviews ?? []).find((r: Review) => r.user?._id === currentUser?._id);
         if (mine) {
           setRating(mine.rating);
           setText(mine.text);
         }
       })
-      .catch(() => setLoading(false));
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [slug, currentUser?._id]);
 
   useEffect(() => {
     loadReviews();
   }, [loadReviews]);
 
-  const myExistingReview = reviews.find((r) => r.user._id === currentUser?._id);
+  const myExistingReview = reviews.find((r) => r.user?._id === currentUser?._id);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -79,6 +88,7 @@ export default function PlaceReviews({
       return;
     }
     setError("");
+    setSaved(false);
     setSubmitting(true);
     try {
       const res = await fetch(`/api/places/${slug}/reviews`, {
@@ -91,7 +101,10 @@ export default function PlaceReviews({
         setError(data.errors?.[0]?.message || data.message || "Something went wrong.");
         return;
       }
+      setSaved(true);
       loadReviews();
+      // Re-render the server parts so the page's average rating updates too.
+      router.refresh();
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -100,22 +113,13 @@ export default function PlaceReviews({
   }
 
   return (
-    <div>
+    <div className="flex flex-col gap-5">
       {/* Aggregate summary */}
-      <div className="flex items-center gap-4">
-        <p className="text-4xl font-black">{initialRating ?? "—"}</p>
+      <div className="flex items-center gap-4 rounded-[20px] bg-surface-2 p-4">
+        <p className="font-display text-4xl font-extrabold">{initialRating ?? "—"}</p>
         <div>
-          <div className="flex gap-0.5">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <Star
-                key={n}
-                size={16}
-                fill={initialRating && initialRating >= n ? "currentColor" : "none"}
-                style={{ color: "rgb(var(--accent))" }}
-              />
-            ))}
-          </div>
-          <p className="mt-0.5 text-sm" style={{ color: "rgb(var(--muted))" }}>
+          <Stars value={initialRating ?? 0} size={18} />
+          <p className="mt-0.5 text-sm text-muted">
             {initialReviewCount === 0
               ? "No reviews yet — be the first!"
               : `Based on ${initialReviewCount} ${initialReviewCount === 1 ? "review" : "reviews"}`}
@@ -124,134 +128,96 @@ export default function PlaceReviews({
       </div>
 
       {/* Write a review — gated */}
-      <div className="mt-6">
-        {!currentUser ? (
-          <div
-            className="rounded-2xl p-5"
-            style={{ backgroundColor: "rgb(var(--primary) / 0.05)" }}
-          >
-            <p className="font-semibold">Been here? Share your experience.</p>
-            <p className="mt-1 text-sm" style={{ color: "rgb(var(--muted))" }}>
-              Log in or create a free account to leave a review.
-            </p>
-            <div className="mt-3 flex gap-2">
-              
-              <a href="/login"
-                className="rounded-lg border px-4 py-2 text-sm font-semibold"
-                style={{ borderColor: "rgb(var(--border))" }}
-              >
-                Log in
-              </a>
-              
-               <a href="/signup"
-                className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-                style={{ backgroundColor: "rgb(var(--primary))" }}
-              >
-                Sign up
-              </a>
-            </div>
+      {!currentUser ? (
+        <div className="rounded-[20px] bg-primary-soft p-4">
+          <p className="font-semibold">Been here? Share your experience.</p>
+          <p className="mt-0.5 text-[15px] text-muted">Log in or create a free account to leave a review.</p>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:flex">
+            <Link href="/login" className={buttonClasses("outline", "md")}>
+              Log in
+            </Link>
+            <Link href="/signup" className={buttonClasses("primary", "md")}>
+              Sign up
+            </Link>
           </div>
-        ) : (
-          <form
-            onSubmit={handleSubmit}
-            className="rounded-2xl border p-5"
-            style={{ borderColor: "rgb(var(--border))" }}
-          >
-            <p className="font-semibold">
-              {myExistingReview ? "Update your review" : "Write a review"}
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="rounded-[20px] border border-border bg-surface p-4">
+          <p className="font-bold">{myExistingReview ? "Update your review" : "Write a review"}</p>
+          <div className="mt-2">
+            <StarRatingInput value={rating} onChange={setRating} />
+          </div>
+          <label htmlFor="place-review-text" className="sr-only">
+            Your review
+          </label>
+          <textarea
+            id="place-review-text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="What did you like? Any tips for others?"
+            rows={4}
+            maxLength={1000}
+            className="mt-2 w-full resize-none rounded-[14px] border-[1.5px] border-transparent bg-surface-2 px-4 py-3 text-base leading-relaxed text-text outline-none placeholder:text-muted focus:border-primary focus:bg-surface"
+          />
+          {error && (
+            <p role="alert" className="mt-2 text-sm text-danger">
+              {error}
             </p>
-            <div className="mt-3">
-              <StarRatingInput value={rating} onChange={setRating} />
-            </div>
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="What did you like about this place?"
-              rows={3}
-              maxLength={1000}
-              className="mt-3 w-full rounded-xl border px-4 py-3 text-sm outline-none"
-              style={{
-                backgroundColor: "rgb(var(--background))",
-                borderColor: "rgb(var(--border))",
-                color: "rgb(var(--text))",
-              }}
-            />
-            {error && (
-              <p className="mt-2 text-xs" style={{ color: "rgb(220 38 38)" }}>
-                {error}
-              </p>
-            )}
-            <button
-              type="submit"
-              disabled={submitting}
-              className="mt-3 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity disabled:opacity-60"
-              style={{ backgroundColor: "rgb(var(--primary))" }}
-            >
-              {submitting && <Loader2 size={14} className="animate-spin" />}
-              {myExistingReview ? "Update review" : "Post review"}
-            </button>
-          </form>
-        )}
-      </div>
+          )}
+          {saved && !error && (
+            <p role="status" className="mt-2 text-sm font-semibold text-primary-fg">
+              Thanks! Your review is saved.
+            </p>
+          )}
+          <button type="submit" disabled={submitting} className={buttonClasses("primary", "md", "mt-3 w-full sm:w-auto")}>
+            {submitting && <Loader2 size={18} className="animate-spin" aria-hidden="true" />}
+            {myExistingReview ? "Update review" : "Post review"}
+          </button>
+        </form>
+      )}
 
       {/* Reviews list */}
-      <div className="mt-8 space-y-4">
-        {loading ? (
-          <Loader2 size={20} className="animate-spin" style={{ color: "rgb(var(--muted))" }} />
-        ) : reviews.length === 0 ? (
-          <div
-            className="flex flex-col items-center rounded-2xl border py-12 text-center"
-            style={{ borderColor: "rgb(var(--border))" }}
-          >
-            <MessageSquareOff size={26} style={{ color: "rgb(var(--muted))" }} />
-            <p className="mt-2 text-sm" style={{ color: "rgb(var(--muted))" }}>
-              No reviews yet. Yours could be the first!
-            </p>
-          </div>
-        ) : (
-          reviews.map((r) => (
-            <div
-              key={r._id}
-              className="rounded-2xl border p-5"
-              style={{ borderColor: "rgb(var(--border))" }}
-            >
-              <div className="flex items-start gap-3">
-                <UserLink userId={r.user._id} className="shrink-0">
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
-                    style={{ backgroundColor: "rgb(var(--primary))" }}
-                  >
-                    {r.user.name[0]?.toUpperCase()}
-                  </div>
-                </UserLink>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <UserLink userId={r.user._id} className="text-sm font-semibold">
-                      {r.user.name}
-                    </UserLink>
-                    <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-                      {timeAgo(r.createdAt)}
+      {loading ? (
+        <div className="flex flex-col gap-3" aria-label="Loading reviews">
+          {[0, 1].map((i) => (
+            <div key={i} className="h-24 rounded-[20px] bg-surface-2" />
+          ))}
+        </div>
+      ) : reviews.length === 0 ? (
+        <div className="flex flex-col items-center rounded-[20px] border border-dashed border-border py-10 text-center">
+          <MessageSquareOff size={26} className="text-muted" aria-hidden="true" />
+          <p className="mt-2 text-[15px] text-muted">No reviews yet. Yours could be the first!</p>
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {reviews.map((r) => {
+            const name = r.user?.name ?? "Deleted User";
+            return (
+              <li key={r._id} className="rounded-[20px] border border-border bg-surface p-4">
+                <div className="flex items-start gap-3">
+                  <UserLink userId={r.user?._id} className="shrink-0">
+                    <Avatar name={name} src={r.user?.avatar} size={40} />
+                  </UserLink>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <UserLink userId={r.user?._id} className="truncate font-bold">
+                        {name}
+                      </UserLink>
+                      <p className="shrink-0 text-[13px] text-muted">{timeAgo(r.createdAt)}</p>
+                    </div>
+                    <div className="mt-0.5">
+                      <Stars value={r.rating} size={14} />
+                    </div>
+                    <p className="mt-2 text-[15px] leading-relaxed break-words whitespace-pre-line text-text">
+                      {r.text}
                     </p>
                   </div>
-                  <div className="mt-0.5 flex gap-0.5">
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <Star
-                        key={n}
-                        size={12}
-                        fill={r.rating >= n ? "currentColor" : "none"}
-                        style={{ color: "rgb(var(--accent))" }}
-                      />
-                    ))}
-                  </div>
-                  <p className="mt-2 text-sm" style={{ color: "rgb(var(--text))" }}>
-                    {r.text}
-                  </p>
                 </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

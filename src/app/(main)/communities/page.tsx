@@ -1,7 +1,10 @@
-import Link from "next/link";
+import { Users } from "lucide-react";
 import CommunityCard from "@/components/communities/CommunityCard";
 import EmptyState from "@/components/shared/EmptyState";
+import PageHeader from "@/components/shared/PageHeader";
+import FilterChips from "@/components/shared/FilterChips";
 import { getAllCommunities } from "@/lib/communities";
+import { CATEGORY_FILTERS } from "@/lib/communityCategories";
 import { pageMetadata } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import { breadcrumbJsonLd } from "@/lib/seo";
@@ -14,16 +17,7 @@ export const metadata = pageMetadata({
   keywords: ["Dehradun communities", "Dehradun groups", "meet people in Dehradun"],
 });
 
-const CATEGORIES = [
-  { label: "All", value: "" },
-  { label: "Tech", value: "tech" },
-  { label: "Nature", value: "nature" },
-  { label: "Food", value: "food" },
-  { label: "Photography", value: "photography" },
-  { label: "Sports", value: "sports" },
-  { label: "Arts", value: "arts" },
-  { label: "General", value: "general" },
-];
+const CATEGORIES = [...CATEGORY_FILTERS, { label: "General", value: "general" }];
 
 interface CommunitiesPageProps {
   searchParams: Promise<{ category?: string }>;
@@ -35,47 +29,34 @@ export default async function CommunitiesPage({ searchParams }: CommunitiesPageP
   const activeCategory = category ?? "";
 
   return (
-    <div className="min-h-screen">
+    <div className="mx-auto max-w-6xl px-4 pt-5 pb-8 sm:px-6 sm:pt-8">
       <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Communities", path: "/communities" }])} />
-      <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4">
-        <div className="mb-3 sm:mb-4">
-          <h1 className="text-lg font-black sm:text-xl lg:text-2xl">Communities in Dehradun</h1>
-          <p className="mt-0.5 text-xs leading-snug text-muted sm:text-sm">
-            Find people who love the same things you do — tech, trails, food and more.
-          </p>
-        </div>
 
-        <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1 sm:mb-6">
-          {CATEGORIES.map((cat) => {
-            const isActive = activeCategory === cat.value;
-            return (
-              <Link
-                key={cat.value}
-                href={cat.value ? `/communities?category=${cat.value}` : "/communities"}
-                className="btn-springy shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors sm:text-sm"
-                style={
-                  isActive
-                    ? { backgroundColor: "rgb(var(--primary))", color: "white" }
-                    : { backgroundColor: "rgb(var(--primary) / 0.08)", color: "rgb(var(--primary))" }
-                }
-              >
-                {cat.label}
-              </Link>
-            );
-          })}
-        </div>
+      <PageHeader
+        title="Communities"
+        description="Find people in Dehradun who love the same things you do."
+      />
 
-        {communities.length === 0 ? (
-          <EmptyState
-            icon="👥"
-            title="No communities found"
-            description="No communities in this category yet."
-          />
-        ) : (
-          <div className="stagger-grid grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
-            {communities.map((community) => (
+      <FilterChips
+        label="Filter communities by interest"
+        items={CATEGORIES.map((cat) => ({
+          label: cat.label,
+          href: cat.value ? `/communities?category=${cat.value}` : "/communities",
+          active: activeCategory === cat.value,
+        }))}
+      />
+
+      {communities.length === 0 ? (
+        <EmptyState
+          icon={<Users size={28} />}
+          title="No communities here yet"
+          description="Try another interest — or check back soon."
+        />
+      ) : (
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {communities.map((community) => (
+            <li key={String(community._id)}>
               <CommunityCard
-                key={String(community._id)}
                 name={community.name as string}
                 slug={community.slug as string}
                 description={community.description as string}
@@ -84,10 +65,10 @@ export default async function CommunitiesPage({ searchParams }: CommunitiesPageP
                 category={community.category as string}
                 memberCount={community.memberCount as number}
               />
-            ))}
-          </div>
-        )}
-      </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

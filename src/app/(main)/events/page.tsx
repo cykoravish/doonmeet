@@ -1,8 +1,12 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { CalendarPlus, Plus } from "lucide-react";
 import EmptyState from "@/components/shared/EmptyState";
+import PageHeader from "@/components/shared/PageHeader";
+import FilterChips from "@/components/shared/FilterChips";
 import EventCard from "@/components/events/EventCard";
+import { buttonClasses } from "@/components/ui/Button";
 import { getEvents } from "@/lib/events";
+import { CATEGORY_FILTERS } from "@/lib/communityCategories";
 import { pageMetadata } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import { breadcrumbJsonLd } from "@/lib/seo";
@@ -15,16 +19,6 @@ export const metadata = pageMetadata({
   keywords: ["Dehradun events", "local meetups", "Doon Valley events", "things to do in Dehradun"],
 });
 
-const TAGS = [
-  { label: "All", value: "" },
-  { label: "Tech", value: "tech" },
-  { label: "Nature", value: "nature" },
-  { label: "Food", value: "food" },
-  { label: "Photography", value: "photography" },
-  { label: "Sports", value: "sports" },
-  { label: "Arts", value: "arts" },
-];
-
 interface EventsPageProps {
   searchParams: Promise<{ tag?: string; search?: string }>;
 }
@@ -34,70 +28,49 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
 
   const events = await getEvents({ tag, search });
   const activeTag = tag ?? "";
+  const activeLabel = CATEGORY_FILTERS.find((t) => t.value === activeTag)?.label;
 
   return (
-    <div className="min-h-screen">
+    <div className="mx-auto max-w-6xl px-4 pt-5 pb-8 sm:px-6 sm:pt-8">
       <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Events", path: "/events" }])} />
-      <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4">
-        <div className="mb-4 flex items-center justify-between gap-3 sm:mb-6">
-          <div className="min-w-0">
-            <h1 className="text-lg font-black sm:text-xl lg:text-2xl">Events in Dehradun</h1>
-            <p className="mt-0.5 text-xs leading-snug text-muted sm:text-sm">
-              Meetups, walks, workshops and more — RSVP in a couple of taps.
-            </p>
-          </div>
-          <Link
-            href="/events/create"
-            className="btn-springy flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold text-white sm:px-5 sm:py-2.5 sm:text-sm"
-            style={{ backgroundColor: "rgb(var(--primary))" }}
-          >
-            <Plus size={15} />
-            <span className="hidden sm:inline">Create Event</span>
-            <span className="sm:hidden">Create</span>
+
+      <PageHeader
+        title="Events in Dehradun"
+        description="Treks, meetups, workshops — RSVP in a couple of taps."
+        action={
+          <Link href="/events/create" className={buttonClasses("primary", "sm")}>
+            <Plus size={18} aria-hidden="true" />
+            Host
           </Link>
-        </div>
+        }
+      />
 
-        <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1 sm:mb-6">
-          {TAGS.map((t) => {
-            const isActive = activeTag === t.value;
-            return (
-              <Link
-                key={t.value}
-                href={t.value ? `/events?tag=${t.value}` : "/events"}
-                className="btn-springy shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors sm:text-sm"
-                style={{
-                  backgroundColor: isActive ? "rgb(var(--primary))" : "rgb(var(--surface))",
-                  borderColor: isActive ? "rgb(var(--primary))" : "rgb(var(--border))",
-                  color: isActive ? "white" : "rgb(var(--muted))",
-                }}
-              >
-                {t.label}
-              </Link>
-            );
-          })}
-        </div>
+      <FilterChips
+        label="Filter events by interest"
+        items={CATEGORY_FILTERS.map((t) => ({
+          label: t.label,
+          href: t.value ? `/events?tag=${t.value}` : "/events",
+          active: activeTag === t.value,
+        }))}
+      />
 
-        {events.length === 0 ? (
-          <EmptyState
-            icon="🎉"
-            title="No events yet"
-            description="Be the first to create an event in Dehradun!"
-            action={
-              <Link
-                href="/events/create"
-                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
-                style={{ backgroundColor: "rgb(var(--primary))" }}
-              >
-                <Plus size={15} />
-                Create first event
-              </Link>
-            }
-          />
-        ) : (
-          <div className="stagger-grid grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
-            {events.map((event) => (
+      {events.length === 0 ? (
+        <EmptyState
+          icon={<CalendarPlus size={28} />}
+          title={activeTag ? `No ${activeLabel?.toLowerCase()} events yet` : "No events yet"}
+          description="Host the first one — a trek, a chai meetup, a workshop. Doon will show up."
+          action={
+            <Link href="/events/create" className={buttonClasses("primary", "md")}>
+              <Plus size={18} aria-hidden="true" />
+              Host an event
+            </Link>
+          }
+        />
+      ) : (
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+          {events.map((event) => (
+            <li key={String(event._id)}>
               <EventCard
-                key={String(event._id)}
                 slug={event.slug as string}
                 title={event.title as string}
                 description={event.description as string}
@@ -108,10 +81,10 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
                 commentCount={event.commentCount as number}
                 tags={event.tags as string[]}
               />
-            ))}
-          </div>
-        )}
-      </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

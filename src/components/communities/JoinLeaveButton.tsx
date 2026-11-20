@@ -1,35 +1,29 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Plus } from "lucide-react";
+import { buttonClasses } from "@/components/ui/Button";
 
 interface JoinLeaveButtonProps {
   slug: string;
   isMember: boolean;
   isLoggedIn: boolean;
-  color: string;
+  /** @deprecated colours now come from theme tokens; kept so old call sites compile. */
+  color?: string;
 }
 
-export default function JoinLeaveButton({
-  slug,
-  isMember: initialIsMember,
-  isLoggedIn,
-  color,
-}: JoinLeaveButtonProps) {
+export default function JoinLeaveButton({ slug, isMember: initialIsMember, isLoggedIn }: JoinLeaveButtonProps) {
   const router = useRouter();
   const [isMember, setIsMember] = useState(initialIsMember);
   const [loading, setLoading] = useState(false);
 
   if (!isLoggedIn) {
     return (
-      
-       <a href="/login"
-        className="block w-full rounded-xl py-2.5 text-center text-sm font-semibold text-white transition-opacity hover:opacity-90"
-        style={{ backgroundColor: color }}
-      >
+      <Link href="/login" className={buttonClasses("primary", "md", "w-full")}>
         Log in to join
-      </a>
+      </Link>
     );
   }
 
@@ -50,20 +44,19 @@ export default function JoinLeaveButton({
 
   return (
     <button
+      type="button"
       onClick={handleClick}
       disabled={loading}
-      className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-opacity disabled:opacity-60"
-      style={
-        isMember
-          ? { backgroundColor: "rgb(var(--surface))", border: `1px solid ${color}`, color }
-          : { backgroundColor: color, color: "white" }
-      }
+      aria-pressed={isMember}
+      className={buttonClasses(isMember ? "outline" : "primary", "md", "w-full")}
     >
       {loading ? (
-        <Loader2 size={15} className="animate-spin" />
+        <Loader2 size={18} className="animate-spin" aria-hidden="true" />
       ) : isMember ? (
-        <Check size={15} />
-      ) : null}
+        <Check size={18} aria-hidden="true" />
+      ) : (
+        <Plus size={18} aria-hidden="true" />
+      )}
       {isMember ? "Joined" : "Join community"}
     </button>
   );

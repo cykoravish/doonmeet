@@ -1,25 +1,7 @@
 import Link from "next/link";
-import {
-  Camera,
-  Cpu,
-  Palette,
-  Trees,
-  Trophy,
-  Users,
-  UtensilsCrossed,
-  type LucideIcon,
-} from "lucide-react";
 import type { HomeCommunity } from "@/lib/home";
+import CategoryIcon from "@/components/shared/CategoryIcon";
 import SectionHeader from "./SectionHeader";
-
-const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  tech: Cpu,
-  nature: Trees,
-  food: UtensilsCrossed,
-  photography: Camera,
-  sports: Trophy,
-  arts: Palette,
-};
 
 interface CommunitiesStripProps {
   communities: HomeCommunity[];
@@ -34,7 +16,6 @@ export default function CommunitiesStrip({ communities }: CommunitiesStripProps)
 
       <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
         {communities.map((community) => {
-          const Icon = CATEGORY_ICONS[community.category] ?? Users;
           return (
             <li key={community._id}>
               <Link
@@ -42,7 +23,7 @@ export default function CommunitiesStrip({ communities }: CommunitiesStripProps)
                 className="flex h-full flex-col gap-2 rounded-[20px] border border-border bg-surface p-3.5 transition-colors hover:bg-surface-2"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-primary-soft text-primary-fg">
-                  <Icon size={20} aria-hidden="true" />
+                  <CategoryIcon category={community.category} size={20} />
                 </span>
                 <span className="line-clamp-2 text-[15px] leading-snug font-semibold text-text">
                   {community.name}

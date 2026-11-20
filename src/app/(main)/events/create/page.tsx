@@ -1,39 +1,20 @@
-import { CalendarPlus } from "lucide-react";
 import CreateEventForm from "@/components/events/CreateEventForm";
+import BackLink from "@/components/shared/BackLink";
 import { noIndexMetadata } from "@/lib/seo";
 
-export const metadata = noIndexMetadata("Create Event", "Create and publish a local event in Dehradun.");
+export const metadata = noIndexMetadata("Host an event", "Create and publish a local event in Dehradun.");
 
 export default function CreateEventPage() {
   return (
-    <div className="mx-auto max-w-2xl px-6 py-12">
-
-      {/* Header */}
-      <div className="mb-8 flex items-center gap-3">
-        <div
-          className="flex h-11 w-11 items-center justify-center rounded-xl"
-          style={{ backgroundColor: "rgb(var(--primary) / 0.1)" }}
-        >
-          <CalendarPlus size={22} style={{ color: "rgb(var(--primary))" }} />
-        </div>
-        <div>
-          <h1 className="text-2xl font-black">Create an Event</h1>
-          <p className="text-sm" style={{ color: "rgb(var(--muted))" }}>
-            Publish a local event for Dehradun to discover
-          </p>
-        </div>
-      </div>
-
-      {/* Form */}
-      <div
-        className="rounded-2xl border p-6"
-        style={{
-          borderColor: "rgb(var(--border))",
-          backgroundColor: "rgb(var(--surface))",
-        }}
-      >
-        <CreateEventForm />
-      </div>
+    <div className="mx-auto max-w-2xl px-4 pt-3 pb-10 sm:px-6 sm:pt-6">
+      <BackLink href="/events" label="All events" />
+      <header className="mb-5">
+        <h1 className="text-[28px] leading-tight font-extrabold sm:text-4xl">Host an event</h1>
+        <p className="mt-1 text-[15px] text-muted">
+          A trek, a chai meetup, a workshop — publish it and Dehradun can RSVP.
+        </p>
+      </header>
+      <CreateEventForm />
     </div>
   );
 }
