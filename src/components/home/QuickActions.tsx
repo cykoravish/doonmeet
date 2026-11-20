@@ -1,89 +1,41 @@
 import Link from "next/link";
-import { Newspaper, MessageCircle, CalendarDays, Users } from "lucide-react";
+import { CalendarDays, MapPin, PenLine, Users, type LucideIcon } from "lucide-react";
 
-const actions = [
-  {
-    title: "Browse Posts",
-    description: "See what people are sharing right now — jobs, events, questions and more.",
-    icon: Newspaper,
-    href: "/posts",
-    accent: "rgb(var(--primary))",
-  },
-  {
-    title: "Meet People",
-    description: "Chat with locals and start meaningful conversations.",
-    icon: MessageCircle,
-    href: "/chat",
-    accent: "rgb(var(--accent))",
-  },
-  {
-    title: "Discover Events",
-    description: "Find local meetups, gatherings and activities near you.",
-    icon: CalendarDays,
-    href: "/events",
-    accent: "rgb(var(--primary-light))",
-  },
-  {
-    title: "Join Communities",
-    description: "Become part of local groups built around your interests.",
-    icon: Users,
-    href: "/communities",
-    accent: "rgb(var(--primary))",
-  },
+interface Action {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+}
+
+// Shortcuts for logged-in users — one tap to the most common things.
+const ACTIONS: Action[] = [
+  { label: "Post", href: "/posts?compose=1", icon: PenLine },
+  { label: "Events", href: "/events", icon: CalendarDays },
+  { label: "People", href: "/chat?members=1", icon: Users },
+  { label: "Places", href: "/places", icon: MapPin },
 ];
 
 export default function QuickActions() {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-20">
-
-      {/* Section header */}
-      <div className="mb-12">
-        <p
-          className="mb-2 text-sm font-semibold uppercase tracking-widest"
-          style={{ color: "rgb(var(--primary))" }}
-        >
-          Explore
-        </p>
-        <h2 className="text-3xl font-black md:text-4xl">
-          What brings you here?
-        </h2>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {actions.map((action) => {
+    <nav aria-label="Quick actions">
+      <ul className="grid grid-cols-4 gap-2">
+        {ACTIONS.map((action) => {
           const Icon = action.icon;
           return (
-            <Link
-              key={action.title}
-              href={action.href}
-              className="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
-              style={{
-                borderColor: "rgb(var(--border))",
-                backgroundColor: "rgb(var(--surface))",
-              }}
-            >
-              {/* Accent top bar */}
-              <div
-                className="absolute left-0 right-0 top-0 h-0.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                style={{ backgroundColor: action.accent }}
-              />
-
-              {/* Icon */}
-              <div
-                className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl"
-                style={{ backgroundColor: `${action.accent}18` }}
+            <li key={action.label}>
+              <Link
+                href={action.href}
+                className="flex flex-col items-center gap-1.5 rounded-[18px] border border-border bg-surface px-1 py-3 text-[13px] font-semibold text-text transition-colors hover:bg-surface-2"
               >
-                <Icon size={20} style={{ color: action.accent }} />
-              </div>
-
-              <h3 className="mb-2 font-bold">{action.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ color: "rgb(var(--muted))" }}>
-                {action.description}
-              </p>
-            </Link>
+                <span className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-primary-soft text-primary-fg">
+                  <Icon size={20} aria-hidden="true" />
+                </span>
+                {action.label}
+              </Link>
+            </li>
           );
         })}
-      </div>
-    </section>
+      </ul>
+    </nav>
   );
 }

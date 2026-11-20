@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import { connectDB } from "@/lib/db";
@@ -5,7 +6,7 @@ import { User } from "@/models/User";
 
 const ACCESS_TOKEN_SECRET = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET);
 
-export async function getSessionUser() {
+async function loadSessionUser() {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("access_token")?.value;
@@ -34,3 +35,7 @@ export async function getSessionUser() {
     return null;
   }
 }
+
+// Deduped per request: the layout (navbar) and the page both ask for the
+// session user, but the cookie check + DB lookup only runs once.
+export const getSessionUser = cache(loadSessionUser);

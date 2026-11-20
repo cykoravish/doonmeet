@@ -1,142 +1,63 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Star, ArrowRight } from "lucide-react";
+import { Star } from "lucide-react";
+import type { PlaceWithRating } from "@/lib/places";
+import SectionHeader from "./SectionHeader";
 
-const places = [
-  {
-    name: "Clock Tower",
-    slug: "clock-tower",
-    description: "The iconic landmark in the heart of Dehradun.",
-    image: "/images/hero-clock-tower.webp",
-    rating: "4.8",
-    reviews: "124",
-    tag: "Landmark",
-  },
-  {
-    name: "Rajpur Road",
-    slug: "rajpur-road",
-    description: "Popular cafes, restaurants and hangout spots.",
-    image: "/images/places/rajpur-road.webp",
-    rating: "4.7",
-    reviews: "89",
-    tag: "Food & Cafes",
-  },
-  {
-    name: "FRI",
-    slug: "fri",
-    description: "A historic campus loved by students and photographers.",
-    image: "/images/places/fri.webp",
-    rating: "4.9",
-    reviews: "156",
-    tag: "Nature",
-  },
-  {
-    name: "Robber's Cave",
-    slug: "robbers-cave",
-    description: "One of Dehradun's most visited natural attractions.",
-    image: "/images/places/robbers-cave.webp",
-    rating: "4.8",
-    reviews: "201",
-    tag: "Adventure",
-  },
-];
+interface PopularPlacesProps {
+  places: PlaceWithRating[];
+}
 
-export default function PopularPlaces() {
+// Real places + real ratings from the database (no hardcoded numbers).
+// Mobile: a horizontal row where the next card peeks in, so it's obvious
+// you can swipe. Desktop: a plain grid.
+export default function PopularPlaces({ places }: PopularPlacesProps) {
+  if (places.length === 0) return null;
+
   return (
-    <section className="py-20" style={{ backgroundColor: "rgb(var(--surface))" }}>
-      <div className="mx-auto max-w-7xl px-6">
-        {/* Header */}
-        <div className="mb-12 flex items-end justify-between">
-          <div>
-            <p
-              className="mb-2 text-sm font-semibold uppercase tracking-widest"
-              style={{ color: "rgb(var(--primary))" }}
-            >
-              Discover
-            </p>
-            <h2 className="text-3xl font-black md:text-4xl">Popular in Dehradun</h2>
-          </div>
-          <Link
-            href="/places"
-            className="hidden items-center gap-1.5 text-sm font-semibold hover:underline sm:flex"
-            style={{ color: "rgb(var(--primary))" }}
-          >
-            View all <ArrowRight size={14} />
-          </Link>
-        </div>
+    <section aria-labelledby="home-places">
+      <SectionHeader id="home-places" title="Popular in Dehradun" href="/places" />
 
-        {/* Grid */}
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {places.map((place) => (
+      <ul className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden">
+        {places.map((place) => (
+          <li key={place._id} className="w-[72%] shrink-0 snap-start sm:w-auto">
             <Link
-              key={place.name}
               href={`/places/${place.slug}`}
-              className="group overflow-hidden rounded-2xl border transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
-              style={{
-                backgroundColor: "rgb(var(--background))",
-                borderColor: "rgb(var(--border))",
-              }}
+              className="block overflow-hidden rounded-[20px] border border-border bg-surface transition-colors hover:bg-surface-2"
             >
-              {/* Image */}
-              <div className="relative h-52 w-full overflow-hidden">
+              <div className="relative aspect-[4/3] w-full bg-surface-2">
                 <Image
                   src={place.image}
-                  alt={place.name}
+                  alt={place.title}
                   fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  sizes="(max-width: 640px) 72vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
                 />
-                {/* Tag badge */}
-                <div className="absolute left-3 top-3">
-                  <span
-                    className="rounded-full px-2.5 py-1 text-xs font-semibold text-white"
-                    style={{ backgroundColor: "rgb(var(--primary) / 0.85)" }}
-                  >
-                    {place.tag}
-                  </span>
-                </div>
+                <span className="absolute top-2.5 left-2.5 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white">
+                  {place.category}
+                </span>
               </div>
-
-              {/* Content */}
-              <div className="p-4">
-                <h3 className="mb-1 font-bold">{place.name}</h3>
-                <p className="mb-3 text-xs leading-relaxed" style={{ color: "rgb(var(--muted))" }}>
-                  {place.description}
+              <div className="p-3.5">
+                <h3 className="truncate text-base font-bold">{place.title}</h3>
+                <p className="mt-0.5 line-clamp-2 text-sm text-muted">{place.shortDescription}</p>
+                <p className="mt-2 flex items-center gap-1 text-sm">
+                  {place.rating !== null ? (
+                    <>
+                      <Star size={15} className="fill-accent text-accent" aria-hidden="true" />
+                      <span className="font-semibold">{place.rating}</span>
+                      <span className="text-muted">
+                        ({place.reviewCount} {place.reviewCount === 1 ? "review" : "reviews"})
+                      </span>
+                    </>
+                  ) : (
+                    <span className="font-semibold text-primary-fg">Be the first to review</span>
+                  )}
                 </p>
-
-                {/* Rating row */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    <Star
-                      size={13}
-                      fill="rgb(var(--accent))"
-                      style={{ color: "rgb(var(--accent))" }}
-                    />
-                    <span className="text-xs font-semibold">{place.rating}</span>
-                    <span className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-                      ({place.reviews})
-                    </span>
-                  </div>
-                  <span className="text-xs font-semibold" style={{ color: "rgb(var(--primary))" }}>
-                    Explore →
-                  </span>
-                </div>
               </div>
             </Link>
-          ))}
-        </div>
-
-        {/* Mobile view all */}
-        <div className="mt-8 flex justify-center sm:hidden">
-          <Link
-            href="/places"
-            className="flex items-center gap-1.5 text-sm font-semibold"
-            style={{ color: "rgb(var(--primary))" }}
-          >
-            View all places <ArrowRight size={14} />
-          </Link>
-        </div>
-      </div>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
