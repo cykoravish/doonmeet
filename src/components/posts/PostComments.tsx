@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, Send } from "lucide-react";
+import Link from "next/link";
+import { Loader2, MessageCircle, Send } from "lucide-react";
 import UserLink from "@/components/shared/UserLink";
-import { Avatar, timeAgo } from "./PostCard";
+import Avatar from "@/components/ui/Avatar";
+import { buttonClasses } from "@/components/ui/Button";
+import { timeAgo } from "./PostCard";
 
 interface Author {
   _id: string;
@@ -74,73 +77,94 @@ export default function PostComments({ postId, initialCommentCount, isLoggedIn }
   }
 
   return (
-    <div className="mt-8">
-      <h2 className="mb-4 text-sm font-bold">
+    <section aria-labelledby="post-comments-title" className="mt-6">
+      <h2 id="post-comments-title" className="mb-3 text-lg font-extrabold">
         {count} {count === 1 ? "comment" : "comments"}
       </h2>
 
       {isLoggedIn ? (
-        <form onSubmit={submit} className="mb-5 flex gap-2">
+        <form onSubmit={submit} className="mb-4 flex gap-2">
+          <label htmlFor="post-comment-input" className="sr-only">
+            Write a comment
+          </label>
           <input
+            id="post-comment-input"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Write a comment..."
+            placeholder="Write a comment…"
             maxLength={500}
-            className="flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none"
-            style={{ borderColor: "rgb(var(--border))", backgroundColor: "rgb(var(--background))" }}
+            className="h-12 min-w-0 flex-1 rounded-[14px] border-[1.5px] border-transparent bg-surface-2 px-4 text-base text-text outline-none placeholder:text-muted focus:border-primary focus:bg-surface"
           />
           <button
             type="submit"
             disabled={submitting || !text.trim()}
-            className="flex items-center justify-center rounded-xl px-4 text-white disabled:opacity-60"
-            style={{ backgroundColor: "rgb(var(--primary))" }}
+            aria-label="Send comment"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary text-on-primary transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
-            <Send size={15} />
+            {submitting ? (
+              <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Send size={18} aria-hidden="true" />
+            )}
           </button>
         </form>
       ) : (
-        <p className="mb-5 text-sm" style={{ color: "rgb(var(--muted))" }}>
-          Log in to join the conversation.
-        </p>
+        <div className="mb-4 flex items-center gap-3 rounded-[18px] bg-primary-soft p-3.5">
+          <p className="min-w-0 flex-1 text-[15px] text-text">Log in to join the conversation.</p>
+          <Link href="/login" className={buttonClasses("primary", "sm", "shrink-0")}>
+            Log in
+          </Link>
+        </div>
       )}
 
       {error && (
-        <p className="mb-3 text-xs" style={{ color: "rgb(220 38 38)" }}>
+        <p role="alert" className="mb-3 text-sm text-danger">
           {error}
         </p>
       )}
 
       {loading ? (
-        <div className="flex justify-center py-6">
-          <Loader2 size={18} className="animate-spin" style={{ color: "rgb(var(--muted))" }} />
-        </div>
-      ) : comments.length === 0 ? (
-        <p className="py-6 text-center text-sm" style={{ color: "rgb(var(--muted))" }}>
-          No comments yet. Be the first to reply!
-        </p>
-      ) : (
-        <div className="space-y-4">
-          {comments.map((c) => (
-            <div key={c._id} className="flex gap-2.5">
-              <UserLink userId={c.author._id}>
-                <Avatar name={c.author.name} avatar={c.author.avatar} size={30} />
-              </UserLink>
-              <div
-                className="flex-1 rounded-xl px-3.5 py-2.5 text-sm"
-                style={{ backgroundColor: "rgb(var(--background))" }}
-              >
-                <p className="text-xs font-semibold">
-                  <UserLink userId={c.author._id}>{c.author.name}</UserLink>{" "}
-                  <span className="font-normal" style={{ color: "rgb(var(--muted))" }}>
-                    · {timeAgo(c.createdAt)}
-                  </span>
-                </p>
-                <p className="mt-0.5 whitespace-pre-line break-words">{c.content}</p>
-              </div>
+        // Static skeleton — no shimmer animation
+        <div className="flex flex-col gap-3" aria-label="Loading comments">
+          {[0, 1].map((i) => (
+            <div key={i} className="flex gap-2.5">
+              <div className="h-9 w-9 shrink-0 rounded-full bg-surface-2" />
+              <div className="h-16 flex-1 rounded-[16px] bg-surface-2" />
             </div>
           ))}
         </div>
+      ) : comments.length === 0 ? (
+        <div className="flex flex-col items-center py-8 text-center">
+          <MessageCircle size={24} className="mb-2 text-muted" aria-hidden="true" />
+          <p className="text-[15px] text-muted">No comments yet. Be the first to reply!</p>
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {comments.map((c) => {
+            const name = c.author?.name ?? "Deleted User";
+            return (
+              <li key={c._id} className="flex gap-2.5">
+                <UserLink userId={c.author?._id}>
+                  <Avatar name={name} src={c.author?.avatar} size={36} />
+                </UserLink>
+                <div className="min-w-0 flex-1 rounded-[16px] rounded-tl-[6px] bg-surface-2 px-3.5 py-2.5">
+                  <p className="text-sm">
+                    <span className="font-bold">
+                      <UserLink userId={c.author?._id}>{name}</UserLink>
+                    </span>{" "}
+                    <span className="text-muted">
+                      · <time dateTime={c.createdAt}>{timeAgo(c.createdAt)}</time>
+                    </span>
+                  </p>
+                  <p className="mt-0.5 text-[15px] leading-relaxed break-words whitespace-pre-line">
+                    {c.content}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
-    </div>
+    </section>
   );
 }

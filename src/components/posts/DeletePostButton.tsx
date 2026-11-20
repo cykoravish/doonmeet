@@ -14,6 +14,8 @@ interface DeletePostButtonProps {
   compact?: boolean;
 }
 
+// Two-tap delete: first tap arms it ("Confirm?"), second tap deletes.
+// Blurring away disarms it, so a stray tap can never delete a post.
 export default function DeletePostButton({
   postId,
   redirectTo,
@@ -51,39 +53,43 @@ export default function DeletePostButton({
     }
   }
 
+  const icon = deleting ? (
+    <Loader2 size={17} className="animate-spin" aria-hidden="true" />
+  ) : (
+    <Trash2 size={17} aria-hidden="true" />
+  );
+
   if (compact) {
     return (
       <button
+        type="button"
         onClick={handleDelete}
         onBlur={() => setConfirming(false)}
         disabled={deleting}
-        aria-label={confirming ? "Confirm delete post" : "Delete post"}
-        title={confirming ? "Confirm delete?" : "Delete post"}
-        className="flex min-h-[36px] min-w-[36px] items-center justify-center gap-1 rounded-lg px-2 text-xs font-semibold transition-colors active:opacity-70"
-        style={{
-          color: confirming ? "rgb(220 38 38)" : "rgb(var(--muted))",
-          backgroundColor: confirming ? "rgb(220 38 38 / 0.1)" : "transparent",
-        }}
+        aria-label={confirming ? "Tap again to delete post" : "Delete post"}
+        title={confirming ? "Tap again to delete" : "Delete post"}
+        className={`flex h-10 min-w-10 items-center justify-center gap-1 rounded-[12px] px-2.5 text-sm font-semibold transition-colors ${
+          confirming ? "bg-danger/10 text-danger" : "text-muted hover:bg-surface-2 hover:text-text"
+        }`}
       >
-        {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-        {confirming && <span>Confirm?</span>}
+        {icon}
+        {confirming && <span>Delete?</span>}
       </button>
     );
   }
 
   return (
     <button
+      type="button"
       onClick={handleDelete}
       onBlur={() => setConfirming(false)}
       disabled={deleting}
-      className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors disabled:opacity-60"
-      style={{
-        borderColor: confirming ? "rgb(220 38 38)" : "rgb(var(--border))",
-        color: confirming ? "rgb(220 38 38)" : "rgb(var(--muted))",
-      }}
+      className={`flex h-12 items-center justify-center gap-2 rounded-[14px] px-4 text-[15px] font-semibold transition-colors disabled:opacity-60 ${
+        confirming ? "bg-danger text-white" : "bg-danger/10 text-danger hover:bg-danger/15"
+      }`}
     >
-      {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
-      {confirming ? "Confirm delete?" : "Delete post"}
+      {icon}
+      {confirming ? "Tap again to delete" : "Delete"}
     </button>
   );
 }

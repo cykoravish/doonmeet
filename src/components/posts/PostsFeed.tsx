@@ -1,11 +1,15 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Plus, X } from "lucide-react";
-import PostCard, { Avatar } from "./PostCard";
+import { ImagePlus, Loader2, Newspaper, X } from "lucide-react";
+import PostCard from "./PostCard";
 import CreatePostForm from "./CreatePostForm";
 import EmptyState from "@/components/shared/EmptyState";
+import Avatar from "@/components/ui/Avatar";
+import IconButton from "@/components/ui/IconButton";
+import { buttonClasses } from "@/components/ui/Button";
 
 interface Author {
   _id: string;
@@ -43,6 +47,7 @@ export default function PostsFeed({
   const [composerOpen, setComposerOpen] = useState(false);
   const loadingRef = useRef(false); // guards against duplicate fires from the observer
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
   const feedUrl = useCallback(
     (cursor?: string) => {
@@ -82,8 +87,7 @@ export default function PostsFeed({
     }
   }, [nextCursor, feedUrl]);
 
-  // Auto-load the next page once the sentinel scrolls into view — this is
-  // what gives a smooth, mobile-friendly infinite feed instead of a tap.
+  // Auto-load the next page once the sentinel scrolls into view.
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el || !nextCursor) return;
@@ -99,19 +103,21 @@ export default function PostsFeed({
     return () => observer.disconnect();
   }, [nextCursor, loadMore]);
 
-  // Close on Escape, and lock background scroll while the composer sheet is open —
-  // standard modal behavior, self-contained and doesn't touch feed data logic.
+  // Escape closes, background scroll is locked, focus moves into the sheet.
   useEffect(() => {
     if (!composerOpen) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setComposerOpen(false);
     };
     document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    sheetRef.current?.focus();
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
+      previouslyFocused?.focus();
     };
   }, [composerOpen]);
 
@@ -133,48 +139,67 @@ export default function PostsFeed({
 
   return (
     <div className="mx-auto max-w-2xl">
-      {/* One-row trigger — opens the create-post sheet. The bottom-nav "+"
-          opens the same sheet via ?compose=1 on mobile. */}
+      {/* Composer trigger — opens the create-post sheet */}
       {showComposer && (
         <button
+          type="button"
           onClick={() => setComposerOpen(true)}
-          className="mb-3 flex w-full items-center gap-2.5 rounded-2xl border p-2.5 text-left transition-colors hover:bg-surface-2"
-          style={{ borderColor: "rgb(var(--border))", backgroundColor: "rgb(var(--surface))" }}
+          className="mb-3 flex w-full items-center gap-3 rounded-[20px] border border-border bg-surface p-2.5 pl-3 text-left transition-colors hover:bg-surface-2"
         >
-          <Avatar name={currentUser!.name} avatar={currentUser!.avatar} size={34} />
-          <span className="flex-1 rounded-full px-3.5 py-2 text-sm" style={{ backgroundColor: "rgb(var(--background))", color: "rgb(var(--muted))" }}>
-            Share a job, an event, something fun...
+          <Avatar name={currentUser!.name} src={currentUser!.avatar} size={40} />
+          <span className="min-w-0 flex-1 truncate text-base text-muted">
+            Kya chal raha hai Doon mein?
           </span>
           <span
-            className="flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold text-white"
-            style={{ backgroundColor: "rgb(var(--primary))" }}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-primary-soft text-primary-fg"
+            aria-hidden="true"
           >
-            <Plus size={15} /> Post
+            <ImagePlus size={20} />
           </span>
         </button>
       )}
 
+      {/* Guests: a clear, friendly way in — not just "log in to post" */}
       {!showComposer && !authorFilter && (
-        <div
-          className="mb-4 rounded-2xl p-3.5 text-center"
-          style={{ backgroundColor: "rgb(var(--primary) / 0.05)" }}
-        >
-          <p className="text-[13px] font-medium sm:text-sm">Log in to share a post with the community.</p>
+        <div className="mb-3 rounded-[20px] bg-primary-soft p-4">
+          <p className="font-semibold text-text">Apni baat Doon tak pahunchao</p>
+          <p className="mt-0.5 text-sm text-muted">
+            Share a job, ask for a recommendation or post weekend plans — it&apos;s free.
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Link href="/login" className={buttonClasses("outline", "md")}>
+              Log in
+            </Link>
+            <Link href="/signup" className={buttonClasses("primary", "md")}>
+              Sign up free
+            </Link>
+          </div>
         </div>
       )}
 
       {posts.length === 0 ? (
         <EmptyState
-          icon="📝"
+          icon={<Newspaper size={28} />}
           title="No posts yet"
           description={
             authorFilter
               ? "This person hasn't shared any posts yet."
               : "Be the first to share something with Dehradun!"
           }
+          action={
+            showComposer ? (
+              <button
+                type="button"
+                onClick={() => setComposerOpen(true)}
+                className={buttonClasses("primary", "md")}
+              >
+                Write the first post
+              </button>
+            ) : undefined
+          }
         />
       ) : (
-        <div className="stagger-grid sm:space-y-4">
+        <div className="flex flex-col gap-3">
           {posts.map((post) => (
             <PostCard
               key={post._id}
@@ -184,7 +209,7 @@ export default function PostsFeed({
               commentCount={post.commentCount}
               createdAt={post.createdAt}
               author={post.author}
-              isOwner={!!currentUser && currentUser._id === post.author._id}
+              isOwner={!!currentUser && currentUser._id === post.author?._id}
               onDeleted={() => setPosts((prev) => prev.filter((p) => p._id !== post._id))}
             />
           ))}
@@ -194,41 +219,43 @@ export default function PostsFeed({
       {nextCursor && (
         <div ref={sentinelRef} className="flex justify-center py-6">
           {loadingMore ? (
-            <Loader2 size={18} className="animate-spin" style={{ color: "rgb(var(--muted))" }} />
+            <Loader2 size={20} className="animate-spin text-muted" aria-label="Loading more posts" />
           ) : (
-            <button
-              onClick={loadMore}
-              className="text-xs font-medium underline-offset-2 hover:underline"
-              style={{ color: "rgb(var(--muted))" }}
-            >
+            <button type="button" onClick={loadMore} className={buttonClasses("secondary", "sm")}>
               Load more
             </button>
           )}
         </div>
       )}
 
+      {!nextCursor && posts.length > 0 && (
+        <p className="py-8 text-center text-sm text-muted">You&apos;re all caught up</p>
+      )}
+
       {showComposer && composerOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+        <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
           <div
             className="composer-backdrop absolute inset-0 bg-black/50"
             onClick={() => setComposerOpen(false)}
+            aria-hidden="true"
           />
-          <div className="composer-sheet relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl bg-surface sm:max-w-lg sm:rounded-2xl">
-            <div
-              className="sticky top-0 flex items-center justify-between border-b px-4 py-3 sm:px-5"
-              style={{ borderColor: "rgb(var(--border))", backgroundColor: "rgb(var(--surface))" }}
-            >
-              <h2 className="text-base font-bold">Create post</h2>
-              <button
-                onClick={() => setComposerOpen(false)}
-                aria-label="Close"
-                className="flex h-9 w-9 items-center justify-center rounded-full transition-colors active:opacity-70"
-                style={{ color: "rgb(var(--muted))" }}
-              >
-                <X size={18} />
-              </button>
+          <div
+            ref={sheetRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-post-title"
+            tabIndex={-1}
+            className="composer-sheet relative max-h-[90dvh] w-full overflow-y-auto rounded-t-[28px] bg-surface outline-none sm:max-w-lg sm:rounded-[28px]"
+          >
+            <div className="sticky top-0 z-10 flex items-center justify-between bg-surface px-4 pt-3 pb-2 sm:px-5">
+              <h2 id="create-post-title" className="text-xl font-extrabold">
+                Create post
+              </h2>
+              <IconButton label="Close" onClick={() => setComposerOpen(false)}>
+                <X size={20} />
+              </IconButton>
             </div>
-            <div className="p-4 sm:p-5">
+            <div className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-5 sm:pb-5">
               <CreatePostForm
                 currentUser={currentUser!}
                 onPosted={() => {

@@ -4,7 +4,9 @@ import { useState } from "react";
 import Image from "next/image";
 import { Pencil } from "lucide-react";
 import UserLink from "@/components/shared/UserLink";
-import { Avatar, timeAgo } from "./PostCard";
+import Avatar from "@/components/ui/Avatar";
+import { buttonClasses } from "@/components/ui/Button";
+import { timeAgo } from "./PostCard";
 import EditPostForm from "./EditPostForm";
 import ShareButton from "@/components/events/ShareButton";
 import DeletePostButton from "./DeletePostButton";
@@ -40,6 +42,7 @@ export default function PostDetailView({
   const [image, setImage] = useState(initialImage);
   const [editing, setEditing] = useState(startInEditMode);
   const [edited, setEdited] = useState(wasEdited);
+  const authorName = author?.name ?? "Deleted User";
 
   if (editing) {
     return (
@@ -60,57 +63,54 @@ export default function PostDetailView({
 
   return (
     <>
-      {/* Visually hidden — gives the page a real H1 for SEO/accessibility
-          without changing the card's visual layout, which has no title slot. */}
-      <h1 className="sr-only">{`Post by ${author.name} on DoonMeet`}</h1>
+      {/* A post has no title — this gives the page a real H1 for SEO and
+          screen readers without adding a visual heading. */}
+      <h1 className="sr-only">{`Post by ${authorName} on DoonMeet`}</h1>
 
-      <article
-        className="overflow-hidden rounded-2xl border"
-        style={{ borderColor: "rgb(var(--border))", backgroundColor: "rgb(var(--surface))" }}
-      >
-        <div className="flex items-start gap-3 p-4 sm:p-5">
-          <UserLink userId={author._id}>
-            <Avatar name={author.name} avatar={author.avatar} size={44} />
+      <article className="overflow-hidden rounded-[20px] border border-border bg-surface">
+        <header className="flex items-center gap-3 p-4">
+          <UserLink userId={author?._id}>
+            <Avatar name={authorName} src={author?.avatar} size={48} />
           </UserLink>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold">
-              <UserLink userId={author._id}>{author.name}</UserLink>
+          <div className="min-w-0 flex-1 leading-tight">
+            <p className="truncate text-[17px] font-bold">
+              <UserLink userId={author?._id}>{authorName}</UserLink>
             </p>
-            <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-              {timeAgo(createdAt)}
+            <p className="text-sm text-muted">
+              <time dateTime={createdAt}>{timeAgo(createdAt)}</time>
               {edited && " · edited"}
             </p>
           </div>
-        </div>
+        </header>
 
-        <div className="px-4 pb-5 sm:px-5">
-          <p className="whitespace-pre-line break-words text-sm leading-relaxed">{content}</p>
+        <div className="px-4 pb-4">
+          <p className="text-[17px] leading-relaxed break-words whitespace-pre-line">{content}</p>
         </div>
 
         {image && (
-          <div className="relative h-64 w-full sm:h-96">
-            <Image src={image} alt={`Post by ${author.name}`} fill priority className="object-cover" />
+          <div className="relative aspect-[4/3] w-full bg-surface-2">
+            {/* object-contain: show the whole photo on the detail page, never crop it */}
+            <Image
+              src={image}
+              alt={`Photo shared by ${authorName}`}
+              fill
+              priority
+              sizes="(max-width: 672px) 100vw, 672px"
+              className="object-contain"
+            />
           </div>
         )}
       </article>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <ShareButton
-          title={`${author.name} on DoonMeet`}
-          url={`https://doonmeet.in/posts/${postId}`}
-          label="Share Post"
-        />
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto_auto]">
+        <ShareButton title={`${authorName} on DoonMeet`} url={`https://doonmeet.in/posts/${postId}`} label="Share post" />
         {isOwner && (
-          <>
-            <button
-              onClick={() => setEditing(true)}
-              className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors active:opacity-70"
-              style={{ borderColor: "rgb(var(--border))", color: "rgb(var(--muted))" }}
-            >
-              <Pencil size={13} /> Edit
+          <div className="grid grid-cols-2 gap-2 sm:contents">
+            <button type="button" onClick={() => setEditing(true)} className={buttonClasses("secondary", "md")}>
+              <Pencil size={17} aria-hidden="true" /> Edit
             </button>
             <DeletePostButton postId={postId} redirectTo="/posts" />
-          </>
+          </div>
         )}
       </div>
     </>

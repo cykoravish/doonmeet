@@ -81,13 +81,12 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
     <div className="min-h-screen">
       <JsonLd data={[jsonLd, breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Posts", path: "/posts" }, { name: buildPostDescription(post.content).slice(0, 60), path: `/posts/${postId}` }])]} />
 
-      <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-2xl px-4 pt-3 pb-6 sm:px-6 sm:pt-6">
         <Link
           href="/posts"
-          className="mb-5 flex w-fit items-center gap-1.5 text-xs font-medium"
-          style={{ color: "rgb(var(--muted))" }}
+          className="-ml-2 mb-2 flex min-h-11 w-fit items-center gap-1.5 rounded-[12px] px-2 text-sm font-semibold text-muted hover:bg-surface-2 hover:text-text"
         >
-          <ArrowLeft size={13} /> All Posts
+          <ArrowLeft size={17} aria-hidden="true" /> Doon Feed
         </Link>
 
         <PostDetailView

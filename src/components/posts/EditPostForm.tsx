@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ImagePlus, X, Loader2, Check } from "lucide-react";
+import { buttonClasses } from "@/components/ui/Button";
 import { compressImage } from "@/lib/imageCompression";
 
 interface EditPostFormProps {
@@ -98,85 +99,80 @@ export default function EditPostForm({
   }
 
   return (
-    <form
-      onSubmit={submit}
-      className="rounded-2xl border p-4"
-      style={{ borderColor: "rgb(var(--border))", backgroundColor: "rgb(var(--surface))" }}
-    >
+    <form onSubmit={submit} className="flex flex-col gap-3 rounded-[20px] border border-border bg-surface p-4">
+      <h1 className="text-xl font-extrabold">Edit post</h1>
+
+      <label htmlFor={`edit-post-content-${postId}`} className="sr-only">
+        Post text
+      </label>
       <textarea
+        id={`edit-post-content-${postId}`}
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        rows={4}
+        rows={6}
         maxLength={3000}
         autoFocus
-        className="w-full resize-none rounded-xl border px-4 py-3 text-base outline-none sm:text-sm"
-        style={{ backgroundColor: "rgb(var(--background))", borderColor: "rgb(var(--border))" }}
+        className="w-full resize-none rounded-[16px] border-[1.5px] border-transparent bg-surface-2 px-4 py-3 text-base leading-relaxed text-text outline-none focus:border-primary focus:bg-surface"
       />
 
       {compressing && (
-        <p className="mt-1.5 flex items-center gap-1.5 text-xs" style={{ color: "rgb(var(--muted))" }}>
-          <Loader2 size={12} className="animate-spin" /> Optimizing image...
+        <p className="flex items-center gap-1.5 text-sm text-muted">
+          <Loader2 size={14} className="animate-spin" aria-hidden="true" /> Optimizing image…
         </p>
       )}
 
       {imagePreview && !compressing && (
-        <div className="relative mt-2 h-48 w-full overflow-hidden rounded-xl sm:h-56">
-          <Image src={imagePreview} alt="Post image preview" fill className="object-cover" />
+        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[16px] bg-surface-2">
+          <Image src={imagePreview} alt="Post image preview" fill sizes="672px" className="object-cover" />
           <button
             type="button"
             onClick={removeImage}
             aria-label="Remove image"
-            className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white active:opacity-70"
+            className="absolute top-2 right-2 flex h-11 w-11 items-center justify-center rounded-full bg-black/60 text-white"
           >
-            <X size={16} />
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
       )}
 
       {error && (
-        <p className="mt-1.5 text-xs" style={{ color: "rgb(220 38 38)" }}>
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       )}
 
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          onChange={handleImageSelect}
-          className="hidden"
-          id={`edit-post-image-${postId}`}
-        />
-        <label
-          htmlFor={`edit-post-image-${postId}`}
-          className="flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium active:opacity-70"
-          style={{ backgroundColor: "rgb(var(--primary) / 0.1)", color: "rgb(var(--primary))" }}
-        >
-          <ImagePlus size={15} />
-          {imagePreview ? "Change" : "Add image"}
-        </label>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handleImageSelect}
+        className="hidden"
+        id={`edit-post-image-${postId}`}
+      />
+      <label
+        htmlFor={`edit-post-image-${postId}`}
+        className="flex h-11 w-fit cursor-pointer items-center gap-2 rounded-[14px] bg-primary-soft px-3.5 text-[15px] font-semibold text-primary-fg"
+      >
+        <ImagePlus size={19} aria-hidden="true" />
+        {imagePreview ? "Change photo" : "Add photo"}
+      </label>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={saving}
-            className="min-h-[40px] rounded-xl border px-4 text-sm font-semibold active:opacity-70 disabled:opacity-50"
-            style={{ borderColor: "rgb(var(--border))" }}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={saving || compressing || !content.trim()}
-            className="flex min-h-[40px] items-center gap-1.5 rounded-xl px-5 text-sm font-semibold text-white active:opacity-80 disabled:opacity-50"
-            style={{ backgroundColor: "rgb(var(--primary))" }}
-          >
-            {saving ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
-            Save
-          </button>
-        </div>
+      <div className="grid grid-cols-2 gap-2 pt-1">
+        <button type="button" onClick={onCancel} disabled={saving} className={buttonClasses("secondary", "md")}>
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={saving || compressing || !content.trim()}
+          className={buttonClasses("primary", "md")}
+        >
+          {saving ? (
+            <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+          ) : (
+            <Check size={18} aria-hidden="true" />
+          )}
+          Save
+        </button>
       </div>
     </form>
   );

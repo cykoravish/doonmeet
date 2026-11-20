@@ -2,6 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { MessageCircle, Pencil } from "lucide-react";
 import UserLink from "@/components/shared/UserLink";
+import UiAvatar from "@/components/ui/Avatar";
+import ShareButton from "@/components/events/ShareButton";
 import DeletePostButton from "./DeletePostButton";
 
 interface Author {
@@ -35,6 +37,7 @@ export function timeAgo(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
+/** Kept for existing imports — delegates to the shared ui/Avatar. */
 export function Avatar({
   name,
   avatar,
@@ -44,31 +47,13 @@ export function Avatar({
   avatar: string | null;
   size?: number;
 }) {
-  if (avatar) {
-    return (
-      <Image
-        src={avatar}
-        alt={name}
-        width={size}
-        height={size}
-        className="shrink-0 rounded-full object-cover"
-        style={{ width: size, height: size }}
-      />
-    );
-  }
-  return (
-    <div
-      className="flex shrink-0 items-center justify-center rounded-full font-bold text-white"
-      style={{
-        width: size,
-        height: size,
-        backgroundColor: "rgb(var(--primary))",
-        fontSize: size * 0.4,
-      }}
-    >
-      {name[0]?.toUpperCase()}
-    </div>
-  );
+  return <UiAvatar name={name} src={avatar} size={size} />;
+}
+
+// Long posts are clamped in the feed; show an explicit "Read more" so users
+// know there's more (and crawlers get a real link to the full post).
+function isLong(content: string) {
+  return content.length > 280 || content.split("\n").length > 6;
 }
 
 export default function PostCard({
@@ -81,74 +66,77 @@ export default function PostCard({
   isOwner = false,
   onDeleted,
 }: PostCardProps) {
-  return (
-    <article
-      className="reveal-on-scroll -mx-4 overflow-hidden border-b transition-shadow duration-200 sm:mx-0 sm:rounded-2xl sm:border sm:shadow-sm sm:hover:shadow-md"
-      style={{ borderColor: "rgb(var(--border))", backgroundColor: "rgb(var(--surface))" }}
-    >
-      {/* thin brand-colored top edge reappears once the card regains its own edges on larger screens */}
-      <div className="hidden h-0.5 w-full sm:block" style={{ backgroundColor: "rgb(var(--primary-light))" }} />
+  const authorName = author?.name ?? "Deleted User";
 
-      <div className="flex gap-3 px-4 py-3.5 sm:p-5">
-        <UserLink userId={author._id}>
-          <Avatar name={author.name} avatar={author.avatar} />
+  return (
+    <article className="overflow-hidden rounded-[20px] border border-border bg-surface">
+      <header className="flex items-center gap-3 px-4 pt-4">
+        <UserLink userId={author?._id}>
+          <UiAvatar name={authorName} src={author?.avatar} size={42} />
         </UserLink>
-        <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-semibold sm:text-sm">
-            <UserLink userId={author._id}>{author.name}</UserLink>{" "}
-            <span className="text-[11px] font-normal sm:text-xs" style={{ color: "rgb(var(--muted))" }}>
-              · {timeAgo(createdAt)}
-            </span>
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="truncate text-base font-bold text-text">
+            <UserLink userId={author?._id}>{authorName}</UserLink>
           </p>
-          <Link href={`/posts/${id}`} className="mt-1 block">
-            <p className="whitespace-pre-line break-words text-[13px] leading-relaxed sm:text-[15px] line-clamp-6">
-              {content}
-            </p>
-          </Link>
+          <p className="text-[13px] text-muted">
+            <time dateTime={createdAt}>{timeAgo(createdAt)}</time>
+          </p>
         </div>
+      </header>
+
+      <div className="px-4 pt-2.5 pb-3">
+        <Link href={`/posts/${id}`} className="block">
+          <p className="line-clamp-6 text-[16px] leading-relaxed break-words whitespace-pre-line text-text">
+            {content}
+          </p>
+          {isLong(content) && (
+            <span className="mt-1 inline-block text-sm font-semibold text-primary-fg">Read more</span>
+          )}
+        </Link>
       </div>
 
       {image && (
-        <Link
-          href={`/posts/${id}`}
-          className="relative block w-full aspect-[4/5] sm:aspect-auto sm:h-80"
-        >
+        <Link href={`/posts/${id}`} className="relative block aspect-[4/3] w-full bg-surface-2">
           <Image
             src={image}
-            alt="Post image"
+            alt={`Photo shared by ${authorName}`}
             fill
-            sizes="(max-width: 640px) 100vw, 672px"
+            sizes="(max-width: 672px) 100vw, 672px"
             className="object-cover"
           />
         </Link>
       )}
 
-      <div
-        className="flex items-center justify-between gap-1.5 border-t px-4 py-3 text-[11px] font-medium sm:px-5 sm:py-2.5 sm:text-xs"
-        style={{ borderColor: "rgb(var(--border))", color: "rgb(var(--muted))" }}
-      >
+      <footer className="flex items-center gap-2 px-3 py-2.5">
         <Link
           href={`/posts/${id}`}
-          className="btn-springy flex min-h-[40px] items-center gap-1.5 py-1.5 transition-opacity hover:opacity-70"
+          className="flex h-10 items-center gap-1.5 rounded-[12px] bg-surface-2 px-3 text-sm font-semibold text-text transition-colors hover:bg-border"
+          aria-label={`${commentCount} ${commentCount === 1 ? "comment" : "comments"} — open post`}
         >
-          <MessageCircle size={14} />
-          {commentCount} {commentCount === 1 ? "comment" : "comments"}
+          <MessageCircle size={18} aria-hidden="true" />
+          {commentCount > 0 ? commentCount : "Comment"}
         </Link>
+        <ShareButton
+          variant="compact"
+          title={`${authorName} on DoonMeet`}
+          url={`https://doonmeet.in/posts/${id}`}
+          label="Share"
+        />
 
         {isOwner && (
-          <div className="flex items-center gap-1">
+          <div className="ml-auto flex items-center gap-1">
             <Link
               href={`/posts/${id}?edit=1`}
               aria-label="Edit post"
               title="Edit post"
-              className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg transition-colors active:opacity-70"
+              className="flex h-10 w-10 items-center justify-center rounded-[12px] text-muted transition-colors hover:bg-surface-2 hover:text-text"
             >
-              <Pencil size={15} />
+              <Pencil size={17} aria-hidden="true" />
             </Link>
             <DeletePostButton postId={id} compact onDeleted={onDeleted} />
           </div>
         )}
-      </div>
+      </footer>
     </article>
   );
 }

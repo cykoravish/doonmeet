@@ -3,7 +3,8 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import { ImagePlus, X, Loader2, Send } from "lucide-react";
-import { Avatar } from "./PostCard";
+import Avatar from "@/components/ui/Avatar";
+import { buttonClasses } from "@/components/ui/Button";
 import { compressImage } from "@/lib/imageCompression";
 
 interface CreatePostFormProps {
@@ -13,6 +14,7 @@ interface CreatePostFormProps {
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_LENGTH = 3000;
 
 export default function CreatePostForm({ currentUser, onPosted }: CreatePostFormProps) {
   const [content, setContent] = useState("");
@@ -86,83 +88,91 @@ export default function CreatePostForm({ currentUser, onPosted }: CreatePostForm
     }
   }
 
+  const remaining = MAX_LENGTH - content.length;
+
   return (
-    <form
-      onSubmit={submit}
-      className="overflow-hidden rounded-2xl border border-t-2 p-4 sm:p-5"
-      style={{
-        borderColor: "rgb(var(--border))",
-        borderTopColor: "rgb(var(--primary-light))",
-        backgroundColor: "rgb(var(--surface))",
-      }}
-    >
-      <div className="flex gap-3">
-        <Avatar name={currentUser.name} avatar={currentUser.avatar} size={44} />
-        <div className="min-w-0 flex-1">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="What's on your mind? Share a job, an event, something fun..."
-            rows={3}
-            maxLength={3000}
-            className="w-full resize-none rounded-xl border px-4 py-3 text-base outline-none sm:text-sm"
-            style={{ backgroundColor: "rgb(var(--background))", borderColor: "rgb(var(--border))" }}
-          />
+    <form onSubmit={submit} className="flex flex-col gap-3">
+      <div className="flex items-center gap-2.5">
+        <Avatar name={currentUser.name} src={currentUser.avatar} size={40} />
+        <div className="leading-tight">
+          <p className="font-bold text-text">{currentUser.name}</p>
+          <p className="text-[13px] text-muted">Posting to everyone in Dehradun</p>
+        </div>
+      </div>
 
-          {compressing && (
-            <p className="mt-1.5 flex items-center gap-1.5 text-xs" style={{ color: "rgb(var(--muted))" }}>
-              <Loader2 size={12} className="animate-spin" /> Optimizing image...
-            </p>
+      <label htmlFor="create-post-content" className="sr-only">
+        Post text
+      </label>
+      <textarea
+        id="create-post-content"
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="Kya chal raha hai Doon mein? Share a job, an event, a question…"
+        rows={5}
+        maxLength={MAX_LENGTH}
+        autoFocus
+        className="min-h-32 w-full resize-none rounded-[16px] border-[1.5px] border-transparent bg-surface-2 px-4 py-3 text-base leading-relaxed text-text outline-none placeholder:text-muted focus:border-primary focus:bg-surface"
+      />
+
+      {compressing && (
+        <p className="flex items-center gap-1.5 text-sm text-muted">
+          <Loader2 size={14} className="animate-spin" aria-hidden="true" /> Optimizing image…
+        </p>
+      )}
+
+      {imagePreview && !compressing && (
+        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[16px] bg-surface-2">
+          <Image src={imagePreview} alt="Selected image preview" fill className="object-cover" unoptimized />
+          <button
+            type="button"
+            onClick={removeImage}
+            aria-label="Remove image"
+            className="absolute top-2 right-2 flex h-11 w-11 items-center justify-center rounded-full bg-black/60 text-white"
+          >
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      )}
+
+      <div className="flex items-center justify-between gap-2">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleImageSelect}
+          className="hidden"
+          id="post-image-input"
+        />
+        <label
+          htmlFor="post-image-input"
+          className="flex h-11 cursor-pointer items-center gap-2 rounded-[14px] bg-primary-soft px-3.5 text-[15px] font-semibold text-primary-fg"
+        >
+          <ImagePlus size={19} aria-hidden="true" />
+          {imageFile ? "Change photo" : "Add photo"}
+        </label>
+
+        <div className="flex items-center gap-3">
+          {remaining < 200 && (
+            <span className={`text-sm ${remaining < 50 ? "text-danger" : "text-muted"}`}>{remaining}</span>
           )}
-
-          {imagePreview && !compressing && (
-            <div className="relative mt-2 h-48 w-full overflow-hidden rounded-xl sm:h-56">
-              <Image src={imagePreview} alt="Selected image preview" fill className="object-cover" />
-              <button
-                type="button"
-                onClick={removeImage}
-                aria-label="Remove image"
-                className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white transition-opacity active:opacity-70"
-              >
-                <X size={16} />
-              </button>
-            </div>
-          )}
-
-          {error && (
-            <p className="mt-1.5 text-xs" style={{ color: "rgb(220 38 38)" }}>
-              {error}
-            </p>
-          )}
-
-          <div className="mt-3 flex items-center justify-between gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={handleImageSelect}
-              className="hidden"
-              id="post-image-input"
-            />
-            <label
-              htmlFor="post-image-input"
-              className="flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium transition-colors active:opacity-70"
-              style={{ backgroundColor: "rgb(var(--primary) / 0.1)", color: "rgb(var(--primary))" }}
-            >
-              <ImagePlus size={15} />
-              {imageFile ? "Change" : "Add image"}
-            </label>
-
-            <button
-              type="submit"
-              disabled={posting || compressing || !content.trim()}
-              className="btn-springy flex min-h-[40px] items-center gap-1.5 rounded-xl px-5 py-2 text-sm font-semibold text-white transition-opacity active:opacity-80 disabled:opacity-50"
-              style={{ backgroundColor: "rgb(var(--primary))" }}
-            >
-              {posting ? <Loader2 size={15} className="animate-spin" /> : <Send size={14} />}
-              Post
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={posting || compressing || !content.trim()}
+            className={buttonClasses("primary", "md", "px-6")}
+          >
+            {posting ? (
+              <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Send size={17} aria-hidden="true" />
+            )}
+            Post
+          </button>
         </div>
       </div>
     </form>

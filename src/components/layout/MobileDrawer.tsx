@@ -150,7 +150,7 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
                   <p className="font-semibold text-text">Doon ke logon se milo</p>
                   <p className="mt-0.5 text-sm text-muted">Free account — chat, post and join events.</p>
                   <div className="mt-3 grid grid-cols-2 gap-2">
-                    <Link href="/login" onClick={close} className={buttonClasses("secondary", "md")}>
+                    <Link href="/login" onClick={close} className={buttonClasses("outline", "md")}>
                       Log in
                     </Link>
                     <Link href="/signup" onClick={close} className={buttonClasses("primary", "md")}>

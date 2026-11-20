@@ -52,19 +52,22 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
   return (
     <div className="min-h-screen">
       <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Posts", path: "/posts" }])} />
-      <div className="mx-auto max-w-2xl px-4 py-3 sm:px-6 sm:py-4">
-        {!filteredUser && <h1 className="sr-only">Dehradun community feed</h1>}
-        {filteredUser && (
-          <div className="mb-3">
+      <div className="mx-auto max-w-2xl px-4 pt-4 pb-6 sm:px-6 sm:pt-6">
+        {filteredUser ? (
+          <header className="mb-3">
             <Link
               href="/posts"
-              className="mb-1.5 flex w-fit items-center gap-1.5 text-xs font-medium"
-              style={{ color: "rgb(var(--muted))" }}
+              className="-ml-2 flex min-h-11 w-fit items-center gap-1.5 rounded-[12px] px-2 text-sm font-semibold text-muted hover:bg-surface-2 hover:text-text"
             >
-              <ArrowLeft size={13} /> All Posts
+              <ArrowLeft size={17} aria-hidden="true" /> All posts
             </Link>
-            <h1 className="text-lg font-black sm:text-xl">Posts by {filteredUser.name}</h1>
-          </div>
+            <h1 className="text-2xl font-extrabold">Posts by {filteredUser.name}</h1>
+          </header>
+        ) : (
+          <header className="mb-4">
+            <h1 className="text-[28px] leading-tight font-extrabold sm:text-3xl">Doon Feed</h1>
+            <p className="mt-0.5 text-[15px] text-muted">What people in Dehradun are sharing right now</p>
+          </header>
         )}
 
         <PostsFeed
