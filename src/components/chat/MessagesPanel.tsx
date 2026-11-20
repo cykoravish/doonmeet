@@ -161,7 +161,7 @@ export default function MessagesPanel({
         ) : conversations.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-4 py-16 text-center">
             <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-              <MessageCircle size={24} className="text-primary" />
+              <MessageCircle size={24} className="text-primary-fg" />
             </div>
             <p className="font-bold">No messages yet</p>
             <p className="mt-1 text-sm text-muted">
@@ -197,7 +197,7 @@ export default function MessagesPanel({
         ) : (
           <div className="hidden h-full flex-col items-center justify-center text-center md:flex">
             <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-              <MessageCircle size={24} className="text-primary" />
+              <MessageCircle size={24} className="text-primary-fg" />
             </div>
             <p className="font-bold">Select a conversation</p>
             <p className="mt-1 text-sm text-muted">Pick someone from the list to start chatting</p>

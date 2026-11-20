@@ -42,7 +42,7 @@ export default function AboutAndFaq() {
       />
 
       <div className="mb-8 sm:mb-10">
-        <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-primary">
+        <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-primary-fg">
           About DoonMeet
         </p>
         <h2 className="text-2xl font-black sm:text-3xl md:text-4xl">
@@ -51,19 +51,19 @@ export default function AboutAndFaq() {
         <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">
           Whether you grew up in the Doon Valley or just moved here for college or work, it&apos;s
           surprisingly hard to find the people and plans that fit you. DoonMeet puts{" "}
-          <Link href="/events" className="font-medium text-primary hover:underline">
+          <Link href="/events" className="font-medium text-primary-fg hover:underline">
             local events
           </Link>
           ,{" "}
-          <Link href="/communities" className="font-medium text-primary hover:underline">
+          <Link href="/communities" className="font-medium text-primary-fg hover:underline">
             communities
           </Link>
           ,{" "}
-          <Link href="/places" className="font-medium text-primary hover:underline">
+          <Link href="/places" className="font-medium text-primary-fg hover:underline">
             places to visit
           </Link>{" "}
           and a friendly{" "}
-          <Link href="/chat" className="font-medium text-primary hover:underline">
+          <Link href="/chat" className="font-medium text-primary-fg hover:underline">
             public chat
           </Link>{" "}
           in one place, so you can go from &quot;anyone up for chai?&quot; to actually meeting

@@ -127,7 +127,7 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
             to just the count on mobile so it can't force the row to wrap. */}
         <button
           onClick={openMembersPanel}
-          className="group ml-auto flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 sm:gap-1.5 sm:px-3"
+          className="group ml-auto flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-xs font-semibold text-primary-fg transition-colors hover:bg-primary/15 sm:gap-1.5 sm:px-3"
           style={{
             backgroundColor: "rgb(var(--primary) / 0.1)",
             borderColor: "rgb(var(--primary) / 0.35)",
@@ -164,7 +164,7 @@ export default function ChatTabs({ currentUser }: ChatTabsProps) {
           ) : (
             <div className="flex h-full flex-col items-center justify-center px-6 text-center">
               <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-                <Lock size={22} className="text-primary" />
+                <Lock size={22} className="text-primary-fg" />
               </div>
               <p className="font-bold">Sign up to message people</p>
               <p className="mt-1 max-w-xs text-sm text-muted">

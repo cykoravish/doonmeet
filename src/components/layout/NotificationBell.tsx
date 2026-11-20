@@ -67,7 +67,7 @@ export default function NotificationBell() {
               <button
                 onClick={handleMarkAllRead}
                 disabled={marking}
-                className="flex items-center gap-1 text-xs font-semibold text-primary transition-opacity hover:opacity-70 disabled:opacity-50"
+                className="flex items-center gap-1 text-xs font-semibold text-primary-fg transition-opacity hover:opacity-70 disabled:opacity-50"
               >
                 <CheckCheck size={12} />
                 Mark all read
@@ -144,7 +144,7 @@ export default function NotificationBell() {
           <Link
             href="/notifications"
             onClick={() => setOpen(false)}
-            className="block border-t border-border px-4 py-2.5 text-center text-xs font-semibold text-primary transition-colors hover:bg-primary/5"
+            className="block border-t border-border px-4 py-2.5 text-center text-xs font-semibold text-primary-fg transition-colors hover:bg-primary/5"
           >
             View all notifications
           </Link>

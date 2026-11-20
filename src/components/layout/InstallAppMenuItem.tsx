@@ -53,7 +53,7 @@ export default function InstallAppMenuItem({ onInstallPrompted }: InstallAppMenu
           >
             <div className="mb-4 flex items-start justify-between">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
-                <Download size={20} className="text-primary" />
+                <Download size={20} className="text-primary-fg" />
               </div>
               <button
                 onClick={() => setShowIOSInstructions(false)}
@@ -72,26 +72,26 @@ export default function InstallAppMenuItem({ onInstallPrompted }: InstallAppMenu
 
             <ol className="mt-4 space-y-3 text-sm text-text">
               <li className="flex items-start gap-2.5">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary-fg">
                   1
                 </span>
                 <span className="pt-0.5">
-                  Tap the <Share size={14} className="mx-1 inline align-text-bottom text-primary" />
+                  Tap the <Share size={14} className="mx-1 inline align-text-bottom text-primary-fg" />
                   Share button in your browser&apos;s toolbar
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary-fg">
                   2
                 </span>
                 <span className="pt-0.5">
                   Scroll down and tap
-                  <SquarePlus size={14} className="mx-1 inline align-text-bottom text-primary" />
+                  <SquarePlus size={14} className="mx-1 inline align-text-bottom text-primary-fg" />
                   &ldquo;Add to Home Screen&rdquo;
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary-fg">
                   3
                 </span>
                 <span className="pt-0.5">

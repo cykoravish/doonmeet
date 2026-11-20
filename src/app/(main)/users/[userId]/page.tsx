@@ -151,7 +151,7 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
             {user.interests.map((i: string) => (
               <span
                 key={i}
-                className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium capitalize text-primary"
+                className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium capitalize text-primary-fg"
               >
                 {i}
               </span>
@@ -265,7 +265,7 @@ function StatBlock({
 }) {
   return (
     <div className="flex flex-col items-center gap-1 px-2 py-4 transition-colors hover:bg-primary/5">
-      <Icon size={17} className="text-primary" />
+      <Icon size={17} className="text-primary-fg" />
       <span className="text-lg font-black">{value}</span>
       <span className="text-[11px] text-muted">{label}</span>
     </div>
@@ -296,7 +296,7 @@ function InfoRow({
           href={href}
           target="_blank"
           rel="noopener noreferrer nofollow"
-          className="break-all text-right font-medium text-primary hover:underline"
+          className="break-all text-right font-medium text-primary-fg hover:underline"
         >
           {value}
         </a>
@@ -328,7 +328,7 @@ function ProfileAction({
     return (
       <Link
         href="/profile"
-        className={`flex items-center gap-1.5 rounded-xl border border-border px-4 py-2 text-xs font-semibold shadow-sm transition-all hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${widthClass}`}
+        className={`flex items-center gap-1.5 rounded-xl border border-border px-4 py-2 text-xs font-semibold shadow-sm transition-all hover:border-primary hover:text-primary-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${widthClass}`}
       >
         <Pencil size={13} />
         Edit Profile

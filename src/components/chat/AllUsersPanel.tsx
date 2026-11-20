@@ -220,7 +220,7 @@ export default function AllUsersPanel({ open, onClose, socket }: AllUsersPanelPr
         <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3.5">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-              <Users size={17} className="text-primary" />
+              <Users size={17} className="text-primary-fg" />
             </div>
             <div>
               <p className="text-sm font-bold leading-tight">Doon Community</p>

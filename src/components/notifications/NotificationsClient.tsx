@@ -57,7 +57,7 @@ export default function NotificationsClient({
         <div className="mx-auto max-w-2xl px-6">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-primary">
+              <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-primary-fg">
                 Updates
               </p>
               <h1 className="text-3xl font-black">Notifications</h1>
@@ -98,7 +98,7 @@ export default function NotificationsClient({
           <div className="space-y-6">
             {unread.length > 0 && (
               <section>
-                <p className="mb-2 px-1 text-xs font-bold uppercase tracking-widest text-primary">
+                <p className="mb-2 px-1 text-xs font-bold uppercase tracking-widest text-primary-fg">
                   New
                 </p>
                 <div className="space-y-2">

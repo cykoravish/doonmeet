@@ -8,7 +8,7 @@ export default function NotFound() {
       {/* Big 404 */}
       <div className="relative mb-8">
         <p
-          className="text-[10rem] font-black leading-none opacity-5 select-none text-primary"
+          className="text-[10rem] font-black leading-none opacity-5 select-none text-primary-fg"
         >
           404
         </p>

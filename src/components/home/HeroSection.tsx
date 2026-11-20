@@ -215,13 +215,13 @@ export default function HeroSection() {
         <div className="relative z-10">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1.5">
             <MapPin size={14} className="text-accent" />
-            <span className="text-sm font-medium text-primary">Dehradun, Uttarakhand</span>
+            <span className="text-sm font-medium text-primary-fg">Dehradun, Uttarakhand</span>
           </div>
 
           <h1 className="mb-5 text-[2.75rem] font-black leading-[1.05] tracking-tight sm:text-6xl lg:text-6xl xl:text-7xl">
             Your city.
             <br />
-            <span className="text-primary">Your people.</span>
+            <span className="text-primary-fg">Your people.</span>
           </h1>
 
           <p className="mb-7 max-w-md text-base leading-relaxed text-muted">

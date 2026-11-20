@@ -20,7 +20,7 @@ export default function MobileBottomNav() {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={`flex flex-col items-center gap-0.5 rounded-xl py-2 transition-all ${
-                active ? "text-primary" : "text-muted"
+                active ? "text-primary-fg" : "text-muted"
               }`}
             >
               <div className="relative">

@@ -3,54 +3,122 @@
 @custom-variant night (&:where([data-theme="night"], [data-theme="night"] *));
 @custom-variant doon (&:where([data-theme="doon"], [data-theme="doon"] *));
 
+/* ============================================================
+   DoonMeet design tokens — "Doon Mist" (light) & "Doon Night" (dark)
+   Values are RGB triplets so Tailwind opacity modifiers work
+   (e.g. bg-primary/10). Rules: .claude-skills/ui-design/SKILL.md
+   ============================================================ */
+
 :root {
-  --background: 245 248 245;
-  --surface: 255 255 255;
+  --background: 243 246 241; /* valley mist */
+  --surface: 255 255 255; /* cards, sheets, nav */
+  --surface-2: 232 239 230; /* inputs, chips, icon buttons */
+  --border: 220 229 218;
 
-  --primary: 34 120 80;
-  --primary-light: 52 168 110;
+  --text: 19 38 28;
+  --muted: 85 105 93; /* 5:1+ on background — safe for small text */
 
-  --accent: 194 140 74;
+  --primary: 31 107 71; /* forest green — fills (buttons, active chips) */
+  --primary-light: 47 140 94;
+  --primary-fg: 31 107 71; /* primary used as text/icon colour */
+  --primary-soft: 220 235 225; /* tinted backgrounds */
+  --on-primary: 255 255 255; /* text on a primary fill */
 
-  --text: 20 40 30;
-  --muted: 100 130 115;
+  --accent: 201 130 46; /* Mussoorie sunset amber — highlights only */
+  --accent-soft: 246 231 210;
+  --accent-fg: 138 82 16; /* amber as text on light surfaces */
 
-  --border: 215 232 220;
+  --danger: 180 35 24;
+  --online: 35 166 101;
 }
 
 [data-theme="night"] {
-  --background: 10 14 12;
-  --surface: 16 22 18;
+  --background: 12 19 16; /* green-tinted night, never pure black */
+  --surface: 19 28 23;
+  --surface-2: 26 38 32;
+  --border: 34 48 42;
 
-  --primary: 40 160 100;
-  --primary-light: 72 210 140;
+  --text: 231 239 233;
+  --muted: 147 168 155;
 
-  --accent: 194 140 74;
+  --primary: 31 133 83; /* deep enough for white text (4.6:1) */
+  --primary-light: 61 186 126;
+  --primary-fg: 95 208 152; /* bright leaf for text/icons on dark */
+  --primary-soft: 23 53 40;
+  --on-primary: 255 255 255;
 
-  --text: 230 240 234;
-  --muted: 140 165 150;
+  --accent: 224 164 88;
+  --accent-soft: 46 36 22;
+  --accent-fg: 224 164 88;
 
-  --border: 32 48 38;
+  --danger: 249 112 102;
+  --online: 61 186 126;
 }
 
 @theme inline {
   --color-background: rgb(var(--background));
   --color-surface: rgb(var(--surface));
-
-  --color-primary: rgb(var(--primary));
-  --color-primary-light: rgb(var(--primary-light));
-
-  --color-accent: rgb(var(--accent));
+  --color-surface-2: rgb(var(--surface-2));
+  --color-border: rgb(var(--border));
 
   --color-text: rgb(var(--text));
   --color-muted: rgb(var(--muted));
 
-  --color-border: rgb(var(--border));
+  --color-primary: rgb(var(--primary));
+  --color-primary-light: rgb(var(--primary-light));
+  --color-primary-fg: rgb(var(--primary-fg));
+  --color-primary-soft: rgb(var(--primary-soft));
+  --color-on-primary: rgb(var(--on-primary));
+
+  --color-accent: rgb(var(--accent));
+  --color-accent-soft: rgb(var(--accent-soft));
+  --color-accent-fg: rgb(var(--accent-fg));
+
+  --color-danger: rgb(var(--danger));
+  --color-online: rgb(var(--online));
+
+  /* Fonts — loaded via next/font in src/app/layout.tsx.
+     Body: Mukta (Latin) + Mukta Devanagari subset for Hindi posts.
+     Display: Bricolage Grotesque for headings. */
+  --font-sans: var(--font-body), var(--font-body-deva), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-heading), var(--font-body-deva), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-body {
-  background-color: rgb(var(--background));
-  color: rgb(var(--text));
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: rgb(var(--background));
+    color: rgb(var(--text));
+    font-family: var(--font-body), var(--font-body-deva), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading), var(--font-body-deva), ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.015em;
+  }
+
+  /* Removes double-tap-zoom delay on taps without disabling pinch zoom */
+  a,
+  button,
+  [role="button"],
+  input,
+  label,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--primary-fg));
+    outline-offset: 2px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -71,27 +139,16 @@ body {
   display: none;
 }
 
+/* ============================================================
+   Motion — deliberately minimal so low-end phones stay smooth.
+   Only short opacity/transform animations (GPU-cheap). No
+   scroll-driven reveals, staggers or springy hover scaling.
+   ============================================================ */
+
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.toast-enter {
-  animation: toast-in 0.2s ease-out;
-}
-
-/* ---- Reusable creative-motion utilities (CSS-only, see doonmeet-ui-redesign skill) ---- */
-
-@keyframes reveal-up {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -99,51 +156,26 @@ body {
   }
 }
 
-/* Gently reveals an element as it scrolls into view. Progressive enhancement —
-   browsers without animation-timeline support just see the content immediately. */
-.reveal-on-scroll {
-  animation: reveal-up 0.5s ease-out both;
-  animation-timeline: view();
-  animation-range: entry 0% entry 40%;
+.toast-enter {
+  animation: toast-in 0.18s ease-out;
 }
 
-@supports not (animation-timeline: view()) {
-  .reveal-on-scroll {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
+/* Kept as no-ops so existing markup doesn't break; remove usages as
+   each page is redesigned. */
+.reveal-on-scroll,
+.stagger-grid > * {
+  animation: none;
 }
 
-/* Staggers direct children of a feed/grid so items feel choreographed, not all-at-once. */
-.stagger-grid > *:nth-child(1) {
-  animation-delay: 0ms;
-}
-.stagger-grid > *:nth-child(2) {
-  animation-delay: 60ms;
-}
-.stagger-grid > *:nth-child(3) {
-  animation-delay: 120ms;
-}
-.stagger-grid > *:nth-child(4) {
-  animation-delay: 180ms;
-}
-.stagger-grid > *:nth-child(n + 5) {
-  animation-delay: 200ms;
-}
-
-/* Small springy scale feedback for primary buttons/CTAs — no JS spring library needed. */
+/* Tap feedback only — no hover scaling (it jitters on cheap GPUs). */
 .btn-springy {
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.12s ease-out;
 }
 .btn-springy:active {
-  transform: scale(0.96);
-}
-.btn-springy:hover {
-  transform: scale(1.03);
+  transform: scale(0.97);
 }
 
-/* Create-post modal entrance: bottom-sheet slide-up on mobile, centered fade-scale on desktop. */
+/* Bottom sheet on mobile, centered fade on desktop. */
 @keyframes sheet-slide-up {
   from {
     transform: translateY(100%);
@@ -153,18 +185,7 @@ body {
   }
 }
 
-@keyframes modal-fade-scale {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes backdrop-fade-in {
+@keyframes fade-in {
   from {
     opacity: 0;
   }
@@ -174,15 +195,15 @@ body {
 }
 
 .composer-backdrop {
-  animation: backdrop-fade-in 0.2s ease-out;
+  animation: fade-in 0.15s ease-out;
 }
 
 .composer-sheet {
-  animation: sheet-slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  animation: sheet-slide-up 0.22s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @media (min-width: 640px) {
   .composer-sheet {
-    animation: modal-fade-scale 0.2s ease-out;
+    animation: fade-in 0.15s ease-out;
   }
 }
