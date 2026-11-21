@@ -30,20 +30,21 @@ export default function RefundPolicyPage() {
     <LegalPageShell
       active="refund"
       title="Refund & Cancellation Policy"
-      description="Using DoonMeet is free. This policy covers our optional paid features — currently Sponsored posts — and what to expect if something goes wrong with a charge."
+      description="Using DoonMeet is free. This policy covers our optional paid features — Support DoonMeet contributions and (when available) Sponsored posts — and what to expect if something goes wrong with a charge."
       lastUpdated={LAST_UPDATED}
       toc={TOC}
     >
       <LegalSection id="overview" number="01" title="Overview">
         <p>
-          <strong>Sponsored posts are paused right now — DoonMeet is not taking any payments.</strong> The
-          terms below apply only when we switch them back on.
+          <strong>Sponsored posts are paused right now.</strong> The only payment you can make on DoonMeet
+          today is an optional <strong>Support DoonMeet</strong> contribution. The sponsored-post terms
+          below apply only when we switch them back on.
         </p>
         <p>
           Using DoonMeet — chatting, posting, events and communities — is <strong>free</strong>.
-          The only paid feature today is <strong>Sponsored posts</strong>: a one-time payment that
-          pins one of your posts at the top of the feed, with a &quot;Sponsored&quot; label, for a
-          fixed period shown before you pay. Payments are processed securely by Razorpay.
+          Paid options are an optional <strong>Support DoonMeet</strong> contribution and, when switched
+          on, <strong>Sponsored posts</strong>: a one-time payment that pins one of your posts at the top
+          of the feed, with a &quot;Sponsored&quot; label, for a fixed period shown before you pay. Payments are processed securely by Cashfree Payments.
         </p>
         <p>
           This policy governs all payments made on DoonMeet, alongside our{" "}
@@ -74,6 +75,7 @@ export default function RefundPolicyPage() {
         <p>This no-refund policy applies to all current and future paid offerings on DoonMeet, including but not limited to:</p>
         <LegalList
           items={[
+            <>Support DoonMeet contributions (voluntary support payments).</>,
             <>Sponsored posts (pinning a post at the top of the feed for a set number of days).</>,
             <>Premium account features or subscription plans, if introduced.</>,
             <>Paid tools for creating or promoting events (e.g. boosted listings, ticketing), if introduced.</>,

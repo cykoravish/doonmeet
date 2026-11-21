@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import SupporterBadge from "@/components/support/SupporterBadge";
 import { useRouter } from "next/navigation";
 import {
   MapPin,
@@ -32,6 +33,8 @@ interface User {
   _id: string;
   name: string;
   email: string;
+  /** Set after a successful "Support DoonMeet" payment. */
+  supporterSince?: string | null;
   avatar: string | null;
   bannerImage: string | null;
   bio: string;
@@ -119,6 +122,7 @@ export default function OwnProfileClient({ user }: { user: User }) {
           />
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-2xl font-extrabold sm:text-3xl">{currentUser.name}</h1>
+            {currentUser.supporterSince && <SupporterBadge className="mt-1" />}
             <p className="truncate text-[15px] text-muted">{currentUser.email}</p>
             <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-muted">
               {currentUser.address && (

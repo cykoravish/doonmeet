@@ -10,6 +10,7 @@ import {
   MapPin,
   Menu,
   Shield,
+  Coffee,
   UserRound,
   Users,
   X,
@@ -28,9 +29,11 @@ const TRANSITION_MS = 200;
 
 interface MobileDrawerProps {
   user: NavUser | null;
+  /** Show the "Support DoonMeet" link (support payments switched on). */
+  supportEnabled?: boolean;
 }
 
-export default function MobileDrawer({ user }: MobileDrawerProps) {
+export default function MobileDrawer({ user, supportEnabled = false }: MobileDrawerProps) {
   const [open, setOpen] = useState(false);
   // Kept mounted for the duration of the close transition so the panel can
   // slide out instead of vanishing.
@@ -188,6 +191,9 @@ export default function MobileDrawer({ user }: MobileDrawerProps) {
               </DrawerSection>
 
               <DrawerSection title="About">
+                {supportEnabled && (
+                  <DrawerLink href="/support" icon={<Coffee size={20} />} label="Support DoonMeet" onClick={close} />
+                )}
                 <DrawerLink href="/privacy" icon={<Shield size={20} />} label="Privacy Policy" onClick={close} />
                 <DrawerLink href="/terms" icon={<FileText size={20} />} label="Terms of Service" onClick={close} />
                 <DrawerLink href="/grievance" icon={<LifeBuoy size={20} />} label="Report a problem" onClick={close} />

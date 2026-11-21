@@ -161,8 +161,9 @@ export default function TermsPage() {
 
       <LegalSection id="paid-features" number="09" title="Paid features & Sponsored posts">
         <p>
-          <strong>Sponsored posts are paused right now — DoonMeet is not taking any payments.</strong> The
-          terms below apply only when we switch them back on.
+          <strong>Sponsored posts are paused right now.</strong> The only payment you can make on DoonMeet
+          today is an optional <strong>Support DoonMeet</strong> contribution. The sponsored-post terms
+          below apply only when we switch them back on.
         </p>
         <p>
           Using DoonMeet is free. We offer optional paid features — currently{" "}
@@ -172,8 +173,15 @@ export default function TermsPage() {
           <Link href="/refund-policy" className="font-semibold text-primary-fg underline">
             Refund &amp; Cancellation Policy
           </Link>
-          . Payments are processed by Razorpay, a licensed third-party payment gateway; we never
-          see or store your card or UPI details.
+          . Payments are processed by Cashfree Payments, a licensed third-party payment gateway; we
+          never see or store your card or UPI details.
+        </p>
+        <p>
+          <strong>Support DoonMeet.</strong> You can choose to pay any amount we offer to support
+          DoonMeet. It is a voluntary payment for the service, not a donation, and has no tax benefit.
+          It gives you a &quot;Supporter&quot; badge on your profile and no other features — everything on
+          DoonMeet stays free for everyone. Support payments are non-refundable except as set out in our
+          Refund &amp; Cancellation Policy.
         </p>
         <p>
           Sponsored posts are always shown with a &quot;Sponsored&quot; label. They must follow these
