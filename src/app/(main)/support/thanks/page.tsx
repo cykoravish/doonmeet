@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { CircleCheck, Clock, XCircle } from "lucide-react";
-import { getSessionUser } from "@/lib/getSessionUser";
 import { settleSupportOrder, type SupportStatus } from "@/lib/support";
 import { supportOrderIdSchema } from "@/validations/support";
 import { noIndexMetadata } from "@/lib/seo";
@@ -15,13 +14,13 @@ export default async function SupportThanksPage({
   searchParams: Promise<{ order_id?: string }>;
 }) {
   const { order_id } = await searchParams;
-  const user = await getSessionUser();
   const parsed = supportOrderIdSchema.safeParse(order_id);
 
   let status: SupportStatus = "not_found";
-  if (user && parsed.success) {
+  let badge = false;
+  if (parsed.success) {
     try {
-      status = await settleSupportOrder(parsed.data, String(user._id));
+      ({ status, badge } = await settleSupportOrder(parsed.data));
     } catch {
       status = "pending";
     }
@@ -31,7 +30,9 @@ export default async function SupportThanksPage({
     paid: {
       icon: <CircleCheck size={44} className="text-primary-fg" aria-hidden="true" />,
       title: "Thank you! ☕",
-      text: "Your support keeps DoonMeet free and growing. A Supporter badge now shows on your profile.",
+      text: badge
+        ? "Your support keeps DoonMeet free and growing. A ☕ Supporter badge now shows on your profile."
+        : "Your support keeps DoonMeet free and growing. Thank you for supporting anonymously 💚",
     },
     pending: {
       icon: <Clock size={44} className="text-accent-fg" aria-hidden="true" />,
@@ -46,7 +47,7 @@ export default async function SupportThanksPage({
     not_found: {
       icon: <XCircle size={44} className="text-muted" aria-hidden="true" />,
       title: "We couldn't find this payment",
-      text: user ? "Check the link, or contact us if money was deducted." : "Log in with the account you paid from to see it.",
+      text: "Check the link, or contact us if money was deducted.",
     },
   }[status];
 
@@ -61,8 +62,8 @@ export default async function SupportThanksPage({
             Check again
           </Link>
         )}
-        <Link href={status === "paid" ? "/profile" : "/support"} className={buttonClasses("primary", "md")}>
-          {status === "paid" ? "See your badge" : "Back to Support"}
+        <Link href={status === "paid" ? (badge ? "/profile" : "/") : "/support"} className={buttonClasses("primary", "md")}>
+          {status === "paid" ? (badge ? "See your badge" : "Back to DoonMeet") : "Back to Support"}
         </Link>
       </div>
     </div>

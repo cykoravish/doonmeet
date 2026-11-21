@@ -179,7 +179,8 @@ export default function TermsPage() {
         <p>
           <strong>Support DoonMeet.</strong> You can choose to pay any amount we offer to support
           DoonMeet. It is a voluntary payment for the service, not a donation, and has no tax benefit.
-          It gives you a &quot;Supporter&quot; badge on your profile and no other features — everything on
+          If you&apos;re logged in and don&apos;t choose to stay anonymous, it gives you a &quot;Supporter&quot; badge on
+          your profile; it unlocks no other features — everything on
           DoonMeet stays free for everyone. Support payments are non-refundable except as set out in our
           Refund &amp; Cancellation Policy.
         </p>

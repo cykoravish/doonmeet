@@ -8,7 +8,7 @@
 
 export const GRIEVANCE_OFFICER = {
   name: "Ravish Bisht",
-  email: "cykoravish@gmail.com",
+  email: "ravish@doonmeet.in",
   location: "Dehradun, Uttarakhand, India",
 } as const;
 

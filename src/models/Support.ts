@@ -2,7 +2,9 @@ import mongoose, { Document, Schema } from "mongoose";
 
 // One "Support DoonMeet" (buy-me-a-coffee) payment attempt via Cashfree.
 export interface ISupport extends Document {
-  user: mongoose.Types.ObjectId;
+  /** Null when the supporter chose to stay anonymous or wasn't logged in. */
+  user: mongoose.Types.ObjectId | null;
+  anonymous: boolean;
   /** Rupees (whole number). */
   amount: number;
   currency: "INR";
@@ -18,7 +20,8 @@ export interface ISupport extends Document {
 
 const SupportSchema = new Schema<ISupport>(
   {
-    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    user: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    anonymous: { type: Boolean, default: false },
     amount: { type: Number, required: true, min: 1 },
     currency: { type: String, enum: ["INR"], default: "INR" },
     message: { type: String, maxlength: 140, default: null },

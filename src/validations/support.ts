@@ -8,7 +8,8 @@ export const createSupportSchema = z.object({
     .min(SUPPORT_MIN_RUPEES, `Minimum is ₹${SUPPORT_MIN_RUPEES}`)
     .max(SUPPORT_MAX_RUPEES, `Maximum is ₹${SUPPORT_MAX_RUPEES}`),
   message: z.string().trim().max(140, "Keep the message under 140 characters").optional(),
-  phone: z.string().trim().max(20).optional(),
+  /** Logged-in supporters can still choose not to be linked (no badge). */
+  anonymous: z.boolean().optional(),
 });
 
 export const supportOrderIdSchema = z.string().regex(/^dms_[a-f0-9]{24}$/, "Invalid order id");
