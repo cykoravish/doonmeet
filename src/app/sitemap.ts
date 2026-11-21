@@ -7,6 +7,7 @@ import { Place } from "@/models/Place";
 import { MIN_INDEXABLE_POST_LENGTH, SITE_URL } from "@/lib/seo";
 import { POST_CATEGORIES } from "@/lib/postCategories";
 import { isPaymentsConfigured } from "@/lib/razorpay";
+import { isSupportEnabled } from "@/lib/support";
 
 // Without this the sitemap is generated once at build time and never again,
 // so new events/places/posts would not show up until the next deploy.
@@ -15,7 +16,7 @@ export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = SITE_URL;
 
-  const staticRoutes = ["", "/posts", "/communities", "/events", "/places", "/chat", "/explore", ...(isPaymentsConfigured() ? ["/promote"] : [])].map(
+  const staticRoutes = ["", "/posts", "/communities", "/events", "/places", "/chat", "/explore", ...(isPaymentsConfigured() ? ["/promote"] : []), ...(isSupportEnabled() ? ["/support"] : [])].map(
     (route) => ({
       url: `${base}${route}`,
       changeFrequency: "daily" as const,

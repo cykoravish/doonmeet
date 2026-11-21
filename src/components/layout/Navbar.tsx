@@ -2,6 +2,7 @@ import Link from "next/link";
 import NavLinks from "./NavLinks";
 import ThemeToggle from "../theme/theme-toggle";
 import MobileDrawer from "./MobileDrawer";
+import { isSupportEnabled } from "@/lib/support";
 import NotificationBell, { NotificationLink } from "./NotificationBell";
 import type { NavUser } from "@/types/user";
 import Logo from "./get-logo/Logo";
@@ -66,7 +67,7 @@ export default function Navbar({ user }: NavbarProps) {
                 Sign up
               </Link>
             )}
-            <MobileDrawer user={user} />
+            <MobileDrawer user={user} supportEnabled={isSupportEnabled()} />
           </div>
         </div>
       </header>

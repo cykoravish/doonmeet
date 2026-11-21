@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Logo from "./get-logo/Logo";
+import { isSupportEnabled } from "@/lib/support";
 
 const links = {
   Explore: [
@@ -37,7 +38,10 @@ export default function Footer() {
           </div>
 
           {/* Links */}
-          {Object.entries(links).map(([section, items]) => (
+          {Object.entries({
+            ...links,
+            Explore: isSupportEnabled() ? [...links.Explore, { label: "Support DoonMeet", href: "/support" }] : links.Explore,
+          }).map(([section, items]) => (
             <div key={section}>
               <p className="mb-4 inline-block border-b-2 border-primary pb-2 text-xs font-bold tracking-widest text-muted uppercase">
                 {section}

@@ -58,6 +58,8 @@ export interface IUser extends Document {
   // short window (see src/lib/safety.ts). While in the future, the user
   // can't post in the public chat. Null / past = not muted.
   chatMutedUntil: Date | null;
+  /** First successful "Support DoonMeet" payment — shows the supporter badge. */
+  supporterSince: Date | null;
   // Methods
   comparePassword(password: string): Promise<boolean>;
 }
@@ -185,6 +187,7 @@ const UserSchema = new Schema<IUser>(
 
     // --- Safety ---
     chatMutedUntil: { type: Date, default: null },
+    supporterSince: { type: Date, default: null },
   },
   {
     timestamps: true, // adds createdAt, updatedAt

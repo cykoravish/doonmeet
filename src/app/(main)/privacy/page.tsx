@@ -73,7 +73,7 @@ export default function PrivacyPolicyPage() {
             <>Basic activity data — last seen time, login timestamps, and device/browser type for security and rate-limiting.</>,
             <>Reports you file (with a copy of the reported message or post, so we can review it) and the people you block.</>,
             <>If you turn on push notifications, your browser&apos;s push subscription, so we can deliver them.</>,
-            <>If you buy a sponsored post, a record of that payment (see Payments below).</>,
+            <>If you support DoonMeet with a payment, a record of that payment (see Payments below).</>,
           ]}
         />
         <p className="font-semibold text-text">Information from your device</p>
@@ -128,9 +128,9 @@ export default function PrivacyPolicyPage() {
         <p>
           We use essential, first-party cookies to keep you signed in — an access token and a
           refresh token, both httpOnly and not readable by scripts. We don&apos;t use third-party
-          advertising or tracking cookies. Signing out clears these cookies. If you pay for a
-          sponsored post, Razorpay&apos;s checkout window may set its own cookies to process the
-          payment securely.
+          advertising or tracking cookies. Signing out clears these cookies. If you make a
+          payment, our payment partner Cashfree&apos;s checkout window may set its own cookies to
+          process it securely.
         </p>
       </LegalSection>
 
@@ -138,7 +138,7 @@ export default function PrivacyPolicyPage() {
         <p>We do not sell your data. We share information only in these limited situations:</p>
         <LegalList
           items={[
-            <><strong>Service providers</strong> we rely on to run DoonMeet — for example Cloudinary (hosting the photos you upload), our email provider (account and security emails), Razorpay (payments for sponsored posts) and your browser&apos;s push service (if you turn on notifications). They only receive what&apos;s needed to perform their function.</>,
+            <><strong>Service providers</strong> we rely on to run DoonMeet — for example Cloudinary (hosting the photos you upload), our email provider (account and security emails), Cashfree (payments) and your browser&apos;s push service (if you turn on notifications). They only receive what&apos;s needed to perform their function.</>,
             <><strong>Google</strong>, if you choose to sign in with Google — we verify your identity with Google&apos;s servers but don&apos;t receive your Google password.</>,
             <><strong>Other users</strong>, limited to your public profile, posts, chat messages, and map check-in, and only according to the visibility and privacy settings you&apos;ve chosen.</>,
             <><strong>Law enforcement or regulators</strong>, only where we&apos;re legally required to disclose information, or to protect the safety of our users or the public.</>,
@@ -149,18 +149,15 @@ export default function PrivacyPolicyPage() {
 
       <LegalSection id="payments" number="07" title="Payments">
         <p>
-          <strong>Sponsored posts are paused right now — DoonMeet is not taking any payments.</strong> The
-          terms below apply only when we switch them back on.
-        </p>
-        <p>
-          DoonMeet is free to use. The only paid feature is <strong>sponsored posts</strong> — a
-          one-time payment that pins your post at the top of the feed for a fixed period. When you pay:
+          DoonMeet is free to use. Right now the only payment you can make is an optional{" "}
+          <strong>Support DoonMeet</strong> contribution (&quot;buy us a chai&quot;). Sponsored posts are
+          paused. When you pay:
         </p>
         <LegalList
           items={[
-            <>Payments are processed by <strong>Razorpay</strong>, our payment gateway. You enter your card, UPI or bank details in Razorpay&apos;s secure checkout — they never reach our servers, and we don&apos;t store them.</>,
-            <>To open the checkout we share your name and email with Razorpay (to pre-fill the form), along with the amount and our internal order reference. Anything you enter in the checkout, such as your phone number, is handled by Razorpay under its own privacy policy.</>,
-            <>We keep a record of each payment — order and payment IDs, amount, status, the promoted post and the dates it was sponsored — for receipts, support, refunds, tax and fraud prevention.</>,
+            <>Payments are processed by <strong>Cashfree Payments</strong>, our payment gateway. You enter your card, UPI or bank details in Cashfree&apos;s secure checkout — they never reach our servers, and we don&apos;t store them.</>,
+            <>To create the payment we share your name, email, mobile number, the amount and our internal order reference with Cashfree. Anything else you enter in the checkout is handled by Cashfree under its own privacy policy.</>,
+            <>We keep a record of each payment — order ID, amount, status, your optional message and the date — for receipts, support, refunds, tax and fraud prevention. Supporters get a public ☕ Supporter badge on their profile.</>,
             <>How charges, refunds and cancellations work is explained in our{" "}
               <Link href="/refund-policy" className="font-semibold text-primary-fg underline">
                 Refund &amp; Cancellation Policy

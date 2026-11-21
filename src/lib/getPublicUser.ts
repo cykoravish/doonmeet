@@ -14,7 +14,7 @@ export async function getPublicUser(userId: string) {
 
     const user = await User.findById(userId)
       .select(
-        "name avatar bannerImage bio gender address interests occupation website dob lookingFor privacy role isActive isDeleted email passwordHash googleId createdAt lastSeenAt"
+        "name avatar bannerImage bio gender address interests occupation website dob lookingFor privacy role isActive isDeleted email passwordHash googleId createdAt lastSeenAt supporterSince"
       )
       .lean();
 
@@ -42,6 +42,7 @@ export async function getPublicUser(userId: string) {
       lookingFor: user.lookingFor,
       createdAt: user.createdAt,
       lastSeenAt: user.lastSeenAt,
+      isSupporter: !!user.supporterSince,
       stats: {
         communities: communitiesCount,
         events: eventsCount,

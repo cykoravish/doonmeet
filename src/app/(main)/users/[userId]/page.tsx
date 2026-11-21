@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import SupporterBadge from "@/components/support/SupporterBadge";
 import Link from "next/link";
 import {
   MapPin,
@@ -123,6 +124,7 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
           <h1 className="text-[28px] leading-tight font-extrabold wrap-anywhere sm:text-4xl">
             {user.name}
           </h1>
+          {user.isSupporter && <SupporterBadge className="mt-2" />}
           {user.bio && (
             <p className="mx-auto mt-2 max-w-xl text-[16px] leading-relaxed text-text sm:mx-0">
               {user.bio}
