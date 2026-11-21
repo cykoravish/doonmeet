@@ -68,7 +68,7 @@ function ChatMessage({
           <span className="w-[34px] shrink-0" aria-hidden="true" />
         ))}
 
-      <div className={`flex max-w-[80%] flex-col ${isOwn ? "items-end" : "items-start"}`}>
+      <div className={`flex max-w-[80%] min-w-0 flex-col ${isOwn ? "items-end" : "items-start"}`}>
         {showName && (
           <ChatUserActions
             userId={senderId}
@@ -83,7 +83,7 @@ function ChatMessage({
         )}
 
         <div
-          className={`rounded-[18px] px-3.5 py-2 text-[15px] leading-snug break-words whitespace-pre-wrap ${
+          className={`max-w-full rounded-[18px] px-3.5 py-2 text-[15px] leading-snug wrap-anywhere whitespace-pre-wrap ${
             isOwn
               ? `bg-primary text-on-primary ${lastInGroup ? "rounded-br-[6px]" : ""}`
               : `border border-border bg-surface text-text ${lastInGroup ? "rounded-bl-[6px]" : ""}`

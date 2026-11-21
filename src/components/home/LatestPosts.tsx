@@ -45,7 +45,7 @@ export default function LatestPosts({ posts, isLoggedIn }: LatestPostsProps) {
                     {" · "}
                     <time dateTime={post.createdAt}>{timeAgo(post.createdAt)}</time>
                   </p>
-                  <p className="mt-0.5 line-clamp-2 text-[15px] leading-snug break-words text-text">
+                  <p className="mt-0.5 line-clamp-2 text-[15px] leading-snug wrap-anywhere text-text">
                     {post.content}
                   </p>
                   {post.commentCount > 0 && (

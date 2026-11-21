@@ -100,7 +100,7 @@ export default function PostCard({
 
       <div className="px-4 pt-2.5 pb-3">
         <Link href={`/posts/${id}`} className="block">
-          <p className="line-clamp-6 text-[16px] leading-relaxed break-words whitespace-pre-line text-text">
+          <p className="line-clamp-6 text-[16px] leading-relaxed wrap-anywhere whitespace-pre-line text-text">
             {content}
           </p>
           {isLong(content) && (

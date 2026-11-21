@@ -170,7 +170,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               ))}
             </div>
           )}
-          <h1 className="text-[28px] leading-tight font-extrabold break-words sm:text-4xl">{title}</h1>
+          <h1 className="text-[28px] leading-tight font-extrabold wrap-anywhere sm:text-4xl">{title}</h1>
           <p className="mt-1 text-[15px] font-semibold text-primary-fg">
             {eventLongDate(eventDate)} · {eventTime(eventDate)}
           </p>
@@ -199,11 +199,11 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                     </span>
                     <span className="min-w-0">
                       <span className="block text-[13px] text-muted">Where</span>
-                      <span className="block font-semibold break-words text-text">
+                      <span className="block font-semibold wrap-anywhere text-text">
                         {location.name || location.address}
                       </span>
                       {location.name && location.address && (
-                        <span className="block text-sm break-words text-muted">{location.address}</span>
+                        <span className="block text-sm wrap-anywhere text-muted">{location.address}</span>
                       )}
                       <a
                         href={mapsSearchUrl(location.name, location.address)}
@@ -230,7 +230,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             <h2 id="event-about-title" className="mb-2 text-xl font-extrabold">
               About this event
             </h2>
-            <p className="text-[16px] leading-relaxed break-words whitespace-pre-line text-text">
+            <p className="text-[16px] leading-relaxed wrap-anywhere whitespace-pre-line text-text">
               {event.description as string}
             </p>
           </section>

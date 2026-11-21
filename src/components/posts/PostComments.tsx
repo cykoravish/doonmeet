@@ -156,7 +156,7 @@ export default function PostComments({ postId, initialCommentCount, isLoggedIn }
                       · <time dateTime={c.createdAt}>{timeAgo(c.createdAt)}</time>
                     </span>
                   </p>
-                  <p className="mt-0.5 text-[15px] leading-relaxed break-words whitespace-pre-line">
+                  <p className="mt-0.5 text-[15px] leading-relaxed wrap-anywhere whitespace-pre-line">
                     {c.content}
                   </p>
                 </div>

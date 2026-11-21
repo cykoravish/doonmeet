@@ -120,7 +120,7 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
 
         {/* Identity block — always below the avatar, normal flow. */}
         <div className="mt-4 text-center sm:text-left">
-          <h1 className="text-[28px] leading-tight font-extrabold break-words sm:text-4xl">
+          <h1 className="text-[28px] leading-tight font-extrabold wrap-anywhere sm:text-4xl">
             {user.name}
           </h1>
           {user.bio && (
@@ -135,7 +135,7 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
           {user.address && (
             <div className="flex items-center gap-1 text-sm text-muted">
               <MapPin size={15} className="shrink-0" aria-hidden="true" />
-              <span className="break-words">{user.address}</span>
+              <span className="wrap-anywhere">{user.address}</span>
             </div>
           )}
           <div className="flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1 text-sm font-semibold text-accent-fg">

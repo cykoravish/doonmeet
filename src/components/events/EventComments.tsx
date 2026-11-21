@@ -148,7 +148,7 @@ export default function EventComments({ eventId, commentCount, isLoggedIn = true
                       })}
                     </span>
                   </p>
-                  <p className="mt-0.5 text-[15px] leading-relaxed break-words whitespace-pre-line">
+                  <p className="mt-0.5 text-[15px] leading-relaxed wrap-anywhere whitespace-pre-line">
                     {comment.content}
                   </p>
                 </div>

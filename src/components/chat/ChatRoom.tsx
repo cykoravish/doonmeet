@@ -141,7 +141,7 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
       <div
         ref={scrollRef}
         onScroll={onScroll}
-        className="flex-1 overflow-y-auto overscroll-contain px-3 pt-3 pb-2 sm:px-6"
+        className="flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-3 pt-3 pb-2 sm:px-6"
       >
         {/* House rules + a hint that names are tappable (a feature people
             otherwise never discover). Scrolls away with the history. */}
