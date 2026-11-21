@@ -10,6 +10,7 @@ import { User } from "@/models/User";
 import { maybeSendDmNotificationEmail, maybeSendGlobalChatNotificationEmail } from "@/lib/email";
 import { sendPushToUser } from "@/lib/push";
 import { getChatMutedUntil, isBlockedEitherWay } from "@/lib/safety";
+import { watchRoomMessageDeletes } from "@/lib/realtime/roomMessageDeletes";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
 
@@ -452,6 +453,9 @@ export function initSocket(httpServer: HttpServer): SocketServer {
       }
     });
   });
+
+  // Admin deletes in the dashboard → remove the message from open chat screens.
+  watchRoomMessageDeletes(io);
 
   return io;
 }
