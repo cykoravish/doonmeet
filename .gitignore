@@ -15,6 +15,11 @@
 
 # next.js
 /.next/
+# production build slots + which one is live (scripts/deploy.sh)
+/.next-a/
+/.next-b/
+/.next-active
+/.next-active.tmp
 /out/
 
 # production
