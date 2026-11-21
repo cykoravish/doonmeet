@@ -104,9 +104,14 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
     function handleMuted(data: { until: string }) {
       setMutedUntil(data.until);
     }
+    // A moderator removed a message — take it off this screen too.
+    function handleDeleted(data: { messageId: string }) {
+      setMessages((prev) => prev.filter((m) => m._id !== data.messageId));
+    }
 
     socket.on("room:message", handleMessage);
     socket.on("room:muted", handleMuted);
+    socket.on("room:message_deleted", handleDeleted);
     // Join now (if connected) and again after any reconnect.
     const stopRejoining = onConnected(socket, () => socket.emit("room:join"));
 
@@ -114,6 +119,7 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
       stopRejoining();
       socket.off("room:message", handleMessage);
       socket.off("room:muted", handleMuted);
+      socket.off("room:message_deleted", handleDeleted);
       // The socket stays open for other features — just leave the room.
       socket.emit("room:leave");
     };
