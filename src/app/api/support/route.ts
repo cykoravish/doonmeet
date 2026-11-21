@@ -1,14 +1,16 @@
 // POST /api/support — start a "Support DoonMeet" payment (Cashfree order).
+// Login is optional: guests (and anyone who ticks "anonymous") support anonymously.
 import { NextResponse } from "next/server";
-import { requireVerified, AuthenticatedRequest } from "@/middleware/auth";
+import { withGuestAllowed, AuthenticatedRequest } from "@/middleware/auth";
 import { validateBody } from "@/middleware/validate";
 import { paymentLimiter } from "@/middleware/rateLimit";
 import { createSupportSchema } from "@/validations/support";
 import { createSupportOrder } from "@/lib/support";
 import { CashfreeError } from "@/lib/cashfree";
 
-export const POST = requireVerified(async (req: AuthenticatedRequest) => {
-  const limited = paymentLimiter(req, String(req.user._id));
+export const POST = withGuestAllowed(async (req: AuthenticatedRequest) => {
+  const user = req.user ?? null;
+  const limited = paymentLimiter(req, user ? String(user._id) : undefined);
   if (limited) return limited;
 
   const result = await validateBody(req, createSupportSchema);
@@ -16,7 +18,7 @@ export const POST = requireVerified(async (req: AuthenticatedRequest) => {
 
   try {
     const outcome = await createSupportOrder(
-      { _id: String(req.user._id), name: req.user.name, email: req.user.email, phone: req.user.phone },
+      user ? { _id: String(user._id), name: user.name, email: user.email } : null,
       result.data
     );
     if (!outcome.ok) {

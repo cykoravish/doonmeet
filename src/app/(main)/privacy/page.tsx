@@ -156,8 +156,8 @@ export default function PrivacyPolicyPage() {
         <LegalList
           items={[
             <>Payments are processed by <strong>Cashfree Payments</strong>, our payment gateway. You enter your card, UPI or bank details in Cashfree&apos;s secure checkout — they never reach our servers, and we don&apos;t store them.</>,
-            <>To create the payment we share your name, email, mobile number, the amount and our internal order reference with Cashfree. Anything else you enter in the checkout is handled by Cashfree under its own privacy policy.</>,
-            <>We keep a record of each payment — order ID, amount, status, your optional message and the date — for receipts, support, refunds, tax and fraud prevention. Supporters get a public ☕ Supporter badge on their profile.</>,
+            <>We never ask for your phone number, and you can support anonymously without an account. If you support while logged in and don&apos;t choose &quot;anonymous&quot;, we share your name and email with Cashfree for the receipt; anonymous support shares nothing that identifies you. Cashfree requires a phone number on every order, so we use DoonMeet&apos;s own contact number. Anything you enter in the checkout itself is handled by Cashfree under its own privacy policy.</>,
+            <>We keep a record of each payment — order ID, amount, status, your optional message and the date — for receipts, support, refunds, tax and fraud prevention. Logged-in supporters who don&apos;t choose anonymous get a public ☕ Supporter badge on their profile.</>,
             <>How charges, refunds and cancellations work is explained in our{" "}
               <Link href="/refund-policy" className="font-semibold text-primary-fg underline">
                 Refund &amp; Cancellation Policy

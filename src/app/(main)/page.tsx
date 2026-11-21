@@ -7,6 +7,8 @@ import UpcomingEvents from "@/components/home/UpcomingEvents";
 import PopularPlaces from "@/components/home/PopularPlaces";
 import CommunitiesStrip from "@/components/home/CommunitiesStrip";
 import AboutAndFaq from "@/components/home/AboutAndFaq";
+import SupportCard from "@/components/home/SupportCard";
+import { isSupportEnabled } from "@/lib/support";
 import { getSessionUser } from "@/lib/getSessionUser";
 import { getHomeData } from "@/lib/home";
 import { pageMetadata } from "@/lib/seo";
@@ -45,6 +47,7 @@ export default async function HomePage() {
         <UpcomingEvents events={data.events} isLoggedIn />
         <CommunitiesStrip communities={data.communities} />
         <PopularPlaces places={data.places} />
+        {isSupportEnabled() && <SupportCard />}
       </div>
     );
   }
@@ -60,6 +63,7 @@ export default async function HomePage() {
         <UpcomingEvents events={data.events} isLoggedIn={false} />
         <CommunitiesStrip communities={data.communities} />
         <PopularPlaces places={data.places} />
+        {isSupportEnabled() && <SupportCard />}
       </div>
       <AboutAndFaq />
     </>

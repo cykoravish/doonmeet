@@ -2,34 +2,40 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CircleCheck, Coffee, Loader2 } from "lucide-react";
+import { CircleCheck, Coffee, Loader2, Minus, Plus } from "lucide-react";
 import { buttonClasses } from "@/components/ui/Button";
 import { openCashfreeCheckout } from "@/lib/cashfree-checkout";
 import {
   SUPPORT_DEFAULT_RUPEES,
   SUPPORT_MAX_RUPEES,
   SUPPORT_MIN_RUPEES,
-  SUPPORT_PRESETS_RUPEES,
+  SUPPORT_PRESETS,
+  SUPPORT_STEP_RUPEES,
 } from "@/lib/supportPlans";
 
 type Phase = "idle" | "starting" | "paying" | "confirming" | "done";
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const clamp = (n: number) => Math.min(SUPPORT_MAX_RUPEES, Math.max(SUPPORT_MIN_RUPEES, n));
 
-export default function SupportForm({ needsPhone }: { needsPhone: boolean }) {
+export default function SupportForm({ isLoggedIn }: { isLoggedIn: boolean }) {
   const router = useRouter();
-  const [amount, setAmount] = useState<number>(SUPPORT_DEFAULT_RUPEES);
-  const [custom, setCustom] = useState("");
+  // One source of truth: the amount box. Presets just fill it.
+  const [amountText, setAmountText] = useState(String(SUPPORT_DEFAULT_RUPEES));
   const [note, setNote] = useState("");
-  const [phone, setPhone] = useState("");
+  const [anonymous, setAnonymous] = useState(!isLoggedIn);
   const [phase, setPhase] = useState<Phase>("idle");
-  const [message, setMessage] = useState<{ tone: "error" | "info" | "success"; text: string } | null>(null);
+  const [message, setMessage] = useState<{ tone: "error" | "info"; text: string } | null>(null);
+  const [gotBadge, setGotBadge] = useState(false);
 
-  const finalAmount = custom ? Number(custom) : amount;
-  const amountValid =
-    Number.isInteger(finalAmount) && finalAmount >= SUPPORT_MIN_RUPEES && finalAmount <= SUPPORT_MAX_RUPEES;
-  const phoneValid = !needsPhone || /^[6-9]\d{9}$/.test(phone.replace(/\D/g, "").slice(-10));
+  const amount = Number(amountText);
+  const amountValid = Number.isInteger(amount) && amount >= SUPPORT_MIN_RUPEES && amount <= SUPPORT_MAX_RUPEES;
   const busy = phase === "starting" || phase === "paying" || phase === "confirming";
+
+  function step(delta: number) {
+    const base = Number.isFinite(amount) && amount > 0 ? amount : SUPPORT_DEFAULT_RUPEES;
+    setAmountText(String(clamp(base + delta)));
+  }
 
   // The popup closing doesn't tell us the truth — ask our server (which asks Cashfree).
   async function confirm(orderId: string) {
@@ -39,8 +45,8 @@ export default function SupportForm({ needsPhone }: { needsPhone: boolean }) {
         const res = await fetch(`/api/support/status?order_id=${encodeURIComponent(orderId)}`, { cache: "no-store" });
         const data = await res.json().catch(() => ({}));
         if (data.status === "paid") {
+          setGotBadge(!!data.badge);
           setPhase("done");
-          setMessage({ tone: "success", text: `Thank you! Your ₹${finalAmount} keeps DoonMeet running. ☕` });
           router.refresh();
           return;
         }
@@ -53,23 +59,19 @@ export default function SupportForm({ needsPhone }: { needsPhone: boolean }) {
     setPhase("idle");
     setMessage({
       tone: "info",
-      text: "The payment wasn't completed. If money was deducted, it will show up here within a few minutes — no need to pay again.",
+      text: "The payment wasn't completed. If money was deducted, it will be confirmed within a few minutes — no need to pay again.",
     });
   }
 
   async function start() {
-    if (!amountValid || !phoneValid || busy) return;
+    if (!amountValid || busy) return;
     setMessage(null);
     setPhase("starting");
     try {
       const res = await fetch("/api/support", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: finalAmount,
-          message: note.trim() || undefined,
-          phone: needsPhone ? phone : undefined,
-        }),
+        body: JSON.stringify({ amount, message: note.trim() || undefined, anonymous }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {
@@ -79,7 +81,7 @@ export default function SupportForm({ needsPhone }: { needsPhone: boolean }) {
       }
       setPhase("paying");
       const result = await openCashfreeCheckout(data.paymentSessionId, data.mode);
-      if (result.redirect) return; // opened in a new window / in-app browser — the return page confirms it
+      if (result.redirect) return; // opened in a new window / UPI app — the return page confirms it
       await confirm(data.orderId);
     } catch (e) {
       setPhase("idle");
@@ -87,12 +89,14 @@ export default function SupportForm({ needsPhone }: { needsPhone: boolean }) {
     }
   }
 
-  if (phase === "done" && message) {
+  if (phase === "done") {
     return (
       <div className="flex flex-col items-center rounded-[20px] bg-primary-soft p-6 text-center">
         <CircleCheck size={40} className="text-primary-fg" aria-hidden="true" />
-        <p className="mt-2 text-lg font-bold">{message.text}</p>
-        <p className="mt-1 text-[15px] text-muted">A ☕ Supporter badge now shows on your profile.</p>
+        <p className="mt-2 text-lg font-bold">Thank you! Your ₹{amount} keeps DoonMeet running ☕</p>
+        <p className="mt-1 text-[15px] text-muted">
+          {gotBadge ? "A ☕ Supporter badge now shows on your profile." : "You supported anonymously — thank you, whoever you are 💚"}
+        </p>
       </div>
     );
   }
@@ -103,50 +107,79 @@ export default function SupportForm({ needsPhone }: { needsPhone: boolean }) {
         e.preventDefault();
         start();
       }}
-      className="flex flex-col gap-4"
+      className="flex flex-col gap-5"
     >
       <fieldset>
-        <legend className="mb-2 text-[15px] font-semibold">Choose an amount</legend>
-        <div className="grid grid-cols-3 gap-2">
-          {SUPPORT_PRESETS_RUPEES.map((v) => {
-            const active = !custom && amount === v;
+        <legend className="mb-2 text-[15px] font-semibold">Pick a treat</legend>
+        <div className="grid grid-cols-2 gap-2">
+          {SUPPORT_PRESETS.map((p) => {
+            const active = amount === p.amount;
             return (
               <button
-                key={v}
+                key={p.amount}
                 type="button"
-                onClick={() => {
-                  setAmount(v);
-                  setCustom("");
-                }}
+                onClick={() => setAmountText(String(p.amount))}
                 aria-pressed={active}
-                className={`h-12 rounded-[14px] border text-[17px] font-bold transition-colors ${
-                  active ? "border-primary bg-primary text-on-primary" : "border-border bg-surface text-text hover:bg-surface-2"
+                className={`flex flex-col items-start rounded-[16px] border p-3.5 text-left transition-colors ${
+                  active ? "border-primary bg-primary-soft" : "border-border bg-surface hover:bg-surface-2"
                 }`}
               >
-                ₹{v}
+                <span className="text-2xl leading-none" aria-hidden="true">
+                  {p.emoji}
+                </span>
+                <span className="mt-1.5 text-[18px] font-extrabold text-text">₹{p.amount}</span>
+                <span className="text-sm text-muted">{p.label}</span>
               </button>
             );
           })}
         </div>
-        <label className="mt-2 block">
-          <span className="sr-only">Other amount in rupees</span>
-          <input
-            inputMode="numeric"
-            value={custom}
-            onChange={(e) => setCustom(e.target.value.replace(/\D/g, "").slice(0, 4))}
-            placeholder={`Other amount (₹${SUPPORT_MIN_RUPEES}–₹${SUPPORT_MAX_RUPEES})`}
-            className="h-12 w-full rounded-[14px] border border-border bg-surface-2 px-4 text-[16px] outline-none focus:border-primary"
-          />
-        </label>
-        {custom && !amountValid && (
-          <p className="mt-1 text-sm text-danger">
-            Enter between ₹{SUPPORT_MIN_RUPEES} and ₹{SUPPORT_MAX_RUPEES}.
-          </p>
-        )}
       </fieldset>
 
+      <div>
+        <label htmlFor="support-amount" className="mb-2 block text-[15px] font-semibold">
+          Or choose your own amount
+        </label>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => step(-SUPPORT_STEP_RUPEES)}
+            aria-label={`₹${SUPPORT_STEP_RUPEES} less`}
+            disabled={amountValid && amount <= SUPPORT_MIN_RUPEES}
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-surface-2 text-text transition-colors hover:bg-border disabled:opacity-40"
+          >
+            <Minus size={20} aria-hidden="true" />
+          </button>
+          <div className="flex h-14 min-w-0 flex-1 items-center rounded-[14px] border border-border bg-surface px-4 focus-within:border-primary">
+            <span className="mr-1 text-2xl font-extrabold text-muted" aria-hidden="true">
+              ₹
+            </span>
+            <input
+              id="support-amount"
+              inputMode="numeric"
+              value={amountText}
+              onChange={(e) => setAmountText(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              className="w-full min-w-0 bg-transparent text-center text-2xl font-extrabold outline-none"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => step(SUPPORT_STEP_RUPEES)}
+            aria-label={`₹${SUPPORT_STEP_RUPEES} more`}
+            disabled={amountValid && amount >= SUPPORT_MAX_RUPEES}
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-surface-2 text-text transition-colors hover:bg-border disabled:opacity-40"
+          >
+            <Plus size={20} aria-hidden="true" />
+          </button>
+        </div>
+        {!amountValid && (
+          <p className="mt-1.5 text-sm text-danger">
+            Enter an amount between ₹{SUPPORT_MIN_RUPEES} and ₹{SUPPORT_MAX_RUPEES}.
+          </p>
+        )}
+      </div>
+
       <label className="block">
-        <span className="mb-1.5 block text-[15px] font-semibold">Message (optional)</span>
+        <span className="mb-1.5 block text-[15px] font-semibold">Say something (optional)</span>
         <input
           value={note}
           onChange={(e) => setNote(e.target.value.slice(0, 140))}
@@ -155,19 +188,25 @@ export default function SupportForm({ needsPhone }: { needsPhone: boolean }) {
         />
       </label>
 
-      {needsPhone && (
-        <label className="block">
-          <span className="mb-1.5 block text-[15px] font-semibold">Mobile number</span>
+      {isLoggedIn ? (
+        <label className="flex items-start gap-3 rounded-[14px] bg-surface-2 p-3.5">
           <input
-            inputMode="tel"
-            autoComplete="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value.slice(0, 14))}
-            placeholder="10-digit mobile number"
-            className="h-12 w-full rounded-[14px] border border-border bg-surface-2 px-4 text-[16px] outline-none focus:border-primary"
+            type="checkbox"
+            checked={anonymous}
+            onChange={(e) => setAnonymous(e.target.checked)}
+            className="mt-0.5 h-5 w-5 shrink-0 accent-primary"
           />
-          <span className="mt-1 block text-sm text-muted">Our payment partner Cashfree needs it for the receipt.</span>
+          <span>
+            <span className="block text-[15px] font-semibold">Support anonymously</span>
+            <span className="block text-sm text-muted">
+              Not linked to your account — no badge, and your name isn&apos;t shared.
+            </span>
+          </span>
         </label>
+      ) : (
+        <p className="rounded-[14px] bg-surface-2 p-3.5 text-sm text-muted">
+          No account needed — you&apos;re supporting anonymously. Log in first if you&apos;d like a ☕ Supporter badge.
+        </p>
       )}
 
       {message && (
@@ -181,11 +220,7 @@ export default function SupportForm({ needsPhone }: { needsPhone: boolean }) {
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={!amountValid || !phoneValid || busy}
-        className={buttonClasses("primary", "lg", "w-full")}
-      >
+      <button type="submit" disabled={!amountValid || busy} className={buttonClasses("primary", "lg", "w-full")}>
         {busy ? (
           <>
             <Loader2 size={18} className="animate-spin" aria-hidden="true" />
@@ -194,11 +229,13 @@ export default function SupportForm({ needsPhone }: { needsPhone: boolean }) {
         ) : (
           <>
             <Coffee size={18} aria-hidden="true" />
-            Support with ₹{amountValid ? finalAmount : "…"}
+            Support with ₹{amountValid ? amount : "…"}
           </>
         )}
       </button>
-      <p className="text-center text-sm text-muted">UPI, cards and netbanking · Secured by Cashfree</p>
+      <p className="text-center text-sm text-muted">
+        UPI, cards and netbanking · Secured by Cashfree · We never ask for your phone number
+      </p>
     </form>
   );
 }
