@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { MessageCircle, CalendarDays, Megaphone, Newspaper } from "lucide-react";
+import { MessageCircle, CalendarDays, Megaphone, Newspaper, ShieldAlert } from "lucide-react";
 
 export type NotificationType =
   | "new_dm"
@@ -7,7 +7,8 @@ export type NotificationType =
   | "comment_reply"
   | "new_event"
   | "announcement"
-  | "post_comment";
+  | "post_comment"
+  | "post_removed";
 
 export interface NotificationItem {
   _id: string;
@@ -74,7 +75,27 @@ export const NOTIFICATION_TYPE_CONFIG: Record<NotificationType, TypeConfigEntry>
     label: "commented on your post",
     href: "/posts",
   },
+  post_removed: {
+    icon: <ShieldAlert size={14} />,
+    color: "rgb(var(--danger))",
+    bg: "rgb(var(--danger) / 0.1)",
+    label: "removed your post because it broke the community guidelines",
+    href: "/grievance",
+  },
 };
+
+// Unknown types (e.g. a newer type sent before this code is deployed) still render.
+const FALLBACK_CONFIG: TypeConfigEntry = {
+  icon: <Megaphone size={14} />,
+  color: "rgb(var(--primary-fg))",
+  bg: "rgb(var(--primary-soft))",
+  label: "sent you an update",
+  href: "/notifications",
+};
+
+export function getNotificationConfig(type: string): TypeConfigEntry {
+  return NOTIFICATION_TYPE_CONFIG[type as NotificationType] ?? FALLBACK_CONFIG;
+}
 
 // new_dm notifications deep-link straight into that conversation;
 // announcement notifications use whatever URL the admin attached (if any);
@@ -85,10 +106,10 @@ export function getNotificationHref(
   if (notif.type === "new_dm" && notif.actor.userId) {
     return `/chat?dm=${notif.actor.userId}`;
   }
-  if ((notif.type === "announcement" || notif.type === "post_comment") && notif.url) {
+  if ((notif.type === "announcement" || notif.type === "post_comment" || notif.type === "post_removed") && notif.url) {
     return notif.url;
   }
-  return NOTIFICATION_TYPE_CONFIG[notif.type].href;
+  return getNotificationConfig(notif.type).href;
 }
 
 export function timeAgo(date: string): string {

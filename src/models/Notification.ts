@@ -6,7 +6,9 @@ export type NotificationType =
   | "comment_reply"
   | "new_event"
   | "announcement"
-  | "post_comment";
+  | "post_comment"
+  /** An admin removed the recipient's Doon Feed post (sent from the admin dashboard). */
+  | "post_removed";
 
 export interface INotification extends Document {
   recipient: mongoose.Types.ObjectId;
@@ -30,7 +32,7 @@ const NotificationSchema = new Schema<INotification>(
     recipient: { type: Schema.Types.ObjectId, ref: "User", required: true },
     type: {
       type: String,
-      enum: ["new_dm", "event_comment", "comment_reply", "new_event", "announcement", "post_comment"],
+      enum: ["new_dm", "event_comment", "comment_reply", "new_event", "announcement", "post_comment", "post_removed"],
       required: true,
     },
     refModel: {
