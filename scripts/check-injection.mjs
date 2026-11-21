@@ -42,9 +42,9 @@ const OBFUSCATOR = /var _\$_[0-9a-f]{4}\s*=\s*\(function/;
 const EVAL_DECODE = /\beval\s*\(\s*["'`]?[^)]{0,40}\batob\s*\(/;
 const ENTRY_BAD = /\beval\s*\(|\batob\s*\(|new\s+Function\s*\(|\bcreateRequire\b|\bglobal(This)?\s*\[/;
 const WS_PAD = /\S[ \t]{100,}\S/;
-const BIDI = /[‪-‮⁦-⁩]/;
-const INVISIBLE_RUN = /[​-‍⁠-⁤︀-️]{3,}/;
-const VS_SUPPLEMENT = /\uDB40[\uDD00-\uDDEF]/; // U+E0100–E01EF, used to smuggle code
+const BIDI = /[\u202A-\u202E\u2066-\u2069]/;
+const INVISIBLE_RUN = /[\u200B-\u200D\u2060-\u2064\uFE00-\uFE0F]{3,}/;
+const VS_SUPPLEMENT = /\uDB40[\uDD00-\uDDEF]/; // U+E0100-E01EF, used to smuggle code
 const LIFECYCLE = ["preinstall", "install", "postinstall", "prepare", "preprepare", "postprepare", "prepublish"];
 
 const problems = [];
