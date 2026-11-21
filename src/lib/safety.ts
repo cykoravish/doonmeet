@@ -69,10 +69,24 @@ export async function unblockUser(me: string, other: string): Promise<void> {
 
 /** Returns the mute end time if the user is currently muted, else null. */
 export async function getChatMutedUntil(userId: string): Promise<Date | null> {
+  return (await getSenderState(userId)).mutedUntil;
+}
+
+/**
+ * Live account state of someone sending over an already-open socket. The
+ * socket only checks the account when it connects, but a ban (from the admin
+ * dashboard) or a mute can start while it's open — so check per message.
+ */
+export async function getSenderState(userId: string): Promise<{ active: boolean; mutedUntil: Date | null }> {
   await connectDB();
-  const user = await User.findById(userId).select("chatMutedUntil").lean<{ chatMutedUntil?: Date | null }>();
+  const user = await User.findById(userId)
+    .select("isActive isDeleted chatMutedUntil")
+    .lean<{ isActive?: boolean; isDeleted?: boolean; chatMutedUntil?: Date | null }>();
   const until = user?.chatMutedUntil ? new Date(user.chatMutedUntil) : null;
-  return until && until.getTime() > Date.now() ? until : null;
+  return {
+    active: !!user && user.isActive !== false && !user.isDeleted,
+    mutedUntil: until && until.getTime() > Date.now() ? until : null,
+  };
 }
 
 // -------------------------------------------------------

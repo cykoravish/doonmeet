@@ -11,8 +11,9 @@ export async function POST(req: NextRequest) {
   try {
     if (refreshToken) {
       await connectDB();
-      // Remove session from DB — invalidates token immediately
-      await Session.deleteOne({ token: refreshToken });
+      // Remove session from DB — invalidates token immediately. Also the token
+      // it replaced, which stays usable for a minute after a rotation.
+      await Session.deleteMany({ $or: [{ token: refreshToken }, { replacedBy: refreshToken }] });
     }
 
     const response = NextResponse.json(

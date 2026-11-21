@@ -119,7 +119,9 @@ function safeEqual(a: string, b: string): boolean {
 /**
  * Verifies a webhook. Signature = Base64(HMAC-SHA256(timestamp + rawBody, secret key)).
  * One Cashfree page writes "timestamp.body", so that form is accepted too — both
- * still require the secret. Rejects timestamps older than 15 minutes (replays).
+ * still require the secret. Rejects timestamps older than 24 hours — Cashfree retries
+ * a failed delivery up to 30 minutes later, and a replay can do no harm anyway: the
+ * payment result is always re-read from Cashfree's API, never taken from the payload.
  */
 export function verifyCashfreeWebhook(
   rawBody: string,
@@ -133,7 +135,7 @@ export function verifyCashfreeWebhook(
   const ts = Number(timestamp);
   if (!Number.isFinite(ts)) return false;
   const tsMs = ts < 1e12 ? ts * 1000 : ts; // seconds or milliseconds
-  if (Math.abs(now - tsMs) > 15 * 60 * 1000) return false;
+  if (Math.abs(now - tsMs) > 24 * 60 * 60 * 1000) return false;
 
   const sign = (payload: string) => crypto.createHmac("sha256", keys.secret).update(payload).digest("base64");
   return safeEqual(sign(timestamp + rawBody), signature) || safeEqual(sign(`${timestamp}.${rawBody}`), signature);

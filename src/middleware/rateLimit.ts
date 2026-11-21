@@ -3,6 +3,7 @@
 // NOTE: Swap to Redis (ioredis + sliding window) when scaling to multiple instances.
 // ============================================================
 import { NextRequest, NextResponse } from "next/server";
+import { getClientIp } from "@/lib/clientIp";
 
 interface RateLimitEntry {
   count: number;
@@ -18,12 +19,30 @@ interface RateLimitOptions {
   keyPrefix: string; // identifies the route/action
 }
 
-function getClientIp(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
+/** Counts one hit for `key`; returns the window's entry and whether it's now over `max`. */
+function hit(key: string, windowMs: number, max: number): { entry: RateLimitEntry; limited: boolean } {
+  const now = Date.now();
+  const entry = store.get(key);
+
+  // First request or window expired — reset
+  if (!entry || now > entry.resetAt) {
+    const fresh = { count: 1, resetAt: now + windowMs };
+    store.set(key, fresh);
+    return { entry: fresh, limited: false };
+  }
+
+  // Within window — increment
+  entry.count += 1;
+  return { entry, limited: entry.count > max };
+}
+
+/**
+ * The same limits for code that isn't an HTTP route (the Socket.IO handlers),
+ * e.g. `isRateLimited(ROOM_CHAT_LIMIT, userId)` — otherwise sending over the
+ * socket would have no limit at all.
+ */
+export function isRateLimited(options: RateLimitOptions, identifier: string): boolean {
+  return hit(`${options.keyPrefix}:${identifier}`, options.windowMs, options.max).limited;
 }
 
 export function rateLimit(options: RateLimitOptions) {
@@ -31,22 +50,11 @@ export function rateLimit(options: RateLimitOptions) {
 
   return function checkRateLimit(req: NextRequest, userId?: string): NextResponse | null {
     // Use userId if available (more accurate), fall back to IP
-    const identifier = userId ?? getClientIp(req);
-    const key = `${keyPrefix}:${identifier}`;
+    const identifier = userId ?? getClientIp(req.headers) ?? "unknown";
     const now = Date.now();
+    const { entry, limited } = hit(`${keyPrefix}:${identifier}`, windowMs, max);
 
-    const entry = store.get(key);
-
-    // First request or window expired — reset
-    if (!entry || now > entry.resetAt) {
-      store.set(key, { count: 1, resetAt: now + windowMs });
-      return null; // allowed
-    }
-
-    // Within window — increment
-    entry.count += 1;
-
-    if (entry.count > max) {
+    if (limited) {
       const retryAfterSeconds = Math.ceil((entry.resetAt - now) / 1000);
       return NextResponse.json(
         {
@@ -81,19 +89,21 @@ export const authLimiter = rateLimit({
   max: 10,
 });
 
-// Public room chat — prevents message flooding
-export const roomChatLimiter = rateLimit({
+// Public room chat — prevents message flooding (REST route + socket handler)
+export const ROOM_CHAT_LIMIT: RateLimitOptions = {
   keyPrefix: "room_chat",
   windowMs: 60 * 1000, // 1 minute
   max: 30,
-});
+};
+export const roomChatLimiter = rateLimit(ROOM_CHAT_LIMIT);
 
-// Direct messages
-export const dmLimiter = rateLimit({
+// Direct messages (REST route + socket handler)
+export const DM_LIMIT: RateLimitOptions = {
   keyPrefix: "dm",
   windowMs: 60 * 1000,
   max: 60,
-});
+};
+export const dmLimiter = rateLimit(DM_LIMIT);
 
 // Event creation — prevents spam events
 export const eventLimiter = rateLimit({
@@ -145,6 +155,14 @@ export const paymentLimiter = rateLimit({
   keyPrefix: "payment",
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 20,
+});
+
+// Support payment status checks — the page polls every few seconds while a
+// payment is in progress (only reveals paid / pending / failed).
+export const paymentStatusLimiter = rateLimit({
+  keyPrefix: "payment-status",
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 300,
 });
 
 // Cleanup stale entries every 10 minutes to prevent memory leak

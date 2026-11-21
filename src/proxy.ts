@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { rotateSession } from "@/lib/rotateSession";
-import { setAuthCookies } from "@/lib/tokens";
+import { clearAuthCookies, setAuthCookies } from "@/lib/tokens";
+import { getClientIp } from "@/lib/clientIp";
 
-// Next.js 16 — proxy.ts replaces middleware.ts
-// Same Edge Runtime rules apply — use jose not jsonwebtoken
+// Next.js 16 — proxy.ts replaces middleware.ts (runs on the Node.js runtime).
 
 const ACCESS_TOKEN_SECRET = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET);
 
@@ -14,85 +14,74 @@ const PROTECTED_ROUTES = ["/profile", "/settings", "/events/create"];
 // Routes only for unauthenticated users
 const AUTH_ROUTES = ["/login", "/signup", "/verify-email", "/reset-password", "/forgot-password"];
 
+// These read and replace the refresh token themselves. Rotating it here first
+// would hand them an already-used token (refresh → 401, logout → still logged in).
+const SESSION_ROUTES = ["/api/auth/refresh", "/api/auth/logout"];
+
+async function isValidAccessToken(token: string | undefined): Promise<boolean> {
+  if (!token) return false;
+  try {
+    await jwtVerify(token, ACCESS_TOKEN_SECRET);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  if (SESSION_ROUTES.includes(pathname)) return NextResponse.next();
 
-  let accessToken = req.cookies.get("access_token")?.value;
   const refreshToken = req.cookies.get("refresh_token")?.value;
+  let isAuthenticated = await isValidAccessToken(req.cookies.get("access_token")?.value);
+  let refreshed: { accessToken: string; refreshToken: string } | null = null;
+  let sessionDead = false;
 
-  let isAuthenticated = false;
-  let refreshedTokens: { accessToken: string; refreshToken: string } | null = null;
-
-  // Access token missing/expired but a refresh token exists — silently rotate
-  if (!accessToken && refreshToken) {
+  // Access token missing or expired but a refresh token exists — rotate it
+  // silently, so this very page renders logged in (no manual refresh needed).
+  if (!isAuthenticated && refreshToken) {
     try {
-      const result = await rotateSession(refreshToken, {
+      refreshed = await rotateSession(refreshToken, {
         userAgent: req.headers.get("user-agent"),
-        ip: req.headers.get("x-forwarded-for")?.split(",")[0] ?? null,
+        ip: getClientIp(req.headers),
       });
-      if (result) {
-        accessToken = result.accessToken;
-        refreshedTokens = result;
-      }
-    } catch {
-      // refresh token invalid/expired — proceed as unauthenticated
+      isAuthenticated = !!refreshed;
+      sessionDead = !refreshed;
+    } catch (error) {
+      // Database hiccup — treat this request as logged out but keep the cookies.
+      console.error("[proxy] session refresh failed:", error);
     }
   }
 
-  if (accessToken) {
-    try {
-      await jwtVerify(accessToken, ACCESS_TOKEN_SECRET);
-      isAuthenticated = true;
-    } catch {
-      isAuthenticated = false;
-    }
-  }
-
-  // Redirect logged in users away from auth pages
-  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
-  if (isAuthRoute && isAuthenticated) {
-    const response = NextResponse.redirect(new URL("/", req.url));
-    if (refreshedTokens) {
-      setAuthCookies(
-        response as unknown as Response,
-        refreshedTokens.accessToken,
-        refreshedTokens.refreshToken
-      );
+  const finish = (response: NextResponse) => {
+    if (refreshed) {
+      setAuthCookies(response as unknown as Response, refreshed.accessToken, refreshed.refreshToken);
+    } else if (sessionDead) {
+      // Logged out elsewhere / expired / banned: drop the dead cookies so we
+      // don't look the session up again on every request.
+      clearAuthCookies(response as unknown as Response);
     }
     return response;
+  };
+
+  // Redirect logged in users away from auth pages
+  if (isAuthenticated && AUTH_ROUTES.some((route) => pathname.startsWith(route))) {
+    return finish(NextResponse.redirect(new URL("/", req.url)));
   }
 
   // Protect routes that require a verified logged in user
-  const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
-
-  if (isProtectedRoute && !isAuthenticated) {
+  if (!isAuthenticated && PROTECTED_ROUTES.some((route) => pathname.startsWith(route))) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("redirect", pathname);
-    const response = NextResponse.redirect(loginUrl);
-    if (refreshedTokens) {
-      setAuthCookies(
-        response as unknown as Response,
-        refreshedTokens.accessToken,
-        refreshedTokens.refreshToken
-      );
-    }
-    return response;
+    return finish(NextResponse.redirect(loginUrl));
   }
 
-  if (refreshedTokens) {
-    req.cookies.set("access_token", refreshedTokens.accessToken);
+  // Let this request's page / API handler see the new tokens straight away.
+  if (refreshed) {
+    req.cookies.set("access_token", refreshed.accessToken);
+    req.cookies.set("refresh_token", refreshed.refreshToken);
   }
-
-  const response = NextResponse.next({ request: req });
-
-  if (refreshedTokens) {
-    setAuthCookies(
-      response as unknown as Response,
-      refreshedTokens.accessToken,
-      refreshedTokens.refreshToken
-    );
-  }
-  return response;
+  return finish(NextResponse.next({ request: req }));
 }
 
 export const config = {

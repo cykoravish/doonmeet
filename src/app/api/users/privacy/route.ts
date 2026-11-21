@@ -29,7 +29,7 @@ export const PATCH = withAuth(async (req: AuthenticatedRequest) => {
     const updated = await User.findByIdAndUpdate(
       req.user._id,
       { $set: privacyUpdate },
-      { new: true, select: "privacy" }
+      { returnDocument: "after", select: "privacy" }
     ).lean();
 
     return NextResponse.json(

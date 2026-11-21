@@ -47,7 +47,8 @@ const CommunitySchema = new Schema<ICommunity>(
   { timestamps: true }
 );
 
-CommunitySchema.index({ slug: 1 });
+// slug already has a unique index (unique: true above) — declaring it again
+// only produced Mongoose's "duplicate schema index" warning.
 CommunitySchema.index({ category: 1 });
 
 export const Community =

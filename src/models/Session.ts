@@ -6,6 +6,8 @@ export interface ISession extends Document {
   userAgent: string | null;
   ip: string | null;
   expiresAt: Date;
+  /** Set once this token has been rotated: the refresh token that replaced it. */
+  replacedBy: string | null;
 }
 
 const SessionSchema = new Schema<ISession>(
@@ -15,6 +17,7 @@ const SessionSchema = new Schema<ISession>(
     userAgent: { type: String, default: null },
     ip: { type: String, default: null },
     expiresAt: { type: Date, required: true },
+    replacedBy: { type: String, default: null },
   },
   { timestamps: true }
 );

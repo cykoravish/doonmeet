@@ -51,6 +51,14 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
     return () => clearTimeout(timer);
   }, [mutedUntil]);
 
+  // Server dropped a message for sending too fast — say so briefly.
+  const [slowDown, setSlowDown] = useState(false);
+  useEffect(() => {
+    if (!slowDown) return;
+    const timer = setTimeout(() => setSlowDown(false), 6000);
+    return () => clearTimeout(timer);
+  }, [slowDown]);
+
   // The tab's shared socket (logged-in users only — the server requires auth).
   const socket = useSocket(currentUser?._id);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -104,6 +112,9 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
     function handleMuted(data: { until: string }) {
       setMutedUntil(data.until);
     }
+    function handleSlowDown() {
+      setSlowDown(true);
+    }
     // A moderator removed a message — take it off this screen too.
     function handleDeleted(data: { messageId: string }) {
       setMessages((prev) => prev.filter((m) => m._id !== data.messageId));
@@ -111,6 +122,7 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
 
     socket.on("room:message", handleMessage);
     socket.on("room:muted", handleMuted);
+    socket.on("room:slow_down", handleSlowDown);
     socket.on("room:message_deleted", handleDeleted);
     // Join now (if connected) and again after any reconnect.
     const stopRejoining = onConnected(socket, () => socket.emit("room:join"));
@@ -119,6 +131,7 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
       stopRejoining();
       socket.off("room:message", handleMessage);
       socket.off("room:muted", handleMuted);
+      socket.off("room:slow_down", handleSlowDown);
       socket.off("room:message_deleted", handleDeleted);
       // The socket stays open for other features — just leave the room.
       socket.emit("room:leave");
@@ -245,6 +258,11 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
               minute: "2-digit",
             })}{" "}
             after reports from other members. Direct messages still work.
+          </p>
+        )}
+        {slowDown && !mutedUntil && (
+          <p role="status" className="mb-2 rounded-[12px] bg-surface-2 px-3 py-2 text-center text-sm font-medium text-text">
+            You&apos;re sending messages too fast — your last one wasn&apos;t sent. Wait a few seconds.
           </p>
         )}
         <form onSubmit={handleSend} className="flex items-center gap-2">

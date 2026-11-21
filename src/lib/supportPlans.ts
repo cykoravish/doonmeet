@@ -10,3 +10,5 @@ export const SUPPORT_MIN_RUPEES = 10;
 export const SUPPORT_MAX_RUPEES = 5000;
 /** − / + buttons on the custom amount move by this much. */
 export const SUPPORT_STEP_RUPEES = 10;
+/** sessionStorage key for a support payment that's still in progress in this tab. */
+export const SUPPORT_PENDING_KEY = "dm_support_pending";
