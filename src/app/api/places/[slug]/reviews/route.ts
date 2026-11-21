@@ -60,7 +60,7 @@ export const POST = requireVerified(
       const review = await PlaceReview.findOneAndUpdate(
         { place: place._id, user: req.user._id },
         { $set: { rating: data.rating, text: data.text } },
-        { upsert: true, new: true, runValidators: true }
+        { upsert: true, returnDocument: "after", runValidators: true }
       );
 
       await review.populate("user", "name avatar");

@@ -10,6 +10,13 @@ import Alert from "@/components/ui/Alert";
 import Divider from "@/components/ui/Divider";
 import GoogleButton from "./GoogleButton";
 
+/** Where to go after logging in: the page that sent them here (?redirect=), else home. */
+function nextPath(): string {
+  const target = new URLSearchParams(window.location.search).get("redirect");
+  // Only our own pages — never "//other-site.com" or "https://…".
+  return target && target.startsWith("/") && !target.startsWith("//") && !target.startsWith("/\\") ? target : "/";
+}
+
 export default function LoginForm() {
   const router = useRouter();
   const [form, setForm] = useState({ email: "", password: "" });
@@ -41,7 +48,7 @@ export default function LoginForm() {
         }
         return;
       }
-      router.push("/");
+      router.push(nextPath());
       router.refresh();
     } catch {
       setError("Network error. Please try again.");
@@ -64,7 +71,7 @@ export default function LoginForm() {
         setError(data.message);
         return;
       }
-      router.push("/");
+      router.push(nextPath());
       router.refresh();
     } catch {
       setError("Network error. Please try again.");

@@ -34,7 +34,7 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
         keys: { p256dh: keys.p256dh, auth: keys.auth },
         userAgent: req.headers.get("user-agent") ?? null,
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: "after" }
     );
 
     return NextResponse.json({ success: true });

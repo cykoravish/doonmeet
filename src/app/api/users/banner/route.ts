@@ -81,7 +81,7 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
         bannerImage: uploadResult.secure_url,
         bannerPublicId: uploadResult.public_id,
       },
-      { new: true, select: "bannerImage bannerPublicId" }
+      { returnDocument: "after", select: "bannerImage bannerPublicId" }
     ).lean();
 
     return NextResponse.json(

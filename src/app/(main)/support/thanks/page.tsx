@@ -4,6 +4,7 @@ import { settleSupportOrder, type SupportStatus } from "@/lib/support";
 import { supportOrderIdSchema } from "@/validations/support";
 import { noIndexMetadata } from "@/lib/seo";
 import { buttonClasses } from "@/components/ui/Button";
+import ThanksAutoCheck from "@/components/support/ThanksAutoCheck";
 
 export const metadata = noIndexMetadata("Thank you");
 
@@ -37,7 +38,7 @@ export default async function SupportThanksPage({
     pending: {
       icon: <Clock size={44} className="text-accent-fg" aria-hidden="true" />,
       title: "Confirming your payment…",
-      text: "This can take a minute. If money was deducted, it will be confirmed shortly — no need to pay again.",
+      text: "This can take a minute — this page checks again by itself. If money was deducted, it will be confirmed shortly — no need to pay again.",
     },
     failed: {
       icon: <XCircle size={44} className="text-danger" aria-hidden="true" />,
@@ -53,6 +54,7 @@ export default async function SupportThanksPage({
 
   return (
     <div className="mx-auto flex max-w-md flex-col items-center px-4 pt-10 pb-16 text-center">
+      {parsed.success && <ThanksAutoCheck orderId={parsed.data} pending={status === "pending"} />}
       {view.icon}
       <h1 className="mt-3 text-2xl font-extrabold">{view.title}</h1>
       <p className="mt-1 text-[15px] text-muted">{view.text}</p>

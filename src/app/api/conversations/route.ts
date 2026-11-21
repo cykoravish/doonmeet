@@ -96,7 +96,7 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
         },
         {
           upsert: true,
-          new: true,
+          returnDocument: "after",
           setDefaultsOnInsert: true,
         }
       ).populate("participants", "name avatar lastSeenAt");

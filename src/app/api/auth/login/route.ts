@@ -8,6 +8,7 @@ import { validateBody } from "@/middleware/validate";
 import { authLimiter } from "@/middleware/rateLimit";
 import { loginSchema } from "@/validations/auth";
 import { generateAccessToken, generateRefreshToken, setAuthCookies } from "@/lib/tokens";
+import { getClientIp } from "@/lib/clientIp";
 
 export async function POST(req: NextRequest) {
   const limited = authLimiter(req);
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest) {
       userId: user._id,
       token: refreshToken,
       userAgent: req.headers.get("user-agent"),
-      ip: req.headers.get("x-forwarded-for")?.split(",")[0] ?? null,
+      ip: getClientIp(req.headers),
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     });
 

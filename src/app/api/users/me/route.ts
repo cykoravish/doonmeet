@@ -66,7 +66,7 @@ export const PATCH = withAuth(async (req: AuthenticatedRequest) => {
       req.user._id,
       { $set: result.data as object },
       {
-        new: true, // return updated doc
+        returnDocument: "after", // return updated doc
         runValidators: true, // run schema validators on update
         select:
           "-passwordHash -googleId -verificationOtp -verificationOtpExpires -verificationOtpAttempts -resetPasswordToken -resetPasswordExpires -__v",

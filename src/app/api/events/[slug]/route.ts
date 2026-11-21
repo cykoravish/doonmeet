@@ -90,7 +90,7 @@ export const PATCH = requireVerified(
       const updated = await Event.findOneAndUpdate(
         { slug },
         { $set: result.data as Partial<IEvent> },
-        { new: true, runValidators: true, select: "-bannerPublicId -__v" }
+        { returnDocument: "after", runValidators: true, select: "-bannerPublicId -__v" }
       ).populate("creator", "name avatar");
 
       return NextResponse.json(

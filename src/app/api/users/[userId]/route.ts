@@ -10,7 +10,7 @@ export const GET = withGuestAllowed(
   async (req: AuthenticatedRequest, { params }: { params: Promise<Record<string, string>> }) => {
     const limited = generalLimiter(
       req,
-      String(req.user?._id ?? req.headers.get("x-forwarded-for") ?? "guest")
+      req.user ? String(req.user._id) : undefined
     );
     if (limited) return limited;
 

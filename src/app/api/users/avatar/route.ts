@@ -87,7 +87,7 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
         avatar: uploadResult.secure_url,
         avatarPublicId: uploadResult.public_id,
       },
-      { new: true, select: "avatar avatarPublicId" }
+      { returnDocument: "after", select: "avatar avatarPublicId" }
     ).lean();
 
     return NextResponse.json(

@@ -1,13 +1,13 @@
 // GET /api/support/status?order_id=dms_… — confirm a support payment with Cashfree.
 // No login needed (anonymous supporters too); it only reveals paid/pending/failed.
 import { NextRequest, NextResponse } from "next/server";
-import { paymentLimiter } from "@/middleware/rateLimit";
+import { paymentStatusLimiter } from "@/middleware/rateLimit";
 import { supportOrderIdSchema } from "@/validations/support";
 import { settleSupportOrder } from "@/lib/support";
 import { CashfreeError } from "@/lib/cashfree";
 
 export async function GET(req: NextRequest) {
-  const limited = paymentLimiter(req);
+  const limited = paymentStatusLimiter(req);
   if (limited) return limited;
 
   const parsed = supportOrderIdSchema.safeParse(new URL(req.url).searchParams.get("order_id"));
@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
   try {
     const { status, badge } = await settleSupportOrder(parsed.data);
     if (status === "not_found") {
-      return NextResponse.json({ success: false, message: "Payment not found" }, { status: 404 });
+      // `status` lets the waiting screen stop instead of polling a payment that doesn't exist.
+      return NextResponse.json({ success: false, status, message: "Payment not found" }, { status: 404 });
     }
     return NextResponse.json({ success: true, status, badge });
   } catch (error) {

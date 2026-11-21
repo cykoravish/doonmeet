@@ -9,8 +9,9 @@ import { Notification } from "@/models/Notification";
 import { User } from "@/models/User";
 import { maybeSendDmNotificationEmail, maybeSendGlobalChatNotificationEmail } from "@/lib/email";
 import { sendPushToUser } from "@/lib/push";
-import { getChatMutedUntil, isBlockedEitherWay } from "@/lib/safety";
+import { getSenderState, isBlockedEitherWay } from "@/lib/safety";
 import { watchRoomMessageDeletes } from "@/lib/realtime/roomMessageDeletes";
+import { DM_LIMIT, ROOM_CHAT_LIMIT, isRateLimited } from "@/middleware/rateLimit";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
 
@@ -143,9 +144,19 @@ export function initSocket(httpServer: HttpServer): SocketServer {
         const content = data.content.replace(/<[^>]*>/g, "").trim();
         if (!content || content.length > 500) return;
 
-        // Auto-muted after several reports (src/lib/safety.ts). Checked per
-        // message — the mute can start while the socket is already open.
-        const mutedUntil = await getChatMutedUntil(socket.userId);
+        // Flood control — same limit as POST /api/room-messages.
+        if (isRateLimited(ROOM_CHAT_LIMIT, socket.userId)) {
+          socket.emit("room:slow_down");
+          return;
+        }
+
+        // Banned, or auto-muted after several reports (src/lib/safety.ts).
+        // Checked per message — either can start while the socket is open.
+        const { active, mutedUntil } = await getSenderState(socket.userId);
+        if (!active) {
+          socket.disconnect(true);
+          return;
+        }
         if (mutedUntil) {
           socket.emit("room:muted", { until: mutedUntil.toISOString() });
           return;
@@ -277,7 +288,19 @@ export function initSocket(httpServer: HttpServer): SocketServer {
       const content = data?.content?.replace(/<[^>]*>/g, "").trim();
       if (!content || content.length > 1000) return;
 
+      // Flood control — same limit as the REST send route.
+      if (isRateLimited(DM_LIMIT, socket.userId)) {
+        socket.emit("dm:slow_down", { conversationId: data.conversationId });
+        return;
+      }
+
       try {
+        // Banned since this socket connected → stop here.
+        if (!(await getSenderState(socket.userId)).active) {
+          socket.disconnect(true);
+          return;
+        }
+
         const conversation = await Conversation.findOne({
           _id: data.conversationId,
           participants: socket.userId,
@@ -406,8 +429,10 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     // -------------------------------------------------------
     // Typing indicators
     // -------------------------------------------------------
+    // Only from someone who joined the conversation (dm:join checks they're a participant).
     socket.on("typing:start", (data: { conversationId: string }) => {
       if (!/^[a-f\d]{24}$/i.test(data?.conversationId)) return;
+      if (!socket.rooms.has(`dm:${data.conversationId}`)) return;
       socket.to(`dm:${data.conversationId}`).emit("typing:start", {
         conversationId: data.conversationId,
         userId: socket.userId,
@@ -417,6 +442,7 @@ export function initSocket(httpServer: HttpServer): SocketServer {
 
     socket.on("typing:stop", (data: { conversationId: string }) => {
       if (!/^[a-f\d]{24}$/i.test(data?.conversationId)) return;
+      if (!socket.rooms.has(`dm:${data.conversationId}`)) return;
       socket.to(`dm:${data.conversationId}`).emit("typing:stop", {
         conversationId: data.conversationId,
         userId: socket.userId,

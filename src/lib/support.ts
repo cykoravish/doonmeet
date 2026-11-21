@@ -10,7 +10,7 @@ import { connectDB } from "@/lib/db";
 import { Support } from "@/models/Support";
 import { User } from "@/models/User";
 import { SITE_URL } from "@/lib/seo";
-import { cashfreeMode, createCashfreeOrder, fetchCashfreeOrder, isCashfreeConfigured } from "@/lib/cashfree";
+import { CashfreeError, cashfreeMode, createCashfreeOrder, fetchCashfreeOrder, isCashfreeConfigured } from "@/lib/cashfree";
 import { SUPPORT_MAX_RUPEES, SUPPORT_MIN_RUPEES } from "@/lib/supportPlans";
 
 /** Sent to Cashfree in place of the supporter's phone (Cashfree requires one). */
@@ -60,20 +60,40 @@ export async function createSupportOrder(
   });
 
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || SITE_URL).replace(/\/+$/, "");
-  const order = await createCashfreeOrder({
+  const minimalCustomer = {
+    // Nothing that identifies the person goes to Cashfree for anonymous support.
+    id: identified ? String(user!._id) : `anon${crypto.randomBytes(8).toString("hex")}`,
+    phone: PLACEHOLDER_PHONE,
+  };
+  const email = identified && user!.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user!.email) ? user!.email : null;
+  const orderInput = (customer: typeof minimalCustomer & { email?: string | null; name?: string | null }) => ({
     orderId,
     amount,
-    customer: identified
-      ? { id: String(user!._id), phone: PLACEHOLDER_PHONE, email: user!.email, name: user!.name }
-      : // Nothing that identifies the person goes to Cashfree for anonymous support.
-        { id: `anon${crypto.randomBytes(8).toString("hex")}`, phone: PLACEHOLDER_PHONE },
+    customer,
     returnUrl: `${appUrl}/support/thanks?order_id=${orderId}`,
     note: "Support DoonMeet",
     tags: { kind: "support", supportId: supportId.toHexString() },
   });
 
-  await Support.updateOne({ _id: supportId }, { $set: { cfOrderId: String(order.cf_order_id) } });
-  return { ok: true, orderId, paymentSessionId: order.payment_session_id, mode: cashfreeMode() };
+  try {
+    let order;
+    try {
+      order = await createCashfreeOrder(
+        orderInput(identified ? { ...minimalCustomer, email, name: user!.name } : minimalCustomer)
+      );
+    } catch (err) {
+      // Cashfree can reject a name/email it doesn't like (emoji, odd characters).
+      // Those are optional — retry once without them rather than block the person.
+      if (!(identified && err instanceof CashfreeError && err.status === 400)) throw err;
+      order = await createCashfreeOrder(orderInput(minimalCustomer));
+    }
+    await Support.updateOne({ _id: supportId }, { $set: { cfOrderId: String(order.cf_order_id) } });
+    return { ok: true, orderId, paymentSessionId: order.payment_session_id, mode: cashfreeMode() };
+  } catch (err) {
+    // Don't leave a "created" record behind for an order Cashfree never made.
+    await Support.updateOne({ _id: supportId }, { $set: { status: "failed" } }).catch(() => {});
+    throw err;
+  }
 }
 
 export type SupportStatus = "paid" | "pending" | "failed" | "not_found";
@@ -108,7 +128,7 @@ export async function settleSupportOrder(orderId: string): Promise<{ status: Sup
     const updated = await Support.findOneAndUpdate(
       { _id: support._id, status: { $ne: "paid" } },
       { $set: { status: "paid", paidAt } },
-      { new: true }
+      { returnDocument: "after" }
     );
     if (updated && support.user) {
       await User.updateOne({ _id: support.user, supporterSince: null }, { $set: { supporterSince: paidAt } });

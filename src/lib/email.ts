@@ -158,7 +158,7 @@ export async function maybeSendDmNotificationEmail(
         $or: [{ lastDmEmailAt: null }, { lastDmEmailAt: { $lt: cutoff } }],
       },
       { $set: { lastDmEmailAt: new Date() } },
-      { new: false } // we don't need the updated doc, just need to know it matched
+      { returnDocument: "before" } // we don't need the updated doc, just need to know it matched
     )
       .select("name email")
       .lean();
