@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { CircleCheck, Megaphone, PenLine } from "lucide-react";
 import { connectDB } from "@/lib/db";
 import { Post } from "@/models/Post";
@@ -36,6 +37,9 @@ const BENEFITS = [
 ];
 
 export default async function PromotePage() {
+  // Paid promotions are hidden while payments are switched off (PAYMENTS_ENABLED).
+  if (!isPaymentsConfigured()) notFound();
+
   const user = await getSessionUser();
   const paymentsEnabled = isPaymentsConfigured();
 
@@ -159,7 +163,7 @@ export default async function PromotePage() {
                       {categoryLabel && <span className="font-semibold text-primary-fg">{categoryLabel} · </span>}
                       {eventShortDate(p.createdAt)}
                     </p>
-                    <p className="line-clamp-2 text-[15px] break-words text-text">{p.content}</p>
+                    <p className="line-clamp-2 text-[15px] wrap-anywhere text-text">{p.content}</p>
                   </Link>
                   <div className="mt-3">
                     <PromoteButton

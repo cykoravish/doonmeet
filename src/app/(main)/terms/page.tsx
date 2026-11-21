@@ -10,7 +10,7 @@ export const metadata = pageMetadata({
   path: "/terms",
 });
 
-const LAST_UPDATED = "20 November 2026";
+const LAST_UPDATED = "21 November 2026";
 
 const TOC = [
   { id: "acceptance", number: "01", label: "Acceptance of terms" },
@@ -160,6 +160,10 @@ export default function TermsPage() {
       </LegalSection>
 
       <LegalSection id="paid-features" number="09" title="Paid features & Sponsored posts">
+        <p>
+          <strong>Sponsored posts are paused right now — DoonMeet is not taking any payments.</strong> The
+          terms below apply only when we switch them back on.
+        </p>
         <p>
           Using DoonMeet is free. We offer optional paid features — currently{" "}
           <strong>Sponsored posts</strong>, which pin one of your own posts at the top of the feed

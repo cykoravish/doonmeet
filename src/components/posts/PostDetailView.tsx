@@ -120,7 +120,7 @@ export default function PostDetailView({
         </header>
 
         <div className="px-4 pb-4">
-          <p className="text-[17px] leading-relaxed break-words whitespace-pre-line">{content}</p>
+          <p className="text-[17px] leading-relaxed wrap-anywhere whitespace-pre-line">{content}</p>
         </div>
 
         {image && (
@@ -150,7 +150,7 @@ export default function PostDetailView({
         )}
       </div>
 
-      {isOwner && (
+      {isOwner && paymentsEnabled && (
         <section
           aria-labelledby="promote-title"
           className="mt-4 rounded-[20px] border border-accent/40 bg-accent-soft/60 p-4"

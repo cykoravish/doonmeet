@@ -14,9 +14,10 @@ import CreateSheet from "./CreateSheet";
 
 interface MobileBottomNavProps {
   isLoggedIn: boolean;
+  promotionsEnabled?: boolean;
 }
 
-export default function MobileBottomNav({ isLoggedIn }: MobileBottomNavProps) {
+export default function MobileBottomNav({ isLoggedIn, promotionsEnabled = false }: MobileBottomNavProps) {
   const pathname = usePathname();
   const [createOpen, setCreateOpen] = useState(false);
   const closeCreate = useCallback(() => setCreateOpen(false), []);
@@ -53,7 +54,12 @@ export default function MobileBottomNav({ isLoggedIn }: MobileBottomNavProps) {
         </div>
       </nav>
 
-      <CreateSheet open={createOpen} onClose={closeCreate} isLoggedIn={isLoggedIn} />
+      <CreateSheet
+        open={createOpen}
+        onClose={closeCreate}
+        isLoggedIn={isLoggedIn}
+        promotionsEnabled={promotionsEnabled}
+      />
     </>
   );
 }

@@ -10,7 +10,7 @@ export const metadata = pageMetadata({
   path: "/refund-policy",
 });
 
-const LAST_UPDATED = "20 November 2026";
+const LAST_UPDATED = "21 November 2026";
 
 const TOC = [
   { id: "overview", number: "01", label: "Overview" },
@@ -35,6 +35,10 @@ export default function RefundPolicyPage() {
       toc={TOC}
     >
       <LegalSection id="overview" number="01" title="Overview">
+        <p>
+          <strong>Sponsored posts are paused right now — DoonMeet is not taking any payments.</strong> The
+          terms below apply only when we switch them back on.
+        </p>
         <p>
           Using DoonMeet — chatting, posting, events and communities — is <strong>free</strong>.
           The only paid feature today is <strong>Sponsored posts</strong>: a one-time payment that
