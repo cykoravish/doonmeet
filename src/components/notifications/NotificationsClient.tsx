@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Bell, CheckCheck } from "lucide-react";
 import {
-  NOTIFICATION_TYPE_CONFIG,
+  getNotificationConfig,
   getNotificationHref,
   timeAgo,
   type NotificationItem,
@@ -116,7 +116,7 @@ export default function NotificationsClient({ initialNotifications, initialUnrea
 }
 
 function NotificationRow({ notif, onRead }: { notif: NotificationItem; onRead: (id: string) => void }) {
-  const config = NOTIFICATION_TYPE_CONFIG[notif.type];
+  const config = getNotificationConfig(notif.type);
 
   return (
     <Link

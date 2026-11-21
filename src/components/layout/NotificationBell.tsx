@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Bell, CheckCheck, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Avatar from "@/components/ui/Avatar";
-import { NOTIFICATION_TYPE_CONFIG, getNotificationHref, timeAgo } from "@/lib/notificationTypeConfig";
+import { getNotificationConfig, getNotificationHref, timeAgo } from "@/lib/notificationTypeConfig";
 import { useNotifications } from "@/providers/notifications-provider";
 
 function UnreadBadge({ count }: { count: number }) {
@@ -115,7 +115,7 @@ export default function NotificationBell() {
               </div>
             ) : (
               notifications.map((notif) => {
-                const config = NOTIFICATION_TYPE_CONFIG[notif.type];
+                const config = getNotificationConfig(notif.type);
                 return (
                   <Link
                     key={notif._id}
