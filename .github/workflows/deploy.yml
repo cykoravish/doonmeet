@@ -56,15 +56,9 @@ jobs:
             # points to by now (a later force-push could swap it).
             git reset --hard ${{ github.sha }}
 
-            echo "Installing dependencies..."
-            npm ci
-
-            echo "Building application..."
-            # prebuild runs the supply-chain guard again on the server.
-            npm run build
-
-            echo "Restarting PM2..."
-            pm2 restart doonmeet --update-env
-            pm2 save
+            # Builds in a spare folder so the live site keeps working, then
+            # switches, restarts and health-checks (fails this run if the site
+            # isn't healthy). See the script for the details.
+            bash scripts/deploy.sh
 
             echo "✅ Deployment completed successfully!"
