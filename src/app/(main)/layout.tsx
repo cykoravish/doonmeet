@@ -2,6 +2,7 @@
 import Navbar from "@/components/layout/Navbar";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import { getSessionUser } from "@/lib/getSessionUser";
+import { isPaymentsConfigured } from "@/lib/razorpay";
 import Footer from "@/components/layout/Footer";
 
 
@@ -14,7 +15,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
       <Navbar user={user} />
       <main className="pb-20 md:pb-0">{children}</main>
       <Footer />
-      <MobileBottomNav isLoggedIn={!!user} />
+      <MobileBottomNav isLoggedIn={!!user} promotionsEnabled={isPaymentsConfigured()} />
     </>
   );
 }

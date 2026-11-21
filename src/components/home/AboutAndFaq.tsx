@@ -10,7 +10,7 @@ const FAQS = [
   },
   {
     q: "Is DoonMeet free to use?",
-    a: "Yes — chatting, posting, events and communities are all free. The only paid option is Sponsored posts, which local businesses can use to pin a post at the top of the feed for a week. Details are in our Terms and Refund Policy.",
+    a: "Yes — chatting, posting, events, communities and places are all free. Local businesses can share their offers for free in the Local Business category of the Doon Feed.",
   },
   {
     q: "Do I need an account?",

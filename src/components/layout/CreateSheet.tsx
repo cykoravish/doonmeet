@@ -20,6 +20,8 @@ interface CreateSheetProps {
   open: boolean;
   onClose: () => void;
   isLoggedIn: boolean;
+  /** Show the paid "Promote your business" entry (payments switched on). */
+  promotionsEnabled?: boolean;
 }
 
 interface CreateOption {
@@ -69,7 +71,7 @@ const OPTIONS: CreateOption[] = [
   },
 ];
 
-export default function CreateSheet({ open, onClose, isLoggedIn }: CreateSheetProps) {
+export default function CreateSheet({ open, onClose, isLoggedIn, promotionsEnabled = false }: CreateSheetProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Escape to close, lock background scroll, move focus into the sheet.
@@ -127,7 +129,7 @@ export default function CreateSheet({ open, onClose, isLoggedIn }: CreateSheetPr
         )}
 
         <ul className="flex flex-col gap-2">
-          {OPTIONS.map((option) => {
+          {OPTIONS.filter((o) => promotionsEnabled || o.href !== "/promote").map((option) => {
             const Icon = option.icon;
             const locked = option.requiresAuth && !isLoggedIn;
             return (

@@ -11,7 +11,7 @@ export const metadata = pageMetadata({
   path: "/privacy",
 });
 
-const LAST_UPDATED = "20 November 2026";
+const LAST_UPDATED = "21 November 2026";
 
 const TOC = [
   { id: "introduction", number: "01", label: "Introduction" },
@@ -148,6 +148,10 @@ export default function PrivacyPolicyPage() {
       </LegalSection>
 
       <LegalSection id="payments" number="07" title="Payments">
+        <p>
+          <strong>Sponsored posts are paused right now — DoonMeet is not taking any payments.</strong> The
+          terms below apply only when we switch them back on.
+        </p>
         <p>
           DoonMeet is free to use. The only paid feature is <strong>sponsored posts</strong> — a
           one-time payment that pins your post at the top of the feed for a fixed period. When you pay:

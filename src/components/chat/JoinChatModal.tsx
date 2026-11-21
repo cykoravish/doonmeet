@@ -62,7 +62,7 @@ export default function JoinChatModal({ pendingMessage, onClose }: JoinChatModal
         </p>
 
         {pendingMessage && (
-          <p className="mt-3 rounded-[14px] bg-surface-2 px-3.5 py-2.5 text-[15px] break-words text-text italic">
+          <p className="mt-3 rounded-[14px] bg-surface-2 px-3.5 py-2.5 text-[15px] wrap-anywhere text-text italic">
             &ldquo;{pendingMessage}&rdquo;
           </p>
         )}

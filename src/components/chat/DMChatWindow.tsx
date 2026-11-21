@@ -441,7 +441,7 @@ export default function DMChatWindow({
       <div
         ref={scrollRef}
         onScroll={onScroll}
-        className="flex-1 overflow-y-auto overscroll-contain px-3 pt-3 pb-2 sm:px-6"
+        className="flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-3 pt-3 pb-2 sm:px-6"
       >
         {loading ? (
           <div className="flex h-full items-center justify-center">

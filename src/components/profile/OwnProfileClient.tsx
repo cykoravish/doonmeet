@@ -133,7 +133,7 @@ export default function OwnProfileClient({ user }: { user: User }) {
         </div>
 
         {currentUser.bio && (
-          <p className="mt-3 text-[15px] leading-relaxed break-words">{currentUser.bio}</p>
+          <p className="mt-3 text-[15px] leading-relaxed wrap-anywhere">{currentUser.bio}</p>
         )}
 
         {currentUser.interests?.length > 0 && (

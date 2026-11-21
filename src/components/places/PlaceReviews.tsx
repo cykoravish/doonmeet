@@ -208,7 +208,7 @@ export default function PlaceReviews({ slug, currentUser, initialRating, initial
                     <div className="mt-0.5">
                       <Stars value={r.rating} size={14} />
                     </div>
-                    <p className="mt-2 text-[15px] leading-relaxed break-words whitespace-pre-line text-text">
+                    <p className="mt-2 text-[15px] leading-relaxed wrap-anywhere whitespace-pre-line text-text">
                       {r.text}
                     </p>
                   </div>

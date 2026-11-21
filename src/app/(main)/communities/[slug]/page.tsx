@@ -103,7 +103,7 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-bold tracking-wide text-primary-fg uppercase">{category} community</p>
-            <h1 className="mt-0.5 text-[26px] leading-tight font-extrabold break-words sm:text-4xl">{name}</h1>
+            <h1 className="mt-0.5 text-[26px] leading-tight font-extrabold wrap-anywhere sm:text-4xl">{name}</h1>
           </div>
         </div>
 
@@ -133,7 +133,7 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
           <Megaphone size={20} className="mt-0.5 shrink-0 text-accent-fg" aria-hidden="true" />
           <div className="min-w-0">
             <p className="text-sm font-bold text-accent-fg">Pinned announcement</p>
-            <p className="mt-0.5 text-[15px] break-words text-text">{announcement.text}</p>
+            <p className="mt-0.5 text-[15px] wrap-anywhere text-text">{announcement.text}</p>
           </div>
         </div>
       )}

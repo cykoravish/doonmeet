@@ -119,7 +119,7 @@ function PostComments({
                     </UserLink>{" "}
                     <span className="text-muted">· {timeAgo(c.createdAt)}</span>
                   </p>
-                  <p className="text-[15px] break-words whitespace-pre-line">{c.content}</p>
+                  <p className="text-[15px] wrap-anywhere whitespace-pre-line">{c.content}</p>
                 </div>
               </li>
             );
@@ -296,7 +296,7 @@ export default function CommunityDiscussion({ slug, isMember, isLoggedIn }: Comm
                       <span className="text-[13px] text-muted">{timeAgo(post.createdAt)}</span>
                     </p>
                   </div>
-                  <p className="mt-2.5 text-[16px] leading-relaxed break-words whitespace-pre-line">{post.content}</p>
+                  <p className="mt-2.5 text-[16px] leading-relaxed wrap-anywhere whitespace-pre-line">{post.content}</p>
                   <button
                     type="button"
                     onClick={() => toggle(post._id)}
