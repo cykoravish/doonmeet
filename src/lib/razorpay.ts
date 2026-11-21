@@ -57,9 +57,19 @@ function getKeys(): { keyId: string; keySecret: string } | null {
   return keyId && keySecret ? { keyId, keySecret } : null;
 }
 
-/** True when API keys are configured (payments can be taken). */
+/**
+ * Master switch. Payments stay OFF until PAYMENTS_ENABLED=true, even when keys
+ * are set — so live keys can be installed while Razorpay is still reviewing the
+ * website, and flipped on the day it's approved. Already-started payments still
+ * settle (verify + webhook use the keys directly).
+ */
+export function isPaymentsSwitchedOn(): boolean {
+  return process.env.PAYMENTS_ENABLED?.trim().toLowerCase() === "true";
+}
+
+/** True when payments can be taken: keys configured AND the switch is on. */
 export function isPaymentsConfigured(): boolean {
-  return getKeys() !== null;
+  return getKeys() !== null && isPaymentsSwitchedOn();
 }
 
 /** The PUBLIC key id handed to Checkout.js. */

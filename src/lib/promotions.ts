@@ -16,6 +16,7 @@ import {
   createOrder,
   fetchPayment,
   getPublicKeyId,
+  isPaymentsConfigured,
   type RazorpayPayment,
 } from "@/lib/razorpay";
 import {
@@ -50,7 +51,7 @@ export async function createPromotionOrder(
   postId: string
 ): Promise<CreateOrderResult> {
   const keyId = getPublicKeyId();
-  if (!keyId) {
+  if (!keyId || !isPaymentsConfigured()) {
     return { ok: false, status: 503, code: "PAYMENTS_UNAVAILABLE", message: "Payments aren't available right now." };
   }
 
