@@ -11,7 +11,8 @@ import { maybeSendDmNotificationEmail, maybeSendGlobalChatNotificationEmail } fr
 import { sendPushToUser } from "@/lib/push";
 import { getSenderState, isBlockedEitherWay } from "@/lib/safety";
 import { watchRoomMessageDeletes } from "@/lib/realtime/roomMessageDeletes";
-import { DM_LIMIT, ROOM_CHAT_LIMIT, isRateLimited } from "@/middleware/rateLimit";
+// Not @/middleware/rateLimit: that imports next/server, which crashes the custom server.
+import { DM_LIMIT, ROOM_CHAT_LIMIT, isRateLimited } from "@/lib/rateLimitStore";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
 

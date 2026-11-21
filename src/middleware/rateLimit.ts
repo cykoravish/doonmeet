@@ -4,46 +4,8 @@
 // ============================================================
 import { NextRequest, NextResponse } from "next/server";
 import { getClientIp } from "@/lib/clientIp";
-
-interface RateLimitEntry {
-  count: number;
-  resetAt: number; // Unix ms timestamp
-}
-
-// In-memory store — key: "ip:route" or "userId:route"
-const store = new Map<string, RateLimitEntry>();
-
-interface RateLimitOptions {
-  windowMs: number; // time window in milliseconds
-  max: number; // max requests in window
-  keyPrefix: string; // identifies the route/action
-}
-
-/** Counts one hit for `key`; returns the window's entry and whether it's now over `max`. */
-function hit(key: string, windowMs: number, max: number): { entry: RateLimitEntry; limited: boolean } {
-  const now = Date.now();
-  const entry = store.get(key);
-
-  // First request or window expired — reset
-  if (!entry || now > entry.resetAt) {
-    const fresh = { count: 1, resetAt: now + windowMs };
-    store.set(key, fresh);
-    return { entry: fresh, limited: false };
-  }
-
-  // Within window — increment
-  entry.count += 1;
-  return { entry, limited: entry.count > max };
-}
-
-/**
- * The same limits for code that isn't an HTTP route (the Socket.IO handlers),
- * e.g. `isRateLimited(ROOM_CHAT_LIMIT, userId)` — otherwise sending over the
- * socket would have no limit at all.
- */
-export function isRateLimited(options: RateLimitOptions, identifier: string): boolean {
-  return hit(`${options.keyPrefix}:${identifier}`, options.windowMs, options.max).limited;
-}
+// The counters live in a Next-free module so the Socket.IO server can use them too.
+import { DM_LIMIT, ROOM_CHAT_LIMIT, hit, type RateLimitOptions } from "@/lib/rateLimitStore";
 
 export function rateLimit(options: RateLimitOptions) {
   const { windowMs, max, keyPrefix } = options;
@@ -89,20 +51,10 @@ export const authLimiter = rateLimit({
   max: 10,
 });
 
-// Public room chat — prevents message flooding (REST route + socket handler)
-export const ROOM_CHAT_LIMIT: RateLimitOptions = {
-  keyPrefix: "room_chat",
-  windowMs: 60 * 1000, // 1 minute
-  max: 30,
-};
+// Public room chat — prevents message flooding (same limit on the socket)
 export const roomChatLimiter = rateLimit(ROOM_CHAT_LIMIT);
 
-// Direct messages (REST route + socket handler)
-export const DM_LIMIT: RateLimitOptions = {
-  keyPrefix: "dm",
-  windowMs: 60 * 1000,
-  max: 60,
-};
+// Direct messages (same limit on the socket)
 export const dmLimiter = rateLimit(DM_LIMIT);
 
 // Event creation — prevents spam events
@@ -165,13 +117,3 @@ export const paymentStatusLimiter = rateLimit({
   max: 300,
 });
 
-// Cleanup stale entries every 10 minutes to prevent memory leak
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [key, entry] of store.entries()) {
-      if (now > entry.resetAt) store.delete(key);
-    }
-  },
-  10 * 60 * 1000
-);
