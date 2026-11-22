@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Image from "next/image";
 import { Camera, Loader2 } from "lucide-react";
 import { useToast } from "@/providers/toast-provider";
+import { compressImage } from "@/lib/imageCompression";
 
 interface ProfileAvatarProps {
   avatar: string | null;
@@ -30,18 +31,20 @@ export default function ProfileAvatar({
   const { showToast } = useToast();
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const picked = e.target.files?.[0];
+    if (!picked) return;
 
-    setPreview(URL.createObjectURL(file));
+    setPreview(URL.createObjectURL(picked));
     setLoading(true);
 
     try {
+      // Phone photos can be several MB — an avatar never needs more than this.
+      const file = await compressImage(picked, { maxDimension: 640 });
       const formData = new FormData();
       formData.append("avatar", file);
 
       const res = await fetch("/api/users/avatar", { method: "POST", body: formData });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.ok && data.avatar) {
         onUpdate?.(data.avatar);
         showToast("Profile photo updated!", "success");

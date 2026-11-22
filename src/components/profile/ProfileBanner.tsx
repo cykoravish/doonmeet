@@ -4,16 +4,23 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { Camera, Loader2 } from "lucide-react";
 import { useToast } from "@/providers/toast-provider";
+import { compressImage } from "@/lib/imageCompression";
 
 interface ProfileBannerProps {
   bannerImage: string | null;
   editable?: boolean;
+  /** Size / corner classes — defaults to the full-width public-profile cover. */
+  className?: string;
 }
 
-// Banner on the public profile page. Owners get an always-visible "Edit"
-// pill (a hover-only control is invisible on phones). No banner yet → a
-// static ridge silhouette on the brand green.
-export default function ProfileBanner({ bannerImage, editable = false }: ProfileBannerProps) {
+// Cover photo on the public profile page and the /profile header. Owners get
+// an always-visible "Add cover photo" pill (a hover-only control is invisible
+// on phones). No cover yet → a static ridge silhouette on the brand green.
+export default function ProfileBanner({
+  bannerImage,
+  editable = false,
+  className = "h-36 sm:h-52 md:rounded-b-[24px]",
+}: ProfileBannerProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -22,28 +29,30 @@ export default function ProfileBanner({ bannerImage, editable = false }: Profile
   const displaySrc = preview ?? bannerImage;
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const picked = e.target.files?.[0];
+    if (!picked) return;
 
-    setPreview(URL.createObjectURL(file));
+    setPreview(URL.createObjectURL(picked));
     setLoading(true);
 
     try {
+      // Phone photos are often bigger than the 6 MB limit — shrink first.
+      const file = await compressImage(picked, { maxDimension: 1600 });
       const formData = new FormData();
       formData.append("banner", file);
 
       const res = await fetch("/api/users/banner", { method: "POST", body: formData });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (res.ok && data.bannerImage) {
-        showToast("Banner updated!", "success");
+        showToast("Cover photo updated", "success");
       } else {
         setPreview(null);
-        showToast(data.message || "Failed to update banner.", "error");
+        showToast(data.message || "Couldn't update your cover photo.", "error");
       }
     } catch {
       setPreview(null);
-      showToast("Network error while uploading banner.", "error");
+      showToast("No internet connection. Please try again.", "error");
     } finally {
       setLoading(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -51,9 +60,9 @@ export default function ProfileBanner({ bannerImage, editable = false }: Profile
   }
 
   return (
-    <div className="relative h-36 overflow-hidden bg-primary sm:h-52 md:rounded-b-[24px]">
+    <div className={`relative overflow-hidden bg-primary ${className}`}>
       {displaySrc ? (
-        <Image src={displaySrc} alt="" fill priority sizes="100vw" className="object-cover" />
+        <Image src={displaySrc} alt="" fill priority sizes="(min-width: 768px) 768px, 100vw" className="object-cover" />
       ) : (
         <svg
           aria-hidden="true"
@@ -71,10 +80,14 @@ export default function ProfileBanner({ bannerImage, editable = false }: Profile
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={loading}
-            className="absolute right-3 bottom-3 flex h-10 items-center gap-1.5 rounded-full bg-black/55 px-3.5 text-sm font-semibold text-white"
+            className="absolute top-3 right-3 flex h-10 items-center gap-1.5 rounded-full bg-black/55 px-3.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-black/70 disabled:opacity-80"
           >
-            {loading ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Camera size={16} aria-hidden="true" />}
-            {displaySrc ? "Change banner" : "Add banner"}
+            {loading ? (
+              <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Camera size={16} aria-hidden="true" />
+            )}
+            {loading ? "Uploading…" : displaySrc ? "Change cover" : "Add cover photo"}
           </button>
           <input
             ref={inputRef}

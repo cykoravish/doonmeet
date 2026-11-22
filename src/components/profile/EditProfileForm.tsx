@@ -1,9 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Check } from "lucide-react";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
+import { useToast } from "@/providers/toast-provider";
+
+/** People type "instagram.com/me" — add the https:// the server expects. */
+function normalizeWebsite(value: string): string {
+  const v = value.trim();
+  if (!v) return "";
+  return /^https?:\/\//i.test(v) ? v : `https://${v}`;
+}
 
 interface ProfileData {
   name: string;
@@ -51,7 +60,23 @@ export default function EditProfileForm({
   const [form, setForm] = useState(initialData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  // Brief "Saved ✓" on the button itself — the form is long, so a message
+  // at the top was off-screen when people tapped Save at the bottom.
+  const [saved, setSaved] = useState(false);
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+  const { showToast } = useToast();
+
+  useEffect(() => () => {
+    if (savedTimer.current) clearTimeout(savedTimer.current);
+  }, []);
+
+  function showError(message: string) {
+    setError(message);
+    showToast(message, "error");
+    // Next paint: bring the message (right above the Save button) into view.
+    requestAnimationFrame(() => errorRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }));
+  }
 
   function toggleInterest(interest: string) {
     const lower = interest.toLowerCase();
@@ -66,8 +91,10 @@ export default function EditProfileForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setSuccess("");
+    setSaved(false);
     setLoading(true);
+
+    const website = normalizeWebsite(form.website);
 
     try {
       const res = await fetch("/api/users/me", {
@@ -81,7 +108,7 @@ export default function EditProfileForm({
           interests: form.interests,
           phone: form.phone || null,
           occupation: form.occupation,
-          website: form.website,
+          website,
           dob: form.dob || null,
           lookingFor: form.lookingFor || null,
         }),
@@ -91,7 +118,7 @@ export default function EditProfileForm({
       if (!res.ok) {
         // Prefer the specific field-level reason over the generic message
         const fieldError = data.errors?.[0]?.message;
-        setError(fieldError || data.message || "Failed to update profile.");
+        showError(fieldError || data.message || "Couldn't save your profile. Please try again.");
         return;
       }
 
@@ -112,10 +139,13 @@ export default function EditProfileForm({
       };
 
       setForm(normalized);
-      setSuccess("Profile updated!");
       onSuccess(normalized);
+      showToast("Profile saved", "success");
+      setSaved(true);
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+      savedTimer.current = setTimeout(() => setSaved(false), 2500);
     } catch {
-      setError("Network error. Please try again.");
+      showError("No internet connection. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -123,9 +153,6 @@ export default function EditProfileForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-      {error && <Alert type="error" message={error} />}
-      {success && <Alert type="success" message={success} />}
-
       <Input
         label="Name"
         value={form.name}
@@ -207,10 +234,14 @@ export default function EditProfileForm({
 
       <Input
         label="Website or social link"
-        type="url"
+        type="text"
+        inputMode="url"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
         value={form.website}
         onChange={(e) => setForm({ ...form, website: e.target.value })}
-        placeholder="https://instagram.com/yourhandle"
+        placeholder="instagram.com/yourhandle"
         maxLength={150}
       />
 
@@ -259,8 +290,20 @@ export default function EditProfileForm({
         </div>
       </div>
 
+      {/* Errors sit right above Save — where the person is looking. */}
+      <div ref={errorRef} aria-live="polite">
+        {error && <Alert type="error" message={error} />}
+      </div>
+
       <Button type="submit" size="lg" loading={loading}>
-        Save changes
+        {saved ? (
+          <>
+            <Check size={18} aria-hidden="true" />
+            Saved
+          </>
+        ) : (
+          "Save changes"
+        )}
       </Button>
     </form>
   );

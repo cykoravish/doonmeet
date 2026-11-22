@@ -4,12 +4,18 @@ import next from "next";
 import cron from "node-cron";
 import { initSocket } from "./src/lib/socket";
 import { runInactivityReminderJob } from "./src/lib/jobs/inactivityReminder";
+import { resetPresenceOnBoot } from "./src/lib/realtime/presence";
 
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
-app.prepare().then(() => {
+app.prepare().then(async () => {
+  // Production only, and before listening: nobody is connected to a freshly
+  // started server. Never in dev — local dev uses the LIVE database, and this
+  // would mark every real user offline.
+  if (!dev) await resetPresenceOnBoot();
+
   const httpServer = createServer((req, res) => handle(req, res));
   initSocket(httpServer);
   httpServer.listen(3000, () => {

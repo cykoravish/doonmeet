@@ -457,11 +457,13 @@ export function initSocket(httpServer: HttpServer): SocketServer {
       console.log(`[socket] Disconnected: ${socket.name} (${socket.userId})`);
 
       try {
-        // Socket.io hasn't dropped this socket from the adapter yet at the
-        // moment "disconnect" fires, so the count below still includes it —
-        // <= 1 means this was the user's last open tab/device.
+        // Socket.IO removes this socket from io.sockets.sockets BEFORE it
+        // fires "disconnect" (Socket#_onclose → _cleanup → nsp._remove), so
+        // the count below no longer includes it — 0 means this was the
+        // user's last open tab/device. (It used to check <= 1, which marked
+        // people offline while another tab was still open.)
         const remaining = countUserSockets(io, socket.userId);
-        const wasLastSocket = remaining <= 1;
+        const wasLastSocket = remaining === 0;
 
         const update: Record<string, unknown> = { lastSeenAt: new Date() };
         if (wasLastSocket) update.isOnline = false;

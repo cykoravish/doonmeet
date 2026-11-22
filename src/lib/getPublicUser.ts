@@ -14,7 +14,7 @@ export async function getPublicUser(userId: string) {
 
     const user = await User.findById(userId)
       .select(
-        "name avatar bannerImage bio gender address interests occupation website dob lookingFor privacy role isActive isDeleted email passwordHash googleId createdAt lastSeenAt supporterSince"
+        "name avatar bannerImage bio gender address interests occupation website dob lookingFor privacy role isActive isDeleted email phone passwordHash googleId createdAt lastSeenAt isOnline supporterSince"
       )
       .lean();
 
@@ -42,6 +42,7 @@ export async function getPublicUser(userId: string) {
       lookingFor: user.lookingFor,
       createdAt: user.createdAt,
       lastSeenAt: user.lastSeenAt,
+      isOnline: !!user.isOnline,
       isSupporter: !!user.supporterSince,
       stats: {
         communities: communitiesCount,
@@ -54,7 +55,17 @@ export async function getPublicUser(userId: string) {
     if (user.privacy?.showAddress) publicProfile.address = user.address;
     if (user.privacy?.showInterests) publicProfile.interests = user.interests;
     if (user.privacy?.showEmail) publicProfile.email = user.email;
-    if (user.privacy?.showDOB) publicProfile.dob = user.dob;
+    // Off by default — only when the person turned "Phone number" on in Privacy.
+    if (user.privacy?.showPhone && user.phone) publicProfile.phone = user.phone;
+    // Day + month only ("12 March") — the year would give away their age.
+    // The full date never leaves the server.
+    if (user.privacy?.showDOB && user.dob) {
+      publicProfile.birthday = new Intl.DateTimeFormat("en-IN", {
+        day: "numeric",
+        month: "long",
+        timeZone: "Asia/Kolkata",
+      }).format(new Date(user.dob));
+    }
 
     return JSON.parse(JSON.stringify(publicProfile));
   } catch (error) {

@@ -8,10 +8,12 @@ import { fetchBlockStatus, setBlocked } from "@/lib/safety-client";
 
 interface ProfileSafetyMenuProps {
   user: { _id: string; name: string };
+  /** "up" when the button sits at the bottom of the screen (mobile action bar). */
+  placement?: "down" | "up";
 }
 
 // "⋯" button on someone else's profile → Report / Block (or Unblock).
-export default function ProfileSafetyMenu({ user }: ProfileSafetyMenuProps) {
+export default function ProfileSafetyMenu({ user, placement = "down" }: ProfileSafetyMenuProps) {
   const [open, setOpen] = useState(false);
   const [sheet, setSheet] = useState<"report" | "block" | null>(null);
   const [blockedByMe, setBlockedByMe] = useState(false);
@@ -58,7 +60,7 @@ export default function ProfileSafetyMenu({ user }: ProfileSafetyMenuProps) {
       {open && (
         <div
           role="menu"
-          className="absolute top-full right-0 z-20 mt-1 w-52 overflow-hidden rounded-[16px] border border-border bg-surface py-1 shadow-lg"
+          className={`absolute right-0 z-20 ${placement === "up" ? "bottom-full mb-1" : "top-full mt-1"} w-52 overflow-hidden rounded-[16px] border border-border bg-surface py-1 shadow-lg`}
         >
           <button
             role="menuitem"
