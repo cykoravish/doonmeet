@@ -1,12 +1,15 @@
 // GET    — get a single post (public)
 // PATCH  — edit own post (author only)
-// DELETE — delete own post (author only)
+// DELETE — delete own post (author only), with its comments and likes
 // ============================================================
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { connectDB } from "@/lib/db";
 import { Post } from "@/models/Post";
 import { PostComment } from "@/models/PostComment";
+import { PostLike } from "@/models/PostLike";
+import { Notification } from "@/models/Notification";
+import { getLikedPostIds } from "@/lib/postLikes";
 import { withGuestAllowed, requireVerified, AuthenticatedRequest } from "@/middleware/auth";
 import { generalLimiter, postLimiter } from "@/middleware/rateLimit";
 import { updatePostSchema } from "@/validations/post";
@@ -45,7 +48,8 @@ export const GET = withGuestAllowed(
         return NextResponse.json({ success: false, message: "Post not found." }, { status: 404 });
       }
 
-      return NextResponse.json({ success: true, post }, { status: 200 });
+      const liked = await getLikedPostIds(req.user?._id ? String(req.user._id) : null, [postId]);
+      return NextResponse.json({ success: true, post: { ...post, likedByMe: liked.has(postId) } }, { status: 200 });
     } catch (error) {
       console.error("[GET /posts/[id]] Error:", error);
       return NextResponse.json(
@@ -71,7 +75,7 @@ export const PATCH = requireVerified(
     try {
       await connectDB();
 
-      const post = await Post.findById(postId).select("author image imagePublicId category");
+      const post = await Post.findById(postId).select("author image imagePublicId imageWidth imageHeight category");
       if (!post) {
         return NextResponse.json({ success: false, message: "Post not found." }, { status: 404 });
       }
@@ -118,6 +122,8 @@ export const PATCH = requireVerified(
 
       let newImageUrl = post.image;
       let newImagePublicId = post.imagePublicId;
+      let newImageWidth: number | null = post.imageWidth ?? null;
+      let newImageHeight: number | null = post.imageHeight ?? null;
       const oldPublicId = post.imagePublicId;
 
       if (imageFile && imageFile.size > 0) {
@@ -137,7 +143,7 @@ export const PATCH = requireVerified(
         const bytes = await imageFile.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        const uploadResult = await new Promise<{ secure_url: string; public_id: string }>(
+        const uploadResult = await new Promise<{ secure_url: string; public_id: string; width?: number; height?: number }>(
           (resolve, reject) => {
             cloudinary.uploader
               .upload_stream(
@@ -159,15 +165,22 @@ export const PATCH = requireVerified(
 
         newImageUrl = uploadResult.secure_url;
         newImagePublicId = uploadResult.public_id;
+        newImageWidth = uploadResult.width ?? null;
+        newImageHeight = uploadResult.height ?? null;
       } else if (removeImage) {
         newImageUrl = null;
         newImagePublicId = null;
+        newImageWidth = null;
+        newImageHeight = null;
       }
 
       post.content = content;
       if (category) post.category = category;
       post.image = newImageUrl;
       post.imagePublicId = newImagePublicId;
+      post.imageWidth = newImageWidth;
+      post.imageHeight = newImageHeight;
+      post.editedAt = new Date();
       await post.save();
 
       // Clean up the old Cloudinary asset once the new one is safely saved,
@@ -219,9 +232,20 @@ export const DELETE = requireVerified(
         );
       }
 
+      // Comment ids first, so their notifications can go too.
+      const commentIds = await PostComment.find({ post: postId }).distinct("_id");
+
       await Promise.all([
         Post.deleteOne({ _id: postId }),
         PostComment.deleteMany({ post: postId }),
+        PostLike.deleteMany({ post: postId }),
+        // Likes/comments notifications would now open a missing post.
+        Notification.deleteMany({
+          $or: [
+            { refModel: "Post", refId: postId },
+            { refModel: "PostComment", refId: { $in: commentIds } },
+          ],
+        }).catch(() => {}),
         post.imagePublicId
           ? cloudinary.uploader.destroy(post.imagePublicId).catch(() => {})
           : Promise.resolve(),

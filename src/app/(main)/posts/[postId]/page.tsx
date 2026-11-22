@@ -16,10 +16,12 @@ import PostComments from "@/components/posts/PostComments";
 import PostDetailView from "@/components/posts/PostDetailView";
 import { isPaymentsConfigured } from "@/lib/razorpay";
 import { eventShortDate } from "@/lib/dates";
+import { connectDB } from "@/lib/db";
+import { getTopLevelComments } from "@/lib/postComments";
 
 interface PostDetailPageProps {
   params: Promise<{ postId: string }>;
-  searchParams: Promise<{ edit?: string }>;
+  searchParams: Promise<{ edit?: string; comment?: string }>;
 }
 
 function buildPostDescription(content: string): string {
@@ -51,19 +53,29 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
 
 export default async function PostDetailPage({ params, searchParams }: PostDetailPageProps) {
   const { postId } = await params;
-  const { edit } = await searchParams;
-  const [post, currentUser] = await Promise.all([getPostById(postId), getSessionUser()]);
+  const { edit, comment: focusComment } = await searchParams;
+  const currentUser = await getSessionUser();
+  const viewerId = currentUser?._id ? String(currentUser._id) : null;
+  const [post, firstComments] = await Promise.all([
+    getPostById(postId, viewerId),
+    // First page of comments rendered on the server — shows instantly and
+    // is readable by search engines.
+    /^[a-f\d]{24}$/i.test(postId)
+      ? connectDB().then(() => getTopLevelComments(postId)).catch(() => ({ comments: [], nextCursor: null }))
+      : Promise.resolve({ comments: [], nextCursor: null }),
+  ]);
 
   if (!post) notFound();
 
   const author = post.author;
-  const isOwner = !!currentUser && String(currentUser._id) === String(author._id);
+  const isOwner = !!currentUser && !!author && String(currentUser._id) === String(author._id);
   const startInEditMode = isOwner && edit === "1";
   const sponsoredUntil = post.sponsoredUntil ? new Date(post.sponsoredUntil) : null;
   const isSponsored = !!sponsoredUntil && sponsoredUntil.getTime() > new Date().getTime();
   const createdAtStr = new Date(post.createdAt).toISOString();
-  const updatedAtStr = new Date(post.updatedAt).toISOString();
-  const wasEdited = updatedAtStr !== createdAtStr;
+  // editedAt is set only by a real edit (likes/comments also move updatedAt).
+  const wasEdited = !!post.editedAt;
+  const modifiedAtStr = post.editedAt ? new Date(post.editedAt).toISOString() : createdAtStr;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -71,12 +83,12 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
     headline: buildPostDescription(post.content),
     articleBody: post.content,
     datePublished: createdAtStr,
-    dateModified: updatedAtStr,
+    dateModified: modifiedAtStr,
     image: post.image ? [absoluteUrl(post.image)] : undefined,
     url: absoluteUrl(`/posts/${postId}`),
     author: {
       "@type": "Person",
-      name: author.name,
+      name: author?.name ?? "DoonMeet member",
     },
     commentCount: post.commentCount,
   };
@@ -97,7 +109,13 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
           postId={postId}
           initialContent={post.content}
           initialImage={post.image}
+          initialImageWidth={post.imageWidth ?? null}
+          initialImageHeight={post.imageHeight ?? null}
           initialCategory={post.category ?? null}
+          commentCount={post.commentCount}
+          likeCount={post.likeCount ?? 0}
+          likedByMe={!!post.likedByMe}
+          canInteract={!!currentUser}
           createdAt={createdAtStr}
           wasEdited={wasEdited}
           author={author}
@@ -110,8 +128,16 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
 
         <PostComments
           postId={postId}
+          postAuthorId={author?._id ? String(author._id) : null}
+          initialComments={firstComments.comments}
+          initialNextCursor={firstComments.nextCursor}
           initialCommentCount={post.commentCount}
-          isLoggedIn={!!currentUser}
+          currentUser={
+            currentUser
+              ? { _id: String(currentUser._id), name: currentUser.name, avatar: currentUser.avatar ?? null }
+              : null
+          }
+          focusCommentId={focusComment && /^[a-f\d]{24}$/i.test(focusComment) ? focusComment : null}
         />
       </div>
     </div>

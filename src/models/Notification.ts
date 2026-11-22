@@ -7,13 +7,15 @@ export type NotificationType =
   | "new_event"
   | "announcement"
   | "post_comment"
+  /** Someone ❤️ the recipient's Doon Feed post (refModel "Post"). */
+  | "post_like"
   /** An admin removed the recipient's Doon Feed post (sent from the admin dashboard). */
   | "post_removed";
 
 export interface INotification extends Document {
   recipient: mongoose.Types.ObjectId;
   type: NotificationType;
-  refModel: "DirectMessage" | "EventComment" | "Event" | "Broadcast" | "PostComment" | null;
+  refModel: "DirectMessage" | "EventComment" | "Event" | "Broadcast" | "PostComment" | "Post" | null;
   refId: mongoose.Types.ObjectId | null;
   preview: string | null;
   // Only set for "announcement" notifications — where the admin's broadcast
@@ -32,12 +34,21 @@ const NotificationSchema = new Schema<INotification>(
     recipient: { type: Schema.Types.ObjectId, ref: "User", required: true },
     type: {
       type: String,
-      enum: ["new_dm", "event_comment", "comment_reply", "new_event", "announcement", "post_comment", "post_removed"],
+      enum: [
+        "new_dm",
+        "event_comment",
+        "comment_reply",
+        "new_event",
+        "announcement",
+        "post_comment",
+        "post_like",
+        "post_removed",
+      ],
       required: true,
     },
     refModel: {
       type: String,
-      enum: ["DirectMessage", "EventComment", "Event", "Broadcast", "PostComment"],
+      enum: ["DirectMessage", "EventComment", "Event", "Broadcast", "PostComment", "Post"],
       default: null,
     },
     refId: { type: Schema.Types.ObjectId, default: null },

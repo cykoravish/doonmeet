@@ -19,7 +19,11 @@ interface PostItem {
   content: string;
   category?: PostCategory | null;
   image: string | null;
+  imageWidth?: number | null;
+  imageHeight?: number | null;
   commentCount: number;
+  likeCount?: number;
+  likedByMe?: boolean;
   createdAt: string;
   author: Author;
 }
@@ -94,6 +98,11 @@ export default function MyPostsTab({ userId }: { userId: string }) {
               category={post.category}
               image={post.image}
               commentCount={post.commentCount}
+              imageWidth={post.imageWidth}
+              imageHeight={post.imageHeight}
+              likeCount={post.likeCount}
+              likedByMe={post.likedByMe}
+              canLike={true}
               createdAt={post.createdAt}
               author={post.author}
               isOwner

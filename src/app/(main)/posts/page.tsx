@@ -8,7 +8,8 @@ import { getPublicUser } from "@/lib/getPublicUser";
 import { connectDB } from "@/lib/db";
 import { Post } from "@/models/Post";
 import { pageMetadata } from "@/lib/seo";
-import { getActiveSponsoredPosts } from "@/lib/posts";
+import { getActiveSponsoredPosts, type PostListItem } from "@/lib/posts";
+import { withViewerLikes } from "@/lib/postLikes";
 import JsonLd from "@/components/seo/JsonLd";
 import { breadcrumbJsonLd } from "@/lib/seo";
 import {
@@ -60,7 +61,7 @@ async function getInitialFeed(author?: string, category?: PostCategory) {
     .lean();
 
   const nextCursor = posts.length === PAGE_SIZE ? String(posts[posts.length - 1]._id) : null;
-  return { posts: JSON.parse(JSON.stringify(posts)), nextCursor };
+  return { posts: JSON.parse(JSON.stringify(posts)) as PostListItem[], nextCursor };
 }
 
 export default async function PostsPage({ searchParams }: PostsPageProps) {
@@ -69,12 +70,19 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
   const category = isPostCategory(rawCategory) ? rawCategory : undefined;
   const categoryInfo = category ? getPostCategory(category) : null;
 
-  const [{ posts, nextCursor }, currentUser, filteredUser, sponsoredPosts] = await Promise.all([
+  const [{ posts: feedPosts, nextCursor }, currentUser, filteredUser, sponsoredRaw] = await Promise.all([
     getInitialFeed(isValidAuthor ? author : undefined, category),
     getSessionUser(),
     isValidAuthor ? getPublicUser(author) : Promise.resolve(null),
     // Paid placements: on the main feed and on the post's own category feed.
     isValidAuthor ? Promise.resolve([]) : getActiveSponsoredPosts({ category }).catch(() => []),
+  ]);
+
+  // Fill in "did I ❤️ this?" for the viewer (one query for both lists).
+  const viewerId = currentUser?._id ? String(currentUser._id) : null;
+  const [posts, sponsoredPosts] = await Promise.all([
+    withViewerLikes(feedPosts, viewerId),
+    withViewerLikes(sponsoredRaw, viewerId),
   ]);
 
   const breadcrumbs = [

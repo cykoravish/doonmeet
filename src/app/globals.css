@@ -160,6 +160,38 @@
   animation: toast-in 0.18s ease-out;
 }
 
+/* ❤️ pop when a post is liked — transform only, so it's cheap on any phone
+   (the reduced-motion rule above switches it off). */
+@keyframes like-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.28);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.like-pop {
+  animation: like-pop 0.24s ease-out;
+}
+
+/* Brief highlight on a comment opened from a notification / just posted. */
+@keyframes comment-flash {
+  from {
+    background-color: rgb(var(--primary-soft));
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+.comment-flash {
+  animation: comment-flash 2.4s ease-out;
+}
+
 /* Tap feedback only — no hover scaling (it jitters on cheap GPUs). */
 .btn-springy {
   transition: transform 0.12s ease-out;

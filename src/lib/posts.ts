@@ -1,5 +1,6 @@
 import { connectDB } from "@/lib/db";
 import { Post } from "@/models/Post";
+import { withViewerLikes } from "@/lib/postLikes";
 import {
   BUSINESS_POST_WINDOW_MS,
   BUSINESS_POSTS_PER_WINDOW,
@@ -13,19 +14,28 @@ export interface PostListItem {
   category?: PostCategory;
   sponsoredUntil?: string | null;
   image: string | null;
+  /** Photo size in px — missing on posts made before sizes were stored. */
+  imageWidth?: number | null;
+  imageHeight?: number | null;
   commentCount: number;
+  /** Missing on posts created before likes existed → 0. */
+  likeCount?: number;
+  /** Whether the viewer has ❤️ it (false for guests / when not computed). */
+  likedByMe?: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Set only when the author edited the post. */
+  editedAt?: string | null;
   author: { _id: string; name: string; avatar: string | null };
 }
 
 // Shared by the /posts page (direct DB call for the first server-rendered
 // page) and reused for SEO metadata / sitemap generation.
 export async function getPosts(
-  options: { limit?: number; author?: string; category?: PostCategory } = {}
+  options: { limit?: number; author?: string; category?: PostCategory; viewerId?: string | null } = {}
 ): Promise<PostListItem[]> {
   await connectDB();
-  const { limit = 20, author, category } = options;
+  const { limit = 20, author, category, viewerId } = options;
 
   const query: Record<string, unknown> = category ? categoryQuery(category) : {};
   if (author) query.author = author;
@@ -39,10 +49,10 @@ export async function getPosts(
 
   // Plain-object round-trip so this is always safe to pass to Client
   // Components, whether used directly or via a Server Component wrapper.
-  return JSON.parse(JSON.stringify(posts));
+  return JSON.parse(JSON.stringify(await withViewerLikes(posts, viewerId)));
 }
 
-export async function getPostById(id: string): Promise<PostListItem | null> {
+export async function getPostById(id: string, viewerId?: string | null): Promise<PostListItem | null> {
   if (!/^[a-f\d]{24}$/i.test(id)) return null;
   await connectDB();
   const post = await Post.findById(id)
@@ -50,11 +60,12 @@ export async function getPostById(id: string): Promise<PostListItem | null> {
     .select("-imagePublicId -__v")
     .lean();
   if (!post) return null;
+  const [withLike] = await withViewerLikes([post], viewerId);
   // Mongoose lean() objects still contain ObjectId/Date instances (which
   // carry a toJSON but aren't "plain objects"), so they can't cross the
   // Server -> Client Component boundary as-is. Round-tripping through
   // JSON gives a fully plain, serializable object.
-  return JSON.parse(JSON.stringify(post));
+  return JSON.parse(JSON.stringify(withLike));
 }
 
 export async function getPostStats() {
@@ -99,9 +110,9 @@ export async function checkBusinessPostLimit(
  * Rotates fairly when more posts are sponsored than there are slots.
  */
 export async function getActiveSponsoredPosts(
-  options: { category?: PostCategory; slots?: number } = {}
+  options: { category?: PostCategory; slots?: number; viewerId?: string | null } = {}
 ): Promise<PostListItem[]> {
-  const { category, slots = 2 } = options;
+  const { category, slots = 2, viewerId } = options;
   await connectDB();
   const query: Record<string, unknown> = {
     ...(category ? categoryQuery(category) : {}),
@@ -119,5 +130,5 @@ export async function getActiveSponsoredPosts(
     const j = Math.floor(Math.random() * (i + 1));
     [posts[i], posts[j]] = [posts[j], posts[i]];
   }
-  return JSON.parse(JSON.stringify(posts.slice(0, slots)));
+  return JSON.parse(JSON.stringify(await withViewerLikes(posts.slice(0, slots), viewerId)));
 }

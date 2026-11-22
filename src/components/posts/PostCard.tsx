@@ -1,10 +1,11 @@
 import Link from "next/link";
-import Image from "next/image";
 import { MessageCircle, Pencil } from "lucide-react";
 import UserLink from "@/components/shared/UserLink";
 import Avatar from "@/components/ui/Avatar";
 import ShareButton from "@/components/events/ShareButton";
 import DeletePostButton from "./DeletePostButton";
+import LikeButton from "./LikeButton";
+import PostImage from "./PostImage";
 import { getPostCategory, type PostCategory } from "@/lib/postCategories";
 
 interface Author {
@@ -19,7 +20,14 @@ interface PostCardProps {
   /** Missing on older posts → treated as "other" (no badge). */
   category?: PostCategory | null;
   image: string | null;
+  /** Photo size in px (lets it show uncropped); missing on older posts. */
+  imageWidth?: number | null;
+  imageHeight?: number | null;
   commentCount: number;
+  likeCount?: number;
+  likedByMe?: boolean;
+  /** Logged-in viewer — guests tapping ❤️ are sent to log in. */
+  canLike?: boolean;
   createdAt: string;
   author: Author;
   /** Show Edit/Delete controls — pass true when this is the logged-in user's own post. */
@@ -53,7 +61,12 @@ export default function PostCard({
   content,
   category,
   image,
+  imageWidth,
+  imageHeight,
   commentCount,
+  likeCount = 0,
+  likedByMe = false,
+  canLike = false,
   createdAt,
   author,
   isOwner = false,
@@ -109,26 +122,25 @@ export default function PostCard({
         </Link>
       </div>
 
+      {/* Real shape, never cropped; tap opens it full screen. */}
       {image && (
-        <Link href={`/posts/${id}`} className="relative block aspect-[4/3] w-full bg-surface-2">
-          <Image
-            src={image}
-            alt={`Photo shared by ${authorName}`}
-            fill
-            sizes="(max-width: 672px) 100vw, 672px"
-            className="object-cover"
-          />
-        </Link>
+        <PostImage
+          src={image}
+          alt={`Photo shared by ${authorName}`}
+          width={imageWidth}
+          height={imageHeight}
+        />
       )}
 
       <footer className="flex items-center gap-2 px-3 py-2.5">
+        <LikeButton postId={id} initialLiked={likedByMe} initialCount={likeCount} canLike={canLike} />
         <Link
-          href={`/posts/${id}`}
-          className="flex h-10 items-center gap-1.5 rounded-[12px] bg-surface-2 px-3 text-sm font-semibold text-text transition-colors hover:bg-border"
-          aria-label={`${commentCount} ${commentCount === 1 ? "comment" : "comments"} — open post`}
+          href={`/posts/${id}#comments`}
+          className="flex h-10 shrink-0 items-center gap-1.5 rounded-[12px] bg-surface-2 px-3 text-sm font-semibold text-text transition-colors hover:bg-border"
+          aria-label={`${commentCount} ${commentCount === 1 ? "comment" : "comments"} — open comments`}
         >
           <MessageCircle size={18} aria-hidden="true" />
-          {commentCount > 0 ? commentCount : "Comment"}
+          {commentCount > 0 ? commentCount : null}
         </Link>
         <ShareButton
           variant="compact"

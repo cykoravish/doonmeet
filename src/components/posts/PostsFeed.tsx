@@ -23,7 +23,11 @@ interface PostItem {
   content: string;
   category?: PostCategory | null;
   image: string | null;
+  imageWidth?: number | null;
+  imageHeight?: number | null;
   commentCount: number;
+  likeCount?: number;
+  likedByMe?: boolean;
   createdAt: string;
   author: Author;
 }
@@ -198,6 +202,11 @@ export default function PostsFeed({
               category={post.category}
               image={post.image}
               commentCount={post.commentCount}
+              imageWidth={post.imageWidth}
+              imageHeight={post.imageHeight}
+              likeCount={post.likeCount}
+              likedByMe={post.likedByMe}
+              canLike={isLoggedIn}
               createdAt={post.createdAt}
               author={post.author}
               sponsored
@@ -240,6 +249,11 @@ export default function PostsFeed({
                 category={post.category}
                 image={post.image}
                 commentCount={post.commentCount}
+                imageWidth={post.imageWidth}
+                imageHeight={post.imageHeight}
+                likeCount={post.likeCount}
+                likedByMe={post.likedByMe}
+                canLike={isLoggedIn}
                 createdAt={post.createdAt}
                 author={post.author}
                 isOwner={!!currentUser && currentUser._id === post.author?._id}

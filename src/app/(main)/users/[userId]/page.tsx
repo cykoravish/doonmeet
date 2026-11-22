@@ -104,7 +104,7 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
   const isVisitor = !!currentUserId && !isOwnProfile;
 
   const [posts, communities] = await Promise.all([
-    getPosts({ author: userId, limit: POSTS_PREVIEW_LIMIT }),
+    getPosts({ author: userId, limit: POSTS_PREVIEW_LIMIT, viewerId: currentUserId }),
     getUserCommunities(userId),
   ]);
 
@@ -326,6 +326,11 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
                   category={post.category}
                   image={post.image}
                   commentCount={post.commentCount}
+                  imageWidth={post.imageWidth}
+                  imageHeight={post.imageHeight}
+                  likeCount={post.likeCount}
+                  likedByMe={post.likedByMe}
+                  canLike={!!currentUserId}
                   createdAt={post.createdAt}
                   author={post.author}
                   isOwner={isOwnProfile}
