@@ -17,6 +17,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 import ProfileAvatar from "./ProfileAvatar";
+import ProfileBanner from "./ProfileBanner";
+import { useToast } from "@/providers/toast-provider";
 import EditProfileForm from "./EditProfileForm";
 import PrivacySettings from "./PrivacySettings";
 import NotificationSettings from "./NotificationSettings";
@@ -110,62 +112,79 @@ export default function OwnProfileClient({ user }: { user: User }) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 pt-5 pb-8 sm:px-6 sm:pt-8">
-      {/* Profile summary */}
-      <header className="rounded-[24px] border border-border bg-surface p-5">
-        <div className="flex items-center gap-4">
+      {/* Profile summary — a small version of the public profile: cover
+          photo (editable right here), avatar overlapping it, then details. */}
+      <header className="overflow-hidden rounded-[24px] border border-border bg-surface">
+        <ProfileBanner
+          bannerImage={currentUser.bannerImage}
+          editable
+          className="h-28 sm:h-40"
+        />
+
+        <div className="px-4 pb-4 sm:px-5 sm:pb-5">
           <ProfileAvatar
             avatar={currentUser.avatar}
             name={currentUser.name}
             editable
-            className="h-20 w-20 sm:h-24 sm:w-24"
+            className="relative z-10 -mt-11 h-22 w-22 sm:-mt-12 sm:h-24 sm:w-24"
             onUpdate={(url) => setCurrentUser((prev) => ({ ...prev, avatar: url }))}
           />
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-2xl font-extrabold sm:text-3xl">{currentUser.name}</h1>
-            {currentUser.supporterSince && <SupporterBadge className="mt-1" />}
-            <p className="truncate text-[15px] text-muted">{currentUser.email}</p>
-            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-muted">
-              {currentUser.address && (
-                <span className="flex min-w-0 items-center gap-1">
-                  <MapPin size={14} className="shrink-0" aria-hidden="true" />
-                  <span className="truncate">{currentUser.address}</span>
-                </span>
-              )}
-              <span>Joined {joinedDate}</span>
-            </p>
+
+          <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+            <h1 className="min-w-0 font-display text-2xl leading-tight font-extrabold wrap-anywhere sm:text-3xl">
+              {currentUser.name}
+            </h1>
+            {currentUser.supporterSince && <SupporterBadge />}
           </div>
-        </div>
+          <p className="mt-0.5 truncate text-[15px] text-muted">{currentUser.email}</p>
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-muted">
+            {currentUser.address && (
+              <span className="flex min-w-0 items-center gap-1">
+                <MapPin size={14} className="shrink-0" aria-hidden="true" />
+                <span className="truncate">{currentUser.address}</span>
+              </span>
+            )}
+            <span>Joined {joinedDate}</span>
+          </p>
 
-        {currentUser.bio && (
-          <p className="mt-3 text-[15px] leading-relaxed wrap-anywhere">{currentUser.bio}</p>
-        )}
+          {currentUser.bio && (
+            <p className="mt-3 text-[15px] leading-relaxed whitespace-pre-line wrap-anywhere">
+              {currentUser.bio}
+            </p>
+          )}
 
-        {currentUser.interests?.length > 0 && (
-          <ul className="mt-3 flex flex-wrap gap-1.5">
-            {currentUser.interests.map((interest) => (
-              <li
-                key={interest}
-                className="rounded-full bg-primary-soft px-3 py-1 text-sm font-semibold text-primary-fg capitalize"
-              >
-                {interest}
-              </li>
-            ))}
-          </ul>
-        )}
+          {currentUser.interests?.length > 0 && (
+            <ul className="mt-3 flex flex-wrap gap-1.5">
+              {currentUser.interests.map((interest) => (
+                <li
+                  key={interest}
+                  className="rounded-full bg-primary-soft px-3 py-1 text-sm font-semibold text-primary-fg capitalize"
+                >
+                  {interest}
+                </li>
+              ))}
+            </ul>
+          )}
 
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:flex">
-          <Link href={`/users/${currentUser._id}`} className={buttonClasses("secondary", "md")}>
-            <ExternalLink size={17} aria-hidden="true" />
-            View public profile
-          </Link>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="flex h-12 items-center justify-center gap-2 rounded-[14px] px-5 text-[15px] font-semibold text-danger transition-colors hover:bg-danger/10"
-          >
-            <LogOut size={17} aria-hidden="true" />
-            Log out
-          </button>
+          {/* One row that never wraps: short labels, "View profile" takes
+              the spare width. */}
+          <div className="mt-4 flex items-center gap-2">
+            <Link
+              href={`/users/${currentUser._id}`}
+              className={buttonClasses("secondary", "md", "min-w-0 flex-1 whitespace-nowrap sm:flex-none")}
+            >
+              <ExternalLink size={17} className="shrink-0" aria-hidden="true" />
+              View profile
+            </Link>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex h-12 shrink-0 items-center justify-center gap-2 rounded-[14px] px-4 text-[15px] font-semibold whitespace-nowrap text-danger transition-colors hover:bg-danger/10"
+            >
+              <LogOut size={17} aria-hidden="true" />
+              Log out
+            </button>
+          </div>
         </div>
       </header>
 
@@ -186,7 +205,12 @@ export default function OwnProfileClient({ user }: { user: User }) {
                 type="button"
                 role="tab"
                 aria-selected={isActive}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={(e) => {
+                  setActiveTab(tab.key);
+                  // Bring a half-hidden tab (Notifications / Security on
+                  // small phones) fully into view.
+                  e.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+                }}
                 className={`flex h-11 shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-semibold whitespace-nowrap transition-colors ${
                   isActive ? "bg-primary text-on-primary" : "bg-surface-2 text-text hover:bg-border"
                 }`}
@@ -264,6 +288,7 @@ function ChangePasswordForm({
   onPasswordSet: () => void;
 }) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -323,6 +348,7 @@ function ChangePasswordForm({
       }
 
       setSuccess(data.message || "Password saved successfully!");
+      showToast(hasPassword ? "Password changed" : "Password set", "success");
       setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setTouched(false);
 
