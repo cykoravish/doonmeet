@@ -15,6 +15,7 @@ import { generalLimiter, postLimiter } from "@/middleware/rateLimit";
 import { createPostSchema, getPostsSchema } from "@/validations/post";
 import { categoryQuery } from "@/lib/postCategories";
 import { checkBusinessPostLimit } from "@/lib/posts";
+import { withViewerLikes } from "@/lib/postLikes";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -77,7 +78,7 @@ export const GET = withGuestAllowed(async (req: AuthenticatedRequest) => {
     return NextResponse.json(
       {
         success: true,
-        posts,
+        posts: await withViewerLikes(posts, req.user?._id ? String(req.user._id) : null),
         nextCursor,
         hasMore: !!nextCursor,
       },
@@ -120,6 +121,8 @@ export const POST = requireVerified(async (req: AuthenticatedRequest) => {
 
     let imageUrl: string | null = null;
     let imagePublicId: string | null = null;
+    let imageWidth: number | null = null;
+    let imageHeight: number | null = null;
 
     const imageFile = formData.get("image") as File | null;
     if (imageFile && imageFile.size > 0) {
@@ -139,7 +142,7 @@ export const POST = requireVerified(async (req: AuthenticatedRequest) => {
       const bytes = await imageFile.arrayBuffer();
       const buffer = Buffer.from(bytes);
 
-      const uploadResult = await new Promise<{ secure_url: string; public_id: string }>(
+      const uploadResult = await new Promise<{ secure_url: string; public_id: string; width?: number; height?: number }>(
         (resolve, reject) => {
           cloudinary.uploader
             .upload_stream(
@@ -161,6 +164,9 @@ export const POST = requireVerified(async (req: AuthenticatedRequest) => {
 
       imageUrl = uploadResult.secure_url;
       imagePublicId = uploadResult.public_id;
+      // Lets the feed show the photo in its real shape instead of cropping it.
+      imageWidth = uploadResult.width ?? null;
+      imageHeight = uploadResult.height ?? null;
     }
 
     const post = await Post.create({
@@ -169,6 +175,8 @@ export const POST = requireVerified(async (req: AuthenticatedRequest) => {
       category: result.data.category,
       image: imageUrl,
       imagePublicId,
+      imageWidth,
+      imageHeight,
     });
 
     await post.populate("author", "name avatar");

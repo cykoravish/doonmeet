@@ -71,6 +71,20 @@ export const postLimiter = rateLimit({
   max: 15,
 });
 
+// Comments + replies on posts — plenty for a real conversation, stops floods.
+export const commentLimiter = rateLimit({
+  keyPrefix: "comment",
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 40,
+});
+
+// ❤️ / un-❤️ — generous (people tap twice by accident), stops scripted spam.
+export const likeLimiter = rateLimit({
+  keyPrefix: "like",
+  windowMs: 60 * 1000,
+  max: 60,
+});
+
 // General API reads
 export const generalLimiter = rateLimit({
   keyPrefix: "general",

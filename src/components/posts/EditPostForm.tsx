@@ -15,7 +15,13 @@ interface EditPostFormProps {
   initialImage: string | null;
   initialCategory?: PostCategory;
   onCancel: () => void;
-  onSaved: (post: { content: string; image: string | null; category: PostCategory }) => void;
+  onSaved: (post: {
+    content: string;
+    image: string | null;
+    imageWidth: number | null;
+    imageHeight: number | null;
+    category: PostCategory;
+  }) => void;
 }
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -96,7 +102,13 @@ export default function EditPostForm({
         return;
       }
 
-      onSaved({ content: data.post.content, image: data.post.image, category: data.post.category ?? category });
+      onSaved({
+        content: data.post.content,
+        image: data.post.image,
+        imageWidth: data.post.imageWidth ?? null,
+        imageHeight: data.post.imageHeight ?? null,
+        category: data.post.category ?? category,
+      });
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");

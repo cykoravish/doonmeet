@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { MessageCircle, CalendarDays, Megaphone, Newspaper, ShieldAlert } from "lucide-react";
+import { MessageCircle, CalendarDays, Heart, Megaphone, Newspaper, Reply, ShieldAlert } from "lucide-react";
 
 export type NotificationType =
   | "new_dm"
@@ -8,6 +8,7 @@ export type NotificationType =
   | "new_event"
   | "announcement"
   | "post_comment"
+  | "post_like"
   | "post_removed";
 
 export interface NotificationItem {
@@ -47,12 +48,13 @@ export const NOTIFICATION_TYPE_CONFIG: Record<NotificationType, TypeConfigEntry>
     label: "commented on your event",
     href: "/events",
   },
+  // Replies on Doon Feed posts — the notification's url opens the thread.
   comment_reply: {
-    icon: <CalendarDays size={14} />,
+    icon: <Reply size={14} />,
     color: "rgb(var(--primary-fg))",
     bg: "rgb(var(--primary-soft))",
     label: "replied to your comment",
-    href: "/events",
+    href: "/posts",
   },
   new_event: {
     icon: <CalendarDays size={14} />,
@@ -73,6 +75,13 @@ export const NOTIFICATION_TYPE_CONFIG: Record<NotificationType, TypeConfigEntry>
     color: "rgb(var(--accent-fg))",
     bg: "rgb(var(--accent-soft))",
     label: "commented on your post",
+    href: "/posts",
+  },
+  post_like: {
+    icon: <Heart size={14} />,
+    color: "rgb(var(--danger))",
+    bg: "rgb(var(--danger) / 0.1)",
+    label: "liked your post",
     href: "/posts",
   },
   post_removed: {
@@ -97,18 +106,21 @@ export function getNotificationConfig(type: string): TypeConfigEntry {
   return NOTIFICATION_TYPE_CONFIG[type as NotificationType] ?? FALLBACK_CONFIG;
 }
 
-// new_dm notifications deep-link straight into that conversation;
-// announcement notifications use whatever URL the admin attached (if any);
-// everything else falls back to its section's static href.
+// new_dm notifications deep-link straight into that conversation; any
+// notification that carries its own url (announcement links, post comments,
+// replies, likes, removals) goes there; everything else falls back to its
+// section's static href.
 export function getNotificationHref(
   notif: Pick<NotificationItem, "type" | "actor" | "url">
 ): string {
   if (notif.type === "new_dm" && notif.actor.userId) {
     return `/chat?dm=${notif.actor.userId}`;
   }
-  if ((notif.type === "announcement" || notif.type === "post_comment" || notif.type === "post_removed") && notif.url) {
+  // Only same-site paths — never send someone off-site from a notification.
+  if (notif.url && notif.url.startsWith("/") && !notif.url.startsWith("//")) {
     return notif.url;
   }
+  if (notif.type === "announcement" && notif.url) return notif.url;
   return getNotificationConfig(notif.type).href;
 }
 

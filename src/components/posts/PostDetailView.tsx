@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
-import { Pencil } from "lucide-react";
+import { useEffect, useState } from "react";
+import { MessageCircle, Pencil } from "lucide-react";
+import { COMMENT_COUNT_EVENT } from "./commentEvents";
+import LikeButton from "./LikeButton";
+import PostImage from "./PostImage";
 import UserLink from "@/components/shared/UserLink";
 import Avatar from "@/components/ui/Avatar";
 import { buttonClasses } from "@/components/ui/Button";
@@ -25,7 +27,14 @@ interface PostDetailViewProps {
   postId: string;
   initialContent: string;
   initialImage: string | null;
+  initialImageWidth?: number | null;
+  initialImageHeight?: number | null;
   initialCategory?: PostCategory | null;
+  commentCount: number;
+  likeCount: number;
+  likedByMe: boolean;
+  /** Logged-in viewer (can ❤️ and comment). */
+  canInteract: boolean;
   createdAt: string;
   wasEdited: boolean;
   author: Author;
@@ -43,7 +52,13 @@ export default function PostDetailView({
   postId,
   initialContent,
   initialImage,
+  initialImageWidth = null,
+  initialImageHeight = null,
   initialCategory,
+  commentCount,
+  likeCount,
+  likedByMe,
+  canInteract,
   createdAt,
   wasEdited,
   author,
@@ -55,8 +70,22 @@ export default function PostDetailView({
 }: PostDetailViewProps) {
   const [content, setContent] = useState(initialContent);
   const [image, setImage] = useState(initialImage);
+  const [imageSize, setImageSize] = useState<{ w: number | null; h: number | null }>({
+    w: initialImageWidth,
+    h: initialImageHeight,
+  });
   const [category, setCategory] = useState<PostCategory | null | undefined>(initialCategory);
   const [editing, setEditing] = useState(startInEditMode);
+  // Live comment total — PostComments announces changes (new/deleted comments).
+  const [liveCommentCount, setLiveCommentCount] = useState(commentCount);
+  useEffect(() => {
+    const onCount = (e: Event) => {
+      const detail = (e as CustomEvent<{ postId: string; count: number }>).detail;
+      if (detail?.postId === postId) setLiveCommentCount(detail.count);
+    };
+    window.addEventListener(COMMENT_COUNT_EVENT, onCount);
+    return () => window.removeEventListener(COMMENT_COUNT_EVENT, onCount);
+  }, [postId]);
   const [edited, setEdited] = useState(wasEdited);
   const authorName = author?.name ?? "Deleted User";
 
@@ -71,6 +100,7 @@ export default function PostDetailView({
         onSaved={(post) => {
           setContent(post.content);
           setImage(post.image);
+          setImageSize({ w: post.imageWidth ?? null, h: post.imageHeight ?? null });
           setCategory(post.category);
           setEdited(true);
           setEditing(false);
@@ -123,32 +153,59 @@ export default function PostDetailView({
           <p className="text-[17px] leading-relaxed wrap-anywhere whitespace-pre-line">{content}</p>
         </div>
 
+        {/* Whole photo in its real shape; tap → full screen. */}
         {image && (
-          <div className="relative aspect-[4/3] w-full bg-surface-2">
-            {/* object-contain: show the whole photo on the detail page, never crop it */}
-            <Image
-              src={image}
-              alt={`Photo shared by ${authorName}`}
-              fill
-              priority
-              sizes="(max-width: 672px) 100vw, 672px"
-              className="object-contain"
-            />
-          </div>
+          <PostImage
+            src={image}
+            alt={`Photo shared by ${authorName}`}
+            width={imageSize.w}
+            height={imageSize.h}
+            priority
+          />
         )}
+
+        {/* ❤️ · 💬 · Share — the same row as on the feed card. */}
+        <footer className="flex items-center gap-2 px-3 py-2.5">
+          <LikeButton
+            postId={postId}
+            initialLiked={likedByMe}
+            initialCount={likeCount}
+            canLike={canInteract}
+            size="lg"
+          />
+          <a
+            href="#comment-composer"
+            onClick={(e) => {
+              // Jump to the comment box and open the keyboard.
+              const box = document.getElementById("comment-composer");
+              if (box) {
+                e.preventDefault();
+                box.scrollIntoView({ block: "center", behavior: "smooth" });
+                box.focus({ preventScroll: true });
+              }
+            }}
+            className="flex h-12 shrink-0 items-center gap-1.5 rounded-[12px] bg-surface-2 px-4 text-[15px] font-semibold text-text transition-colors hover:bg-border"
+          >
+            <MessageCircle size={20} aria-hidden="true" />
+            {liveCommentCount > 0 ? liveCommentCount : "Comment"}
+          </a>
+          <ShareButton
+            variant="compact"
+            title={`${authorName} on DoonMeet`}
+            url={`https://doonmeet.in/posts/${postId}`}
+            label="Share"
+          />
+        </footer>
       </article>
 
-      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto_auto]">
-        <ShareButton title={`${authorName} on DoonMeet`} url={`https://doonmeet.in/posts/${postId}`} label="Share post" />
-        {isOwner && (
-          <div className="grid grid-cols-2 gap-2 sm:contents">
-            <button type="button" onClick={() => setEditing(true)} className={buttonClasses("secondary", "md")}>
-              <Pencil size={17} aria-hidden="true" /> Edit
-            </button>
-            <DeletePostButton postId={postId} redirectTo="/posts" />
-          </div>
-        )}
-      </div>
+      {isOwner && (
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+          <button type="button" onClick={() => setEditing(true)} className={buttonClasses("secondary", "md")}>
+            <Pencil size={17} aria-hidden="true" /> Edit post
+          </button>
+          <DeletePostButton postId={postId} redirectTo="/posts" />
+        </div>
+      )}
 
       {isOwner && paymentsEnabled && (
         <section
