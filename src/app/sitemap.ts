@@ -8,6 +8,7 @@ import { MIN_INDEXABLE_POST_LENGTH, SITE_URL } from "@/lib/seo";
 import { POST_CATEGORIES } from "@/lib/postCategories";
 import { isPaymentsConfigured } from "@/lib/razorpay";
 import { isSupportEnabled } from "@/lib/support";
+import { getCommunityGuide } from "@/data/communityGuides";
 
 // Without this the sitemap is generated once at build time and never again,
 // so new events/places/posts would not show up until the next deploy.
@@ -57,12 +58,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
 
     const communities = await Community.find({ isActive: true }).select("slug updatedAt").lean();
-    communityRoutes = communities.map((c) => ({
-      url: `${base}/communities/${c.slug}`,
-      lastModified: c.updatedAt ?? new Date(),
-      changeFrequency: "weekly",
-      priority: 0.6,
-    }));
+    communityRoutes = communities.map((c) => {
+      // A community's local guide lives in code, not in its DB document, so
+      // its date has to count too — otherwise Google never hears the page changed.
+      const guide = getCommunityGuide(c.slug);
+      const guideDate = guide ? new Date(`${guide.updatedAt}T00:00:00+05:30`) : null;
+      const dbDate = c.updatedAt ? new Date(c.updatedAt) : null;
+      const lastModified =
+        guideDate && dbDate ? (guideDate > dbDate ? guideDate : dbDate) : guideDate ?? dbDate ?? new Date();
+      return {
+        url: `${base}/communities/${c.slug}`,
+        lastModified,
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+      };
+    });
 
     const events = await Event.find({ slug: { $exists: true, $ne: null } })
       .select("slug updatedAt")
