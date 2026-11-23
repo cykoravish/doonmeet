@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Globe, Megaphone, Users } from "lucide-react";
+import { Globe, MapPin, Megaphone, MessageCircleQuestion, Users } from "lucide-react";
 import type { Metadata } from "next";
 import JsonLd from "@/components/seo/JsonLd";
 import { absoluteUrl, breadcrumbJsonLd, pageMetadata, truncate } from "@/lib/seo";
@@ -14,6 +14,9 @@ import CommunityDiscussion from "@/components/communities/CommunityDiscussion";
 import BackLink from "@/components/shared/BackLink";
 import UserLink from "@/components/shared/UserLink";
 import Avatar from "@/components/ui/Avatar";
+import CommunityGuide from "@/components/communities/CommunityGuide";
+import { getCommunityGuide } from "@/data/communityGuides";
+import { getPlacesByCategories } from "@/lib/places";
 
 interface CommunityPageProps {
   params: Promise<{ slug: string }>;
@@ -25,6 +28,20 @@ export async function generateMetadata({ params }: CommunityPageProps): Promise<
   if (!community) return { title: "Community Not Found", robots: { index: false, follow: false } };
 
   const name = community.name as string;
+  const image = ((community.banner as string | null) || (community.icon as string | null)) ?? undefined;
+
+  // Communities with a local guide get a keyword-rich title and description.
+  const guide = getCommunityGuide(slug);
+  if (guide) {
+    return pageMetadata({
+      title: guide.seoTitle,
+      description: guide.seoDescription,
+      path: `/communities/${slug}`,
+      keywords: guide.keywords,
+      image,
+    });
+  }
+
   const description = truncate(
     (community.description as string)?.trim() ||
       `Join ${name}, a ${community.category as string} community in Dehradun on DoonMeet — meet members, join discussions and find events.`
@@ -34,7 +51,7 @@ export async function generateMetadata({ params }: CommunityPageProps): Promise<
     title: `${name} — Dehradun Community`,
     description,
     path: `/communities/${slug}`,
-    image: ((community.banner as string | null) || (community.icon as string | null)) ?? undefined,
+    image,
   });
 }
 
@@ -45,10 +62,12 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
   if (!community) notFound();
 
   const communityId = String(community._id);
-  const [members, memberStatus, events] = await Promise.all([
+  const guide = getCommunityGuide(slug);
+  const [members, memberStatus, events, relatedPlaces] = await Promise.all([
     getCommunityMembers(communityId),
     isUserMember(communityId, currentUser?._id),
     getCommunityEvents(communityId),
+    guide ? getPlacesByCategories(guide.relatedPlaceCategories).catch(() => []) : Promise.resolve([]),
   ]);
 
   const name = community.name as string;
@@ -79,6 +98,19 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
             { name: "Communities", path: "/communities" },
             { name, path: `/communities/${slug}` },
           ]),
+          ...(guide
+            ? [
+                {
+                  "@context": "https://schema.org",
+                  "@type": "FAQPage",
+                  mainEntity: guide.faqs.map((f) => ({
+                    "@type": "Question",
+                    name: f.q,
+                    acceptedAnswer: { "@type": "Answer", text: f.a },
+                  })),
+                },
+              ]
+            : []),
         ]}
       />
 
@@ -138,9 +170,18 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
         </div>
       )}
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_300px] lg:gap-8">
-        {/* Sidebar first in the DOM so phones see events/members before a long discussion */}
-        <aside className="flex flex-col gap-4 lg:col-start-2 lg:row-start-1">
+      <div className={`mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px] lg:gap-8 ${guide ? "lg:items-start" : ""}`}>
+        {/* Phones read top to bottom: local guide (if any) → events/members/places → discussion. */}
+        {guide && (
+          <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+            <CommunityGuide guide={guide} slug={slug} isMember={memberStatus} isLoggedIn={!!currentUser} />
+          </div>
+        )}
+
+        {/* Sidebar before the discussion in the DOM so phones see events/members before a long discussion */}
+        <aside
+          className={`flex flex-col gap-4 lg:col-start-2 lg:row-start-1 ${guide ? "lg:row-span-2" : ""}`}
+        >
           {events.length > 0 && (
             <section aria-labelledby="community-events-title" className="rounded-[20px] border border-border bg-surface p-4">
               <h2 id="community-events-title" className="mb-3 text-lg font-extrabold">
@@ -191,9 +232,55 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
               {memberCount > 16 && <p className="mt-2 text-sm text-muted">+{memberCount - 16} more</p>}
             </section>
           )}
+
+          {relatedPlaces.length > 0 && (
+            <section aria-labelledby="community-places-title" className="rounded-[20px] border border-border bg-surface p-4">
+              <h2 id="community-places-title" className="mb-3 text-lg font-extrabold">
+                Places to explore
+              </h2>
+              <ul className="flex flex-col gap-2">
+                {relatedPlaces.map((place) => (
+                  <li key={place._id}>
+                    <Link
+                      href={`/places/${place.slug}`}
+                      className="flex items-center gap-3 rounded-[14px] p-2 transition-colors hover:bg-surface-2"
+                    >
+                      <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-primary-soft">
+                        {place.image ? (
+                          <Image src={place.image} alt="" fill sizes="48px" className="object-cover" />
+                        ) : (
+                          <MapPin size={20} className="m-auto h-full text-primary-fg" aria-hidden="true" />
+                        )}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate font-semibold text-text">{place.title}</span>
+                        <span className="block truncate text-sm text-muted">{place.shortDescription}</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {guide && (
+            <Link
+              href="/posts?category=ask"
+              className="flex min-h-[44px] items-center gap-3 rounded-[20px] border border-border bg-surface p-4 transition-colors hover:bg-surface-2"
+            >
+              <MessageCircleQuestion size={22} className="shrink-0 text-primary-fg" aria-hidden="true" />
+              <span className="min-w-0">
+                <span className="block font-semibold text-text">Looking for a recommendation?</span>
+                <span className="block text-sm text-muted">Ask people in Dehradun on Ask Doon</span>
+              </span>
+            </Link>
+          )}
         </aside>
 
-        <section aria-labelledby="community-discussion-title" className="min-w-0 lg:col-start-1 lg:row-start-1">
+        <section
+          aria-labelledby="community-discussion-title"
+          className={`min-w-0 lg:col-start-1 ${guide ? "lg:row-start-2" : "lg:row-start-1"}`}
+        >
           <h2 id="community-discussion-title" className="mb-3 text-xl font-extrabold">
             Discussion
           </h2>
