@@ -22,6 +22,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Old URLs Google still has in its index. The Locations feature was renamed
+  // to Places (same slugs), so send visitors and link value to the new pages
+  // instead of a 404. Permanent (308) so Google swaps the URL in its index.
+  async redirects() {
+    return [
+      { source: "/locations", destination: "/places", permanent: true },
+      { source: "/locations/:slug", destination: "/places/:slug", permanent: true },
+    ];
+  },
 };
 
 // Build-output folder. `next build` empties its output folder before it
