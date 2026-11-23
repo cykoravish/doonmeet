@@ -59,6 +59,32 @@ export async function getAllPlacesWithRatings(): Promise<PlaceWithRating[]> {
   return attachRatings(places);
 }
 
+export interface PlaceSummary {
+  _id: string;
+  title: string;
+  slug: string;
+  image: string;
+  shortDescription: string;
+}
+
+/** Places in any of these categories (e.g. "Food & Cafes") — for "related places" links. */
+export async function getPlacesByCategories(categories: string[], limit = 4): Promise<PlaceSummary[]> {
+  if (categories.length === 0) return [];
+  await connectDB();
+  const places = await Place.find({ category: { $in: categories } })
+    .sort({ createdAt: 1 })
+    .limit(limit)
+    .select("title slug image shortDescription")
+    .lean<{ _id: unknown; title: string; slug: string; image: string; shortDescription: string }[]>();
+  return places.map((p) => ({
+    _id: String(p._id),
+    title: p.title,
+    slug: p.slug,
+    image: p.image,
+    shortDescription: p.shortDescription,
+  }));
+}
+
 export async function getPlaceWithRating(slug: string): Promise<PlaceWithRating | null> {
   await connectDB();
   const place = await Place.findOne({ slug });
