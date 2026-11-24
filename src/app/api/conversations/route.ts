@@ -23,7 +23,7 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
     })
       .sort({ updatedAt: -1 }) // most recent first
       .limit(50) // max 50 conversations in inbox
-      .populate("participants", "name avatar lastSeenAt isActive")
+      .populate("participants", "name avatar lastSeenAt isOnline isActive")
       .lean();
 
     // Shape response — add unread count for current user
@@ -99,14 +99,14 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
           returnDocument: "after",
           setDefaultsOnInsert: true,
         }
-      ).populate("participants", "name avatar lastSeenAt");
+      ).populate("participants", "name avatar lastSeenAt isOnline");
     } catch (err: unknown) {
       // Two simultaneous requests both tried to create this pair's first
       // conversation — the other one won the race. Just fetch it.
       if (err && typeof err === "object" && "code" in err && err.code === 11000) {
         conversation = await Conversation.findOne({ participantsKey }).populate(
           "participants",
-          "name avatar lastSeenAt"
+          "name avatar lastSeenAt isOnline"
         );
       } else {
         throw err;

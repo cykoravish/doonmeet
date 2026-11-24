@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Loader2, MessageCircle, Users } from "lucide-react";
 import ConversationListItem, { type ConversationSummary } from "./ConversationListItem";
 import DMChatWindow from "./DMChatWindow";
 import Alert from "@/components/ui/Alert";
 import { buttonClasses } from "@/components/ui/Button";
+import { onConnected, useSocket } from "@/lib/socket-client";
+import type { PresenceInfo } from "./dmTypes";
 
 interface CurrentUser {
   _id: string;
@@ -129,6 +131,68 @@ export default function MessagesPanel({
     setConversations((prev) => prev.map((c) => (c._id === id ? { ...c, unreadCount: 0 } : c)));
   }
 
+  // ---- Online status of everyone in the list (dots + the open chat's header) ----
+  // This panel is the ONLY place that watches — the open chat reads from here —
+  // so two components can never unwatch each other's people.
+  const socket = useSocket(currentUser._id);
+  const [presence, setPresence] = useState<Record<string, PresenceInfo>>({});
+
+  // Stable key: only re-watch when the set of people changes, not on every re-sort.
+  const watchKey = useMemo(
+    () =>
+      [...new Set(conversations.map((c) => c.otherParticipant?._id).filter((id): id is string => !!id))]
+        .sort()
+        .join(","),
+    [conversations]
+  );
+
+  useEffect(() => {
+    if (!socket || !watchKey) return;
+    const userIds = watchKey.split(",");
+
+    function handleUpdate(data: { userId: string; isOnline: boolean; lastSeenAt: string | null }) {
+      if (!userIds.includes(data.userId)) return;
+      setPresence((prev) => ({
+        ...prev,
+        [data.userId]: {
+          isOnline: data.isOnline,
+          // "Came online" events carry no lastSeenAt — keep the one we had.
+          lastSeenAt: data.lastSeenAt ?? prev[data.userId]?.lastSeenAt ?? null,
+        },
+      }));
+    }
+
+    socket.on("presence:update", handleUpdate);
+    // Watch now and after every reconnect; the ack carries everyone's current state.
+    const stop = onConnected(socket, () => {
+      socket.emit(
+        "presence:watch",
+        { userIds },
+        (res?: { ok: boolean; presence?: Record<string, PresenceInfo> }) => {
+          if (res?.ok && res.presence) setPresence((prev) => ({ ...prev, ...res.presence }));
+        }
+      );
+    });
+
+    return () => {
+      stop();
+      socket.off("presence:update", handleUpdate);
+      socket.emit("presence:unwatch", { userIds });
+    };
+  }, [socket, watchKey]);
+
+  /** Live state if we have it, else what the conversations API said at load. */
+  function presenceOf(conv: ConversationSummary): PresenceInfo | null {
+    const other = conv.otherParticipant;
+    if (!other) return null;
+    return (
+      presence[other._id] ?? {
+        isOnline: !!other.isOnline,
+        lastSeenAt: other.lastSeenAt ?? null,
+      }
+    );
+  }
+
   const selectedConversation = conversations.find((c) => c._id === selectedId) ?? null;
   const conversationOpen = !!selectedConversation?.otherParticipant;
 
@@ -196,6 +260,7 @@ export default function MessagesPanel({
                   conversation={conv}
                   isActive={conv._id === selectedId}
                   currentUserId={currentUser._id}
+                  isOnline={!!presenceOf(conv)?.isOnline}
                   onClick={() => handleSelect(conv._id)}
                 />
               </li>
@@ -212,6 +277,7 @@ export default function MessagesPanel({
             conversationId={selectedConversation!._id}
             otherParticipant={selectedConversation!.otherParticipant!}
             currentUser={currentUser}
+            presence={presenceOf(selectedConversation!)}
             onBack={() => setSelectedId(null)}
             onMessageSent={handleNewIncomingMessage}
           />

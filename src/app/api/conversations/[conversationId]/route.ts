@@ -27,7 +27,7 @@ export const GET = withAuth(
         _id: conversationId,
         participants: req.user._id, // ensure user is a participant
       })
-        .populate("participants", "name avatar lastSeenAt isActive")
+        .populate("participants", "name avatar lastSeenAt isOnline isActive")
         .lean();
 
       if (!conversation) {

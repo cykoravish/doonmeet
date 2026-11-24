@@ -12,9 +12,22 @@ import { sendPushToUser } from "@/lib/push";
 import { getSenderState, isBlockedEitherWay } from "@/lib/safety";
 import { watchRoomMessageDeletes } from "@/lib/realtime/roomMessageDeletes";
 // Not @/middleware/rateLimit: that imports next/server, which crashes the custom server.
-import { DM_LIMIT, ROOM_CHAT_LIMIT, isRateLimited } from "@/lib/rateLimitStore";
+import {
+  DM_LIMIT,
+  DM_REACT_LIMIT,
+  PRESENCE_WATCH_LIMIT,
+  ROOM_CHAT_LIMIT,
+  isRateLimited,
+} from "@/lib/rateLimitStore";
+import { getPresenceFor, prepareDmFields, setDmReaction, toDmPayload } from "@/lib/dm";
+import { isDmReaction } from "@/lib/dmShared";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
+
+const isObjectId = (id: unknown): id is string => typeof id === "string" && /^[a-f\d]{24}$/i.test(id);
+
+/** Sockets watching one person's online status (from their Messages list). */
+const presenceRoomFor = (userId: string) => `presence:user:${userId}`;
 
 interface AuthenticatedSocket extends Socket {
   userId: string;
@@ -115,7 +128,10 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     // -------------------------------------------------------
     User.updateOne({ _id: socket.userId }, { $set: { isOnline: true } })
       .then(() => {
-        io.to("presence:room").emit("presence:update", {
+        // The members panel ("presence:room") and anyone watching this person
+        // from their Messages list (presence:watch). One emit — a socket in
+        // both rooms still gets it once.
+        io.to("presence:room").to(presenceRoomFor(socket.userId)).emit("presence:update", {
           userId: socket.userId,
           isOnline: true,
           lastSeenAt: null,
@@ -283,11 +299,16 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     // -------------------------------------------------------
     // DMs — send message
     // -------------------------------------------------------
-    socket.on("dm:message", async (data: { conversationId: string; content: string }) => {
-      if (!/^[a-f\d]{24}$/i.test(data?.conversationId)) return;
+    // { conversationId, content, replyToId? } — a text message, optionally a reply
+    // { conversationId, sharedProfileUserId, replyToId? } — a profile card
+    socket.on(
+      "dm:message",
+      async (data: { conversationId: string; content?: string; replyToId?: string; sharedProfileUserId?: string }) => {
+      if (!isObjectId(data?.conversationId)) return;
 
-      const content = data?.content?.replace(/<[^>]*>/g, "").trim();
-      if (!content || content.length > 1000) return;
+      const isProfileShare = isObjectId(data?.sharedProfileUserId);
+      const rawContent = typeof data?.content === "string" ? data.content.replace(/<[^>]*>/g, "").trim() : "";
+      if (!isProfileShare && (!rawContent || rawContent.length > 1000)) return;
 
       // Flood control — same limit as the REST send route.
       if (isRateLimited(DM_LIMIT, socket.userId)) {
@@ -321,6 +342,22 @@ export function initSocket(httpServer: HttpServer): SocketServer {
           return;
         }
 
+        // Text / reply quote / profile card — validated the same way as the REST route.
+        const prepared = await prepareDmFields(data.conversationId, {
+          content: rawContent,
+          replyToId: data.replyToId,
+          sharedProfileUserId: isProfileShare ? data.sharedProfileUserId : undefined,
+        });
+        if (!prepared.ok) {
+          socket.emit("dm:error", {
+            conversationId: data.conversationId,
+            code: prepared.code,
+            message: prepared.message,
+          });
+          return;
+        }
+        const { content } = prepared.fields;
+
         const dmRoom = `dm:${data.conversationId}`;
         // Is the recipient already looking at this exact conversation right
         // now? If so, treat the message as instantly read for them — both
@@ -337,6 +374,9 @@ export function initSocket(httpServer: HttpServer): SocketServer {
           conversationId: data.conversationId,
           sender: socket.userId,
           content,
+          type: prepared.fields.type,
+          replyTo: prepared.fields.replyTo,
+          sharedProfile: prepared.fields.sharedProfile,
           readBy,
         });
 
@@ -354,17 +394,11 @@ export function initSocket(httpServer: HttpServer): SocketServer {
         }
         await Conversation.updateOne({ _id: data.conversationId }, conversationUpdate);
 
-        const messagePayload = {
-          _id: message._id,
-          conversationId: data.conversationId,
-          content: message.content,
-          createdAt: message.createdAt,
-          sender: {
-            _id: socket.userId,
-            name: socket.name,
-            avatar: socket.avatar,
-          },
-        };
+        const messagePayload = toDmPayload(message, data.conversationId, {
+          _id: socket.userId,
+          name: socket.name,
+          avatar: socket.avatar,
+        });
 
         io.to(dmRoom).emit("dm:message", messagePayload);
 
@@ -428,6 +462,92 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     });
 
     // -------------------------------------------------------
+    // DMs — emoji reaction. { conversationId, messageId, emoji } sets mine,
+    // emoji: null removes it. Everyone in the conversation room gets the
+    // message's fresh reaction list. ack({ ok, reactions? }) for the sender.
+    // -------------------------------------------------------
+    socket.on(
+      "dm:react",
+      async (
+        data: { conversationId: string; messageId: string; emoji: string | null },
+        ack?: (res: { ok: boolean; reactions?: { userId: string; emoji: string }[]; code?: string }) => void
+      ) => {
+        const reply = typeof ack === "function" ? ack : () => {};
+        if (!isObjectId(data?.conversationId) || !isObjectId(data?.messageId)) return reply({ ok: false, code: "INVALID" });
+        const emoji = data.emoji === null ? null : isDmReaction(data.emoji) ? data.emoji : undefined;
+        if (emoji === undefined) return reply({ ok: false, code: "INVALID" });
+
+        if (isRateLimited(DM_REACT_LIMIT, socket.userId)) return reply({ ok: false, code: "SLOW_DOWN" });
+
+        try {
+          if (!(await getSenderState(socket.userId)).active) {
+            socket.disconnect(true);
+            return;
+          }
+
+          const conversation = await Conversation.findOne({
+            _id: data.conversationId,
+            participants: socket.userId,
+          })
+            .select("participants")
+            .lean<{ participants: unknown[] }>();
+          if (!conversation) return reply({ ok: false, code: "NOT_FOUND" });
+
+          const otherId = conversation.participants.map(String).find((p) => p !== socket.userId);
+          if (otherId && (await isBlockedEitherWay(socket.userId, otherId))) {
+            socket.emit("dm:blocked", { conversationId: data.conversationId });
+            return reply({ ok: false, code: "BLOCKED" });
+          }
+
+          const reactions = await setDmReaction(data.conversationId, data.messageId, socket.userId, emoji);
+          if (!reactions) return reply({ ok: false, code: "NOT_FOUND" });
+
+          io.to(`dm:${data.conversationId}`).emit("dm:reaction", {
+            conversationId: data.conversationId,
+            messageId: data.messageId,
+            reactions,
+          });
+          reply({ ok: true, reactions });
+        } catch (error) {
+          console.error("[socket dm:react] Error:", error);
+          reply({ ok: false, code: "ERROR" });
+        }
+      }
+    );
+
+    // -------------------------------------------------------
+    // PRESENCE — watch specific people (the Messages list): get their
+    // current state in the ack, then presence:update whenever they come
+    // online or go offline. People with a block either way are skipped.
+    // -------------------------------------------------------
+    socket.on(
+      "presence:watch",
+      async (
+        data: { userIds: string[] },
+        ack?: (res: { ok: boolean; presence?: Record<string, { isOnline: boolean; lastSeenAt: string | null }> }) => void
+      ) => {
+        const reply = typeof ack === "function" ? ack : () => {};
+        if (!Array.isArray(data?.userIds)) return reply({ ok: false });
+        if (isRateLimited(PRESENCE_WATCH_LIMIT, socket.userId)) return reply({ ok: false });
+        try {
+          const { visible, visibleIds } = await getPresenceFor(socket.userId, data.userIds);
+          for (const id of visibleIds) socket.join(presenceRoomFor(id));
+          reply({ ok: true, presence: visible });
+        } catch (error) {
+          console.error("[socket presence:watch] Error:", error);
+          reply({ ok: false });
+        }
+      }
+    );
+
+    socket.on("presence:unwatch", (data: { userIds: string[] }) => {
+      if (!Array.isArray(data?.userIds)) return;
+      for (const id of data.userIds.slice(0, 100)) {
+        if (isObjectId(id)) socket.leave(presenceRoomFor(id));
+      }
+    });
+
+    // -------------------------------------------------------
     // Typing indicators
     // -------------------------------------------------------
     // Only from someone who joined the conversation (dm:join checks they're a participant).
@@ -471,7 +591,7 @@ export function initSocket(httpServer: HttpServer): SocketServer {
         await User.updateOne({ _id: socket.userId }, update);
 
         if (wasLastSocket) {
-          io.to("presence:room").emit("presence:update", {
+          io.to("presence:room").to(presenceRoomFor(socket.userId)).emit("presence:update", {
             userId: socket.userId,
             isOnline: false,
             lastSeenAt: update.lastSeenAt,
