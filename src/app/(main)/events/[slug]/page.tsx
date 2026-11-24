@@ -1,13 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarDays, Clock, ExternalLink, MapPin, Users } from "lucide-react";
+import { CalendarCheck, CalendarDays, Clock, ExternalLink, MapPin, Users } from "lucide-react";
 import type { Metadata } from "next";
 import { connectDB } from "@/lib/db";
 import { EventRSVP } from "@/models/EventRSVP";
-import { getEventBySlug } from "@/lib/events";
+import { getEventBySlug, getEvents, isEventOver, shouldNoindexEvent } from "@/lib/events";
 import { getSessionUser } from "@/lib/getSessionUser";
-import { eventLongDate, eventTime, mapsSearchUrl } from "@/lib/dates";
+import { eventDay, eventLongDate, eventMonth, eventShortDate, eventTime, mapsSearchUrl } from "@/lib/dates";
 import EventComments from "@/components/events/EventComments";
 import RSVPButton from "@/components/events/RSVPButton";
 import ShareButton from "@/components/events/ShareButton";
@@ -42,6 +42,9 @@ export async function generateMetadata({ params }: EventDetailPageProps): Promis
     description,
     path: `/events/${slug}`,
     image: (event.banner as string | null) ?? undefined,
+    // Ended events stay readable for people with the link, but drop out of
+    // Google a month after they end so search results stay fresh.
+    noindex: shouldNoindexEvent(event.date as string, event.endsAt as string | null),
   });
 }
 
@@ -57,16 +60,20 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
 
   if (!event) notFound();
 
+  const eventDate = new Date(event.date as string);
+  const endsAt = event.endsAt ? new Date(event.endsAt as string) : null;
+  const isOver = isEventOver(eventDate, endsAt);
+
   await connectDB();
-  const [attendees, totalGoing, isGoing] = await Promise.all([
+  const [attendees, totalGoing, isGoing, upcoming] = await Promise.all([
     EventRSVP.find({ event: event._id }).sort({ createdAt: -1 }).limit(20).populate("user", "name avatar").lean(),
     EventRSVP.countDocuments({ event: event._id }),
     currentUser ? EventRSVP.exists({ event: event._id, user: currentUser._id }) : Promise.resolve(false),
+    // Ended event → point people at what's coming up instead.
+    isOver ? getEvents({ limit: 3 }).catch(() => []) : Promise.resolve([]),
   ]);
 
   const title = event.title as string;
-  const eventDate = new Date(event.date as string);
-  const endsAt = event.endsAt ? new Date(event.endsAt as string) : null;
   const capacity = (event.capacity as number | null) ?? null;
   const isFull = !!capacity && totalGoing >= capacity;
   const location = (event.location as { name?: string; address?: string } | undefined) ?? {};
@@ -219,8 +226,25 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               </ul>
             </div>
 
-            <RSVPButton slug={slug} isGoing={!!isGoing} isFull={isFull} isLoggedIn={!!currentUser} />
-            <ShareButton title={title} url={`https://doonmeet.in/events/${slug}`} label="Share event" />
+            {isOver ? (
+              <div className="rounded-[20px] border border-border bg-surface-2 p-4">
+                <p className="flex items-center gap-2 font-bold text-text">
+                  <CalendarCheck size={19} className="shrink-0 text-muted" aria-hidden="true" />
+                  This event has ended
+                </p>
+                <Link
+                  href="/events"
+                  className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-primary-fg hover:underline"
+                >
+                  See upcoming events in Dehradun
+                </Link>
+              </div>
+            ) : (
+              <>
+                <RSVPButton slug={slug} isGoing={!!isGoing} isFull={isFull} isLoggedIn={!!currentUser} />
+                <ShareButton title={title} url={`https://doonmeet.in/events/${slug}`} label="Share event" />
+              </>
+            )}
           </div>
         </aside>
 
@@ -264,6 +288,35 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                     </li>
                   );
                 })}
+              </ul>
+            </section>
+          )}
+
+          {isOver && upcoming.length > 0 && (
+            <section aria-labelledby="event-upcoming-title">
+              <h2 id="event-upcoming-title" className="mb-3 text-xl font-extrabold">
+                Coming up in Dehradun
+              </h2>
+              <ul className="flex flex-col gap-2">
+                {upcoming.map((e) => (
+                  <li key={String(e._id)}>
+                    <Link
+                      href={`/events/${e.slug}`}
+                      className="flex items-center gap-3 rounded-[14px] border border-border bg-surface p-2.5 transition-colors hover:bg-surface-2"
+                    >
+                      <span className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-primary-soft text-primary-fg">
+                        <span className="text-[10px] font-bold uppercase">{eventMonth(e.date as Date)}</span>
+                        <span className="text-lg leading-none font-extrabold">{eventDay(e.date as Date)}</span>
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate font-semibold text-text">{e.title as string}</span>
+                        <span className="block truncate text-sm text-muted">
+                          {eventShortDate(e.date as Date)} · {eventTime(e.date as Date)}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </section>
           )}

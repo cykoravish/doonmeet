@@ -18,6 +18,28 @@ export async function getEvents(options: { tag?: string; search?: string; limit?
     .lean();
 }
 
+// ---------------------------------------------------------------------------
+// When is an event over? Its end time if the host set one; otherwise the end
+// of its start day in Dehradun (IST), so an evening event stays "on" all day.
+// ---------------------------------------------------------------------------
+const istDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }); // "2026-11-23"
+
+export function eventEndTime(date: Date | string, endsAt?: Date | string | null): Date {
+  if (endsAt) return new Date(endsAt);
+  return new Date(`${istDay.format(new Date(date))}T23:59:59.999+05:30`);
+}
+
+export function isEventOver(date: Date | string, endsAt?: Date | string | null, now = Date.now()): boolean {
+  return eventEndTime(date, endsAt).getTime() < now;
+}
+
+/** Ended events stay readable, but leave Google's index after this long. */
+export const ENDED_EVENT_NOINDEX_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
+
+export function shouldNoindexEvent(date: Date | string, endsAt?: Date | string | null, now = Date.now()): boolean {
+  return eventEndTime(date, endsAt).getTime() + ENDED_EVENT_NOINDEX_AFTER_MS < now;
+}
+
 export async function getEventBySlug(slug: string) {
   await connectDB();
   return Event.findOne({ slug, status: "published" })
