@@ -14,6 +14,7 @@ import { sendDirectMessageSchema, getMessagesSchema } from "@/validations/direct
 import { getIO, isUserActiveInRoom } from "@/lib/socket";
 import { maybeSendDmNotificationEmail } from "@/lib/email";
 import { sendPushToUser } from "@/lib/push";
+import { prepareDmFields, toDmPayload } from "@/lib/dm";
 
 // GET /api/conversations/[conversationId]/messages
 export const GET = withAuth(
@@ -152,7 +153,7 @@ export const POST = withAuth(
 
     const result = await validateBody(req, sendDirectMessageSchema);
     if (result instanceof NextResponse) return result;
-    const { content } = result.data as { content: string };
+    const body = result.data as { content?: string; replyToId?: string | null; sharedProfileUserId?: string | null };
 
     try {
       await connectDB();
@@ -183,6 +184,16 @@ export const POST = withAuth(
         );
       }
 
+      // Text / reply quote / profile card — same rules as the socket handler.
+      const prepared = await prepareDmFields(conversationId, body);
+      if (!prepared.ok) {
+        return NextResponse.json(
+          { success: false, code: prepared.code, message: prepared.message },
+          { status: 400 }
+        );
+      }
+      const { content } = prepared.fields;
+
       // Is the recipient already looking at this exact conversation right
       // now (their own socket has it joined)? If so, treat this message as
       // instantly read for them, same as the socket dm:message handler
@@ -209,6 +220,9 @@ export const POST = withAuth(
         conversationId,
         sender: req.user._id,
         content,
+        type: prepared.fields.type,
+        replyTo: prepared.fields.replyTo,
+        sharedProfile: prepared.fields.sharedProfile,
         readBy,
       });
 
@@ -236,13 +250,14 @@ export const POST = withAuth(
       try {
         const io = getIO();
         const dmRoom = `dm:${conversationId}`;
-        io.to(dmRoom).emit("dm:message", {
-          _id: message._id,
-          conversationId,
-          content: message.content,
-          createdAt: message.createdAt,
-          sender: message.sender,
-        });
+        io.to(dmRoom).emit(
+          "dm:message",
+          toDmPayload(message, conversationId, {
+            _id: String(req.user._id),
+            name: req.user.name,
+            avatar: req.user.avatar ?? null,
+          })
+        );
         if (recipientActive && recipientId) {
           io.to(dmRoom).emit("dm:read", {
             conversationId,

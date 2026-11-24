@@ -7,6 +7,7 @@ export interface ConversationSummary {
     name: string;
     avatar: string | null;
     lastSeenAt?: string;
+    isOnline?: boolean;
   } | null;
   lastMessage: {
     content: string | null;
@@ -20,6 +21,8 @@ interface ConversationListItemProps {
   conversation: ConversationSummary;
   isActive: boolean;
   currentUserId: string;
+  /** Live online status (from MessagesPanel's presence watch). */
+  isOnline?: boolean;
   onClick: () => void;
 }
 
@@ -40,6 +43,7 @@ export default function ConversationListItem({
   conversation,
   isActive,
   currentUserId,
+  isOnline = false,
   onClick,
 }: ConversationListItemProps) {
   const other = conversation.otherParticipant;
@@ -57,7 +61,7 @@ export default function ConversationListItem({
         isActive ? "bg-primary-soft" : "hover:bg-surface-2"
       }`}
     >
-      <Avatar name={other.name} src={other.avatar} size={52} />
+      <Avatar name={other.name} src={other.avatar} size={52} online={isOnline} />
 
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">

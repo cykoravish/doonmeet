@@ -60,6 +60,21 @@ export const DM_LIMIT: RateLimitOptions = {
   max: 60,
 };
 
+// Emoji reactions on DMs (socket) — generous for real use, stops scripted spam.
+export const DM_REACT_LIMIT: RateLimitOptions = {
+  keyPrefix: "dm_react",
+  windowMs: 60 * 1000,
+  max: 60,
+};
+
+// "Tell me when these people come online" (socket) — sent when the Messages
+// list opens and after reconnects, so a handful per minute is plenty.
+export const PRESENCE_WATCH_LIMIT: RateLimitOptions = {
+  keyPrefix: "presence_watch",
+  windowMs: 60 * 1000,
+  max: 30,
+};
+
 // Cleanup stale entries every 10 minutes to prevent memory leak
 setInterval(
   () => {
