@@ -19,15 +19,17 @@ export default function HeroSection({ onlineCount }: HeroSectionProps) {
           Dehradun, Uttarakhand
         </p>
 
+        {/* The page's main keyword lives in the h1 — it's what people search for. */}
         <h1 className="text-[2.6rem] leading-[1.05] font-extrabold sm:text-6xl xl:text-7xl">
-          Your city.
+          Meet people in
           <br />
-          <span className="text-primary-fg">Your people.</span>
+          <span className="text-primary-fg">Dehradun.</span>
         </h1>
 
         <p className="mt-4 max-w-md text-[17px] leading-relaxed text-muted">
-          DoonMeet is a free local community for Dehradun. Chat with people nearby, find events,
-          join communities and discover places — from Rajpur Road to Robber&apos;s Cave.
+          <strong className="font-semibold text-text">Your city, your people.</strong>{" "}
+          DoonMeet is a free local community for Dehradun. Chat with people nearby, find events, join communities
+          and discover places, from Rajpur Road to Robber&apos;s Cave.
         </p>
 
         <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">

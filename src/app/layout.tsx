@@ -61,11 +61,11 @@ export const metadata: Metadata = {
     template: "%s | DoonMeet",
   },
   description:
-    "DoonMeet is where Dehradun hangs out online — find events worth showing up for, join communities that match your interests, and chat with people nearby.",
+    "DoonMeet is a free local community for Dehradun. Meet people nearby, find events, join communities and discover places across the Doon Valley.",
   openGraph: {
     title: "DoonMeet - Meet People, Events & Communities in Dehradun",
     description:
-      "Find events worth showing up for, join communities that match your interests, and chat with people nearby — all in one place for Dehradun.",
+      "Meet people in Dehradun, find local events, join communities and discover places across the Doon Valley. Free, and made for Doon.",
     url: "https://doonmeet.in",
     siteName: "DoonMeet",
     locale: "en_IN",
@@ -75,7 +75,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "DoonMeet - Meet People, Events & Communities in Dehradun",
     description:
-      "Find events worth showing up for, join communities that match your interests, and chat with people nearby — all in one place for Dehradun.",
+      "Meet people in Dehradun, find local events, join communities and discover places across the Doon Valley. Free, and made for Doon.",
   },
 };
 
@@ -110,7 +110,7 @@ export default function RootLayout({
               url: "https://doonmeet.in",
               inLanguage: "en-IN",
               description:
-                "A free local community for Dehradun — find events, join communities, discover places and chat with people nearby.",
+                "A free local community for Dehradun. Meet people nearby, find events, join communities and discover places.",
               publisher: { "@id": "https://doonmeet.in/#organization" },
             },
             {
@@ -121,13 +121,12 @@ export default function RootLayout({
               url: "https://doonmeet.in",
               logo: "https://doonmeet.in/doonmeet-light.png",
               description:
-                "DoonMeet is a local community platform for Dehradun, Uttarakhand — events, communities, places and chat in one place.",
+                "DoonMeet is a local community platform for Dehradun, Uttarakhand, with events, communities, places and chat in one place.",
               areaServed: {
                 "@type": "City",
                 name: "Dehradun",
                 containedInPlace: { "@type": "AdministrativeArea", name: "Uttarakhand, India" },
               },
-              sameAs: ["https://instagram.com/cykoravish"],
             },
           ]}
         />

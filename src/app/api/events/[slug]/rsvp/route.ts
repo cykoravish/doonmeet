@@ -4,6 +4,7 @@ import { Event } from "@/models/Event";
 import { EventRSVP } from "@/models/EventRSVP";
 import { requireVerified, AuthenticatedRequest } from "@/middleware/auth";
 import { generalLimiter } from "@/middleware/rateLimit";
+import { isEventOver } from "@/lib/events";
 
 // POST — RSVP to an event
 export const POST = requireVerified(
@@ -16,9 +17,16 @@ export const POST = requireVerified(
     try {
       await connectDB();
 
-      const event = await Event.findOne({ slug, status: "published" }).select("_id capacity");
+      const event = await Event.findOne({ slug, status: "published" }).select("_id capacity date endsAt");
       if (!event) {
         return NextResponse.json({ success: false, message: "Event not found." }, { status: 404 });
+      }
+
+      if (isEventOver(event.date, event.endsAt)) {
+        return NextResponse.json(
+          { success: false, code: "EVENT_ENDED", message: "This event has already ended." },
+          { status: 400 }
+        );
       }
 
       const existing = await EventRSVP.findOne({ event: event._id, user: req.user._id });

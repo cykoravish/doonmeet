@@ -9,6 +9,7 @@ import { POST_CATEGORIES } from "@/lib/postCategories";
 import { isPaymentsConfigured } from "@/lib/razorpay";
 import { isSupportEnabled } from "@/lib/support";
 import { getCommunityGuide } from "@/data/communityGuides";
+import { isEventOver } from "@/lib/events";
 
 // Without this the sitemap is generated once at build time and never again,
 // so new events/places/posts would not show up until the next deploy.
@@ -74,10 +75,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       };
     });
 
-    const events = await Event.find({ slug: { $exists: true, $ne: null } })
-      .select("slug updatedAt")
+    // Only published events that haven't ended. Cancelled/draft ones 404 on
+    // the site, and ended ones are going stale (they're noindexed a month
+    // later), so listing them would just waste Google's crawl. The date
+    // filter is a cheap pre-filter; isEventOver() makes the exact call.
+    const events = await Event.find({
+      slug: { $exists: true, $ne: null },
+      status: "published",
+      $or: [{ date: { $gte: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) } }, { endsAt: { $gte: new Date() } }],
+    })
+      .select("slug updatedAt date endsAt")
       .lean();
-    eventRoutes = events.map((e) => ({
+    eventRoutes = events.filter((e) => !isEventOver(e.date, e.endsAt)).map((e) => ({
       url: `${base}/events/${e.slug}`,
       lastModified: e.updatedAt ?? new Date(),
       changeFrequency: "weekly",
