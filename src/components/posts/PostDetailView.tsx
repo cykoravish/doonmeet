@@ -9,6 +9,7 @@ import UserLink from "@/components/shared/UserLink";
 import Avatar from "@/components/ui/Avatar";
 import { buttonClasses } from "@/components/ui/Button";
 import { timeAgo } from "./PostCard";
+import { categoryFeedPath } from "@/data/categoryLandings";
 import EditPostForm from "./EditPostForm";
 import ShareButton from "@/components/events/ShareButton";
 import DeletePostButton from "./DeletePostButton";
@@ -139,7 +140,7 @@ export default function PostDetailView({
           </div>
           {category && category !== "other" && (
             <Link
-              href={`/posts?category=${category}`}
+              href={categoryFeedPath(category)}
               className={`flex h-8 shrink-0 items-center rounded-full px-3 text-xs font-bold ${
                 category === "business" ? "bg-accent-soft text-accent-fg" : "bg-primary-soft text-primary-fg"
               }`}

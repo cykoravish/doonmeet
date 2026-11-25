@@ -3,6 +3,8 @@ import { jwtVerify } from "jose";
 import { rotateSession } from "@/lib/rotateSession";
 import { clearAuthCookies, setAuthCookies } from "@/lib/tokens";
 import { getClientIp } from "@/lib/clientIp";
+import { isPostCategory } from "@/lib/postCategories";
+import { categoryFeedPath } from "@/data/categoryLandings";
 
 // Next.js 16 — proxy.ts replaces middleware.ts (runs on the Node.js runtime).
 
@@ -31,6 +33,18 @@ async function isValidAccessToken(token: string | undefined): Promise<boolean> {
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   if (SESSION_ROUTES.includes(pathname)) return NextResponse.next();
+
+  // Category feeds moved to landing pages: /posts?category=jobs → /dehradun/jobs
+  // (permanent, and without the old query string). "Other" has no landing page.
+  if (pathname === "/posts") {
+    const category = req.nextUrl.searchParams.get("category");
+    if (isPostCategory(category) && category !== "other") {
+      const url = req.nextUrl.clone();
+      url.pathname = categoryFeedPath(category);
+      url.search = "";
+      return NextResponse.redirect(url, 308);
+    }
+  }
 
   const refreshToken = req.cookies.get("refresh_token")?.value;
   let isAuthenticated = await isValidAccessToken(req.cookies.get("access_token")?.value);

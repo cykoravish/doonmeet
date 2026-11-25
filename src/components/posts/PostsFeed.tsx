@@ -42,6 +42,12 @@ interface PostsFeedProps {
   /** Paid posts pinned above the feed (server-picked, rotated per request). */
   sponsoredPosts?: PostItem[];
   currentUser: { _id: string; name: string; avatar: string | null } | null;
+  /**
+   * Load the next page automatically near the bottom (infinite scroll).
+   * Landing pages turn this off so the guide/FAQ below the feed stays reachable —
+   * they get a "Load more" button instead.
+   */
+  autoLoad?: boolean;
 }
 
 export default function PostsFeed({
@@ -52,6 +58,7 @@ export default function PostsFeed({
   categoryFilter,
   sponsoredPosts = [],
   currentUser,
+  autoLoad = true,
 }: PostsFeedProps) {
   const [posts, setPosts] = useState<PostItem[]>(initialPosts);
   const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor);
@@ -103,7 +110,7 @@ export default function PostsFeed({
   // Auto-load the next page once the sentinel scrolls into view.
   useEffect(() => {
     const el = sentinelRef.current;
-    if (!el || !nextCursor) return;
+    if (!el || !nextCursor || !autoLoad) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -114,7 +121,7 @@ export default function PostsFeed({
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [nextCursor, loadMore]);
+  }, [nextCursor, loadMore, autoLoad]);
 
   // Escape closes, background scroll is locked, focus moves into the sheet.
   useEffect(() => {
