@@ -12,6 +12,7 @@ import { getActiveSponsoredPosts, type PostListItem } from "@/lib/posts";
 import { withViewerLikes } from "@/lib/postLikes";
 import JsonLd from "@/components/seo/JsonLd";
 import { breadcrumbJsonLd } from "@/lib/seo";
+import { categoryFeedPath } from "@/data/categoryLandings";
 import {
   POST_CATEGORIES,
   categoryQuery,
@@ -122,7 +123,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
                 { label: "All", href: "/posts", active: !category },
                 ...POST_CATEGORIES.map((c) => ({
                   label: c.label,
-                  href: `/posts?category=${c.value}`,
+                  href: categoryFeedPath(c.value),
                   active: category === c.value,
                 })),
               ]}

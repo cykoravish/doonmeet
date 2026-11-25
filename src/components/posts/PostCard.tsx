@@ -7,6 +7,7 @@ import DeletePostButton from "./DeletePostButton";
 import LikeButton from "./LikeButton";
 import PostImage from "./PostImage";
 import { getPostCategory, type PostCategory } from "@/lib/postCategories";
+import { categoryFeedPath } from "@/data/categoryLandings";
 
 interface Author {
   _id: string;
@@ -101,7 +102,7 @@ export default function PostCard({
         </div>
         {categoryInfo && (
           <Link
-            href={`/posts?category=${categoryInfo.value}`}
+            href={categoryFeedPath(categoryInfo.value)}
             className={`flex h-8 shrink-0 items-center rounded-full px-3 text-xs font-bold ${
               categoryInfo.value === "business" ? "bg-accent-soft text-accent-fg" : "bg-primary-soft text-primary-fg"
             }`}

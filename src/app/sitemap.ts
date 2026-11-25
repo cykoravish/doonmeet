@@ -5,7 +5,7 @@ import { Event } from "@/models/Event";
 import { Post } from "@/models/Post";
 import { Place } from "@/models/Place";
 import { MIN_INDEXABLE_POST_LENGTH, SITE_URL } from "@/lib/seo";
-import { POST_CATEGORIES } from "@/lib/postCategories";
+import { getAllCategoryLandings } from "@/data/categoryLandings";
 import { isPaymentsConfigured } from "@/lib/razorpay";
 import { isSupportEnabled } from "@/lib/support";
 import { getCommunityGuide } from "@/data/communityGuides";
@@ -26,11 +26,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   );
 
-  // Category feeds double as landing pages ("PG in Dehradun", "jobs in Dehradun").
-  const postCategoryRoutes = POST_CATEGORIES.filter((c) => c.value !== "other").map((c) => ({
-    url: `${base}/posts?category=${c.value}`,
+  // Category landing pages ("PG in Dehradun", "Jobs in Dehradun") — /dehradun/<topic>.
+  const postCategoryRoutes = getAllCategoryLandings().map((l) => ({
+    url: `${base}/dehradun/${l.slug}`,
     changeFrequency: "daily" as const,
-    priority: 0.6,
+    priority: 0.7,
   }));
 
   const legalRoutes = ["/privacy", "/terms", "/refund-policy", "/grievance"].map((route) => ({

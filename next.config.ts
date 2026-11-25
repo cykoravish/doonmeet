@@ -29,6 +29,8 @@ const nextConfig: NextConfig = {
     return [
       { source: "/locations", destination: "/places", permanent: true },
       { source: "/locations/:slug", destination: "/places/:slug", permanent: true },
+      // /posts?category=… → /dehradun/<topic> lives in src/proxy.ts: a config
+      // redirect would carry "?category=…" over to the new URL.
     ];
   },
 };

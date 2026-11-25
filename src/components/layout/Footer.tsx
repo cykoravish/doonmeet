@@ -1,8 +1,18 @@
 import Link from "next/link";
 import Logo from "./get-logo/Logo";
 import { isSupportEnabled } from "@/lib/support";
+import { getAllCategoryLandings } from "@/data/categoryLandings";
 
 const links = {
+  // Local landing pages — linked from every page so people (and search
+  // engines) can always reach them.
+  "In Dehradun": [
+    ...getAllCategoryLandings().map((l) => ({
+      label: l.slug === "ask" ? "Ask Dehradun" : `${l.label} in Dehradun`,
+      href: `/dehradun/${l.slug}`,
+    })),
+    { label: "Places to Visit", href: "/places" },
+  ],
   Explore: [
     { label: "Posts", href: "/posts" },
     { label: "Events", href: "/events" },
@@ -26,7 +36,7 @@ export default function Footer() {
   return (
     <footer className="hidden border-t md:block bg-surface border-border">
       <div className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-8">
-        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[minmax(280px,1.8fr)_repeat(3,minmax(140px,1fr))]">
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[minmax(260px,1.6fr)_repeat(4,minmax(140px,1fr))]">
           {/* Brand */}
           <div>
             <Logo />

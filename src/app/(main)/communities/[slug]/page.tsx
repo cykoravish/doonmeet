@@ -265,7 +265,7 @@ export default async function CommunityDetailPage({ params }: CommunityPageProps
 
           {guide && (
             <Link
-              href="/posts?category=ask"
+              href="/dehradun/ask"
               className="flex min-h-[44px] items-center gap-3 rounded-[20px] border border-border bg-surface p-4 transition-colors hover:bg-surface-2"
             >
               <MessageCircleQuestion size={22} className="shrink-0 text-primary-fg" aria-hidden="true" />
