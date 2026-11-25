@@ -35,7 +35,15 @@ export default async function PlaceDetailPage({ params }: { params: Promise<{ sl
     "@type": "TouristAttraction",
     name: place.title,
     description: place.shortDescription,
-    image: absoluteUrl(place.image),
+    image: place.imageCredit
+      ? {
+          "@type": "ImageObject",
+          contentUrl: absoluteUrl(place.image),
+          creditText: `${place.imageCredit.author} via Wikimedia Commons`,
+          ...(place.imageCredit.licenseUrl && { license: place.imageCredit.licenseUrl }),
+          acquireLicensePage: place.imageCredit.sourceUrl,
+        }
+      : absoluteUrl(place.image),
     url: absoluteUrl(`/places/${slug}`),
     address: {
       "@type": "PostalAddress",
@@ -83,6 +91,24 @@ export default async function PlaceDetailPage({ params }: { params: Promise<{ sl
           className="object-cover"
         />
       </div>
+      {place.imageCredit && (
+        // Required by the photo's license (CC BY / BY-SA): author, license, source.
+        <p className="mt-1.5 text-right text-xs text-muted">
+          Photo:{" "}
+          <a href={place.imageCredit.sourceUrl} target="_blank" rel="noopener noreferrer nofollow" className="underline hover:text-text">
+            {place.imageCredit.author}
+          </a>
+          ,{" "}
+          {place.imageCredit.licenseUrl ? (
+            <a href={place.imageCredit.licenseUrl} target="_blank" rel="noopener noreferrer nofollow license" className="underline hover:text-text">
+              {place.imageCredit.license}
+            </a>
+          ) : (
+            place.imageCredit.license
+          )}
+          , via Wikimedia Commons (resized)
+        </p>
+      )}
 
       <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_320px] lg:gap-8">
         <header className="lg:col-start-1">

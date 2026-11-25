@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Search, Star, MapPinOff } from "lucide-react";
 import { badgeClasses } from "@/components/ui/Badge";
+import PhotoCreditBadge from "./PhotoCreditBadge";
 
 interface PlaceCard {
   _id: string;
@@ -16,6 +17,7 @@ interface PlaceCard {
   shortDescription: string;
   rating: number | null;
   reviewCount: number;
+  imageCredit?: { author: string; license: string } | null;
 }
 
 interface PlacesExplorerProps {
@@ -113,6 +115,7 @@ export default function PlacesExplorer({ places }: PlacesExplorerProps) {
                   <span className="absolute top-2.5 left-2.5 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white">
                     {place.category}
                   </span>
+                  <PhotoCreditBadge credit={place.imageCredit} />
                 </div>
 
                 <div className="p-4">
