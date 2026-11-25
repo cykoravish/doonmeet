@@ -10,6 +10,8 @@ export interface IPlace extends Document {
   highlights: string[];
   bestTimeToVisit: string;
   howToReach: string;
+  /** Credit for a photo we didn't take (e.g. Wikimedia Commons) — shown under the image. */
+  imageCredit: { author: string; license: string; licenseUrl: string | null; sourceUrl: string } | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,6 +27,18 @@ const PlaceSchema = new Schema<IPlace>(
     highlights: { type: [String], default: [] },
     bestTimeToVisit: { type: String, default: "" },
     howToReach: { type: String, default: "" },
+    imageCredit: {
+      type: new Schema(
+        {
+          author: { type: String, required: true },
+          license: { type: String, required: true },
+          licenseUrl: { type: String, default: null },
+          sourceUrl: { type: String, required: true },
+        },
+        { _id: false }
+      ),
+      default: null,
+    },
   },
   { timestamps: true }
 );

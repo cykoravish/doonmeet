@@ -13,6 +13,7 @@ export interface PlaceWithRating {
   highlights: string[];
   bestTimeToVisit: string;
   howToReach: string;
+  imageCredit: { author: string; license: string; licenseUrl: string | null; sourceUrl: string } | null;
   rating: number | null;
   reviewCount: number;
 }
@@ -47,6 +48,14 @@ async function attachRatings(placeDocs: IPlace[]): Promise<PlaceWithRating[]> {
       highlights: p.highlights,
       bestTimeToVisit: p.bestTimeToVisit,
       howToReach: p.howToReach,
+      imageCredit: p.imageCredit
+        ? {
+            author: p.imageCredit.author,
+            license: p.imageCredit.license,
+            licenseUrl: p.imageCredit.licenseUrl ?? null,
+            sourceUrl: p.imageCredit.sourceUrl,
+          }
+        : null,
       rating: stats ? Number(stats.avgRating.toFixed(1)) : null,
       reviewCount: stats?.count ?? 0,
     };

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Star } from "lucide-react";
 import type { PlaceWithRating } from "@/lib/places";
 import SectionHeader from "./SectionHeader";
+import PhotoCreditBadge from "@/components/places/PhotoCreditBadge";
 
 interface PopularPlacesProps {
   places: PlaceWithRating[];
@@ -36,6 +37,7 @@ export default function PopularPlaces({ places }: PopularPlacesProps) {
                 <span className="absolute top-2.5 left-2.5 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white">
                   {place.category}
                 </span>
+                <PhotoCreditBadge credit={place.imageCredit} />
               </div>
               <div className="p-3.5">
                 <h3 className="truncate text-base font-bold">{place.title}</h3>

@@ -13,7 +13,7 @@ const places = [
     image: "/images/hero-clock-tower.webp",
     category: "Landmark",
     shortDescription: "The iconic landmark in the heart of Dehradun.",
-    about: `Right in the middle of the city, the Clock Tower — known to locals as Ghanta Ghar — is where Dehradun's heart beats. Built in the early 1950s and opened by freedom fighter Sarojini Naidu, this six-sided tower was raised to honor India's independence, and the names of local freedom fighters are engraved on a golden plate near its base. Standing close to 85 metres tall, it's easy to spot from almost anywhere nearby.
+    about: `Right in the middle of the city, the Clock Tower — known to locals as Ghanta Ghar — is where Dehradun's heart beats. Built in the early 1950s and opened by freedom fighter Sarojini Naidu, this six-sided tower was raised to honor India's independence, and the names of local freedom fighters are engraved on a golden plate near its base.
 
 The clocks on its six faces don't run anymore, but that hasn't slowed the place down one bit. Paltan Bazaar wraps around it on every side, so you'll find street food stalls, clothing shops, and the constant hum of auto-rickshaws all rolled into one lively little corner of the city.`,
     highlights: [
