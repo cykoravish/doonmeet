@@ -1,8 +1,8 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 import Link from "next/link";
-import { Reply, SmilePlus } from "lucide-react";
+import { Check, CheckCheck, Reply, SmilePlus } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
 import PhotoViewButton from "@/components/ui/PhotoViewButton";
 import { useMessageGestures } from "./useMessageGestures";
@@ -26,6 +26,24 @@ interface DMMessageItemProps {
   onOpenActions: (message: DMMessage) => void;
   onToggleReaction: (messageId: string, emoji: string) => void;
   onJumpTo: (messageId: string) => void;
+  /** My messages only: ✓ sent / ✓✓ seen by the other person. */
+  receipt?: "sent" | "seen";
+  /** Double tap → ❤️. Omitted when reacting isn't possible (e.g. blocked). */
+  onHeart?: (messageId: string) => void;
+}
+
+/** ✓ / ✓✓ next to the time on my messages (WhatsApp-style). */
+function ReceiptTicks({ status }: { status: "sent" | "seen" }) {
+  return (
+    <>
+      {status === "seen" ? (
+        <CheckCheck size={15} strokeWidth={2.4} className="shrink-0 text-seen" aria-hidden="true" />
+      ) : (
+        <Check size={15} strokeWidth={2.4} className="shrink-0" aria-hidden="true" />
+      )}
+      <span className="sr-only">{status === "seen" ? "Seen" : "Sent"}</span>
+    </>
+  );
 }
 
 function groupReactions(reactions: DMMessage["reactions"], currentUserId: string) {
@@ -53,10 +71,20 @@ function DMMessageItem({
   onOpenActions,
   onToggleReaction,
   onJumpTo,
+  receipt,
+  onHeart,
 }: DMMessageItemProps) {
+  // Bumped on each double tap so the ❤️ pop restarts; 0 = not showing.
+  const [heartPop, setHeartPop] = useState(0);
   const { columnRef, hintRef, rowHandlers } = useMessageGestures({
     onSwipeReply: () => onReply(message),
     onLongPress: () => onOpenActions(message),
+    onDoubleTap: onHeart
+      ? () => {
+          setHeartPop((n) => n + 1);
+          onHeart(message._id);
+        }
+      : undefined,
   });
 
   const reactions = groupReactions(message.reactions, currentUserId);
@@ -109,7 +137,20 @@ function DMMessageItem({
         </button>
       </div>
 
-      <div ref={columnRef} className={`flex max-w-[80%] min-w-0 flex-col ${isOwn ? "items-end" : "items-start"}`}>
+      <div
+        ref={columnRef}
+        className={`relative flex max-w-[80%] min-w-0 flex-col ${isOwn ? "items-end" : "items-start"}`}
+      >
+        {heartPop > 0 && (
+          <span
+            key={heartPop}
+            aria-hidden="true"
+            onAnimationEnd={() => setHeartPop(0)}
+            className="heart-pop pointer-events-none absolute inset-0 z-2 flex items-center justify-center text-5xl [text-shadow:0_2px_10px_rgb(0_0_0/0.25)]"
+          >
+            ❤️
+          </span>
+        )}
         <div
           className={`max-w-full rounded-[18px] text-[15px] leading-snug wrap-anywhere whitespace-pre-wrap transition-shadow [@media(hover:none)]:select-none ${
             profile ? "p-1.5" : "px-3.5 py-2"
@@ -157,22 +198,24 @@ function DMMessageItem({
                 </Link>
               </div>
               <span
-                className={`block px-1.5 pt-1 text-right text-[11px] leading-none ${
+                className={`flex items-center justify-end gap-0.5 px-1.5 pt-1 text-[11px] leading-none ${
                   isOwn ? "text-on-primary/75" : "text-muted"
                 }`}
               >
                 {time}
+                {isOwn && receipt && <ReceiptTicks status={receipt} />}
               </span>
             </>
           ) : (
             <>
               {message.content}
               <span
-                className={`ml-2 inline-block translate-y-0.5 align-bottom text-[11px] leading-none ${
+                className={`ml-2 inline-flex translate-y-0.5 items-center gap-0.5 align-bottom text-[11px] leading-none ${
                   isOwn ? "text-on-primary/75" : "text-muted"
                 }`}
               >
                 {time}
+                {isOwn && receipt && <ReceiptTicks status={receipt} />}
               </span>
             </>
           )}

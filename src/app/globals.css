@@ -30,6 +30,9 @@
 
   --danger: 180 35 24;
   --online: 35 166 101;
+  /* "Seen" ticks on my (green) chat bubbles — light amber: 4.6:1 on the
+     light-theme primary, 3.3:1 on night's (icons need 3:1) */
+  --seen: 255 213 128;
 }
 
 [data-theme="night"] {
@@ -53,6 +56,7 @@
 
   --danger: 249 112 102;
   --online: 61 186 126;
+  --seen: 255 213 128;
 }
 
 @theme inline {
@@ -76,6 +80,7 @@
 
   --color-danger: rgb(var(--danger));
   --color-online: rgb(var(--online));
+  --color-seen: rgb(var(--seen));
 
   /* Fonts — loaded via next/font in src/app/layout.tsx.
      Body: Mukta (Latin) + Mukta Devanagari subset for Hindi posts.
@@ -230,5 +235,84 @@
 @media (min-width: 640px) {
   .composer-sheet {
     animation: fade-in 0.15s ease-out;
+  }
+}
+
+/* ---- Chat ---- */
+
+/* "typing…" bubble: three dots bobbing in turn (transform/opacity only). */
+@keyframes typing-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+.typing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background-color: rgb(var(--muted));
+  animation: typing-dot 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* Double-tap ❤️ on a message: a big heart pops over the bubble and fades. */
+@keyframes heart-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+.heart-pop {
+  animation: heart-pop 0.6s ease-out forwards;
+}
+
+/* Round "jump to latest" button appearing above the composer. */
+@keyframes fab-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.fab-in {
+  animation: fab-in 0.15s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* An endless animation squeezed to 0.01ms (rule above) would flicker —
+     show still dots instead. */
+  .typing-dot {
+    animation: none;
+    opacity: 0.6;
   }
 }

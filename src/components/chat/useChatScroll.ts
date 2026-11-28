@@ -11,6 +11,8 @@ interface Options {
 
 // How close to the bottom (px) still counts as "reading the latest messages".
 const NEAR_BOTTOM_PX = 120;
+// Scrolled up further than this → offer the round "jump to latest" button.
+const SHOW_JUMP_PX = 400;
 
 /**
  * Scroll behaviour for a chat list:
@@ -29,6 +31,8 @@ export function useChatScroll({ messages, ready, currentUserId }: Options) {
   // restore so the message the user was reading doesn't jump.
   const prependAnchorRef = useRef<{ height: number; top: number } | null>(null);
   const [unseenCount, setUnseenCount] = useState(0);
+  // Only flips when crossing SHOW_JUMP_PX, so scrolling doesn't re-render the list.
+  const [awayFromBottom, setAwayFromBottom] = useState(false);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     const el = scrollRef.current;
@@ -42,9 +46,11 @@ export function useChatScroll({ messages, ready, currentUserId }: Options) {
   const onScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const near = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX;
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const near = distance < NEAR_BOTTOM_PX;
     nearBottomRef.current = near;
     if (near) setUnseenCount((n) => (n === 0 ? n : 0));
+    setAwayFromBottom(distance > SHOW_JUMP_PX);
   }, []);
 
   /** Call right before prepending an older page of messages. */
@@ -87,5 +93,5 @@ export function useChatScroll({ messages, ready, currentUserId }: Options) {
     }
   }, [messages, ready, currentUserId]);
 
-  return { scrollRef, onScroll, scrollToBottom, beginPrepend, unseenCount };
+  return { scrollRef, onScroll, scrollToBottom, beginPrepend, unseenCount, awayFromBottom };
 }

@@ -8,6 +8,8 @@ export interface ChatMessageLike {
 
 export interface ChatRow<T extends ChatMessageLike> {
   msg: T;
+  /** Position in the full message list. */
+  index: number;
   /** Day label ("Today", "Yesterday", "12 March") — shown when it changes. */
   dayLabel: string;
   showDivider: boolean;
@@ -52,6 +54,7 @@ export function buildChatRows<T extends ChatMessageLike>(messages: T[]): ChatRow
     const showDivider = i === 0 || labels[i] !== labels[i - 1];
     return {
       msg,
+      index: i,
       dayLabel: labels[i],
       showDivider,
       firstInGroup: showDivider || prev?.sender._id !== msg.sender._id,
@@ -59,6 +62,27 @@ export function buildChatRows<T extends ChatMessageLike>(messages: T[]): ChatRow
       time: dates[i].toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" }),
     };
   });
+}
+
+export interface ChatDay<T extends ChatMessageLike> {
+  /** "Today", "Yesterday", "12 March" — unique per day, so it doubles as the React key. */
+  label: string;
+  rows: ChatRow<T>[];
+}
+
+/**
+ * Splits rows into one group per day. Each day is rendered as its own block
+ * so its date pill can be `position: sticky` — it stays on top while you
+ * scroll through that day and the next day's pill pushes it out (WhatsApp-style).
+ */
+export function groupRowsByDay<T extends ChatMessageLike>(rows: ChatRow<T>[]): ChatDay<T>[] {
+  const days: ChatDay<T>[] = [];
+  for (const row of rows) {
+    const last = days[days.length - 1];
+    if (!last || row.showDivider) days.push({ label: row.dayLabel, rows: [row] });
+    else last.rows.push(row);
+  }
+  return days;
 }
 
 /** Appends a message unless one with the same id is already in the list (reconnect/REST-fallback safety). */

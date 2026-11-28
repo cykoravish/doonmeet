@@ -70,7 +70,11 @@ function ChatMessage({
 
   const showAvatarColumn = !isOwn;
   const showName = !isOwn && firstInGroup;
-  const quotedName = replyTo ? (replyTo.senderId === currentUserId ? "You" : replyTo.senderName) : "";
+  const quotedName = replyTo
+    ? replyTo.senderId === currentUserId
+      ? "You"
+      : replyTo.senderName
+    : "";
 
   return (
     <div
@@ -107,7 +111,10 @@ function ChatMessage({
           <span className="w-[34px] shrink-0" aria-hidden="true" />
         ))}
 
-      <div ref={columnRef} className={`flex max-w-[80%] min-w-0 flex-col ${isOwn ? "items-end" : "items-start"}`}>
+      <div
+        ref={columnRef}
+        className={`flex max-w-[80%] min-w-0 flex-col ${isOwn ? "items-end" : "items-start"}`}
+      >
         {showName && (
           <ChatUserActions
             userId={senderId}
@@ -136,7 +143,9 @@ function ChatMessage({
             (replyTo.removed ? (
               <span
                 className={`mb-1.5 block rounded-[10px] border-l-[3px] px-2.5 py-1.5 text-[13px] italic ${
-                  isOwn ? "border-on-primary/50 bg-on-primary/10 text-on-primary/80" : "border-border bg-surface-2 text-muted"
+                  isOwn
+                    ? "border-on-primary/50 bg-on-primary/10 text-on-primary/80"
+                    : "border-border bg-surface-2 text-muted"
                 }`}
               >
                 Message removed
@@ -156,7 +165,9 @@ function ChatMessage({
                 >
                   {quotedName}
                 </span>
-                <span className={`line-clamp-2 block text-[13px] ${isOwn ? "text-on-primary/85" : "text-muted"}`}>
+                <span
+                  className={`line-clamp-2 block text-[13px] ${isOwn ? "text-on-primary/85" : "text-muted"}`}
+                >
                   {replyTo.preview}
                 </span>
               </button>

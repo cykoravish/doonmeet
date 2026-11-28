@@ -11,7 +11,8 @@ import { User } from "@/models/User";
 import { replyPreviewText } from "@/lib/dmShared";
 import type { RoomReplyTo } from "@/lib/roomShared";
 
-const isObjectId = (id: unknown): id is string => typeof id === "string" && /^[a-f\d]{24}$/i.test(id);
+const isObjectId = (id: unknown): id is string =>
+  typeof id === "string" && /^[a-f\d]{24}$/i.test(id);
 
 /** Shown for a quoted person whose account no longer exists at all. */
 const UNKNOWN_SENDER = "Deleted User";

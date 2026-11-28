@@ -10,6 +10,9 @@ const LONG_PRESS_MS = 450;
 export const SWIPE_REPLY_PX = 56;
 const SWIPE_MAX_PX = 72;
 const MOVE_SLOP_PX = 10;
+// Two taps this close in time and place make a double tap.
+const DOUBLE_TAP_MS = 300;
+const DOUBLE_TAP_SLOP_PX = 30;
 
 interface Gesture {
   x: number;
@@ -21,8 +24,13 @@ interface Gesture {
   armed: boolean;
   /** The long-press fired (its options sheet is now open). */
   longPressed: boolean;
+  /** Started on a button / link inside the message (quote, reaction chip…). */
+  onControl: boolean;
   timer: ReturnType<typeof setTimeout>;
 }
+
+const isControl = (target: EventTarget | null) =>
+  target instanceof Element && !!target.closest("button, a, input, textarea, select");
 
 /**
  * Lifting the finger after a long press still sends a "click" — and by then
@@ -46,6 +54,8 @@ function swallowNextClick() {
 interface Options {
   onSwipeReply: () => void;
   onLongPress: () => void;
+  /** Two quick taps (or a mouse double-click) on the message, not on a control in it. */
+  onDoubleTap?: () => void;
 }
 
 /**
@@ -54,11 +64,12 @@ interface Options {
  * on the message row. Moves happen straight on the DOM — no re-render per
  * pointer event, which keeps cheap phones smooth.
  */
-export function useMessageGestures({ onSwipeReply, onLongPress }: Options) {
+export function useMessageGestures({ onSwipeReply, onLongPress, onDoubleTap }: Options) {
   const columnRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLSpanElement>(null);
   const gestureRef = useRef<Gesture | null>(null);
   const lastPointerRef = useRef<string>("mouse");
+  const lastTapRef = useRef<{ t: number; x: number; y: number } | null>(null);
 
   function shift(px: number, animate = false) {
     const col = columnRef.current;
@@ -81,6 +92,7 @@ export function useMessageGestures({ onSwipeReply, onLongPress }: Options) {
       done: false,
       armed: false,
       longPressed: false,
+      onControl: isControl(e.target),
       timer: setTimeout(() => {
         g.done = true;
         g.longPressed = true;
@@ -126,6 +138,22 @@ export function useMessageGestures({ onSwipeReply, onLongPress }: Options) {
     if (g.swiping) {
       if (commit && g.px >= SWIPE_REPLY_PX) onSwipeReply();
       shift(0, true);
+      return;
+    }
+    // A plain tap (no swipe, scroll or long press) — maybe the 2nd of a double tap.
+    if (commit && !g.done && !g.onControl && onDoubleTap) {
+      const now = Date.now();
+      const last = lastTapRef.current;
+      if (
+        last &&
+        now - last.t < DOUBLE_TAP_MS &&
+        Math.hypot(g.x - last.x, g.y - last.y) < DOUBLE_TAP_SLOP_PX
+      ) {
+        lastTapRef.current = null;
+        onDoubleTap();
+      } else {
+        lastTapRef.current = { t: now, x: g.x, y: g.y };
+      }
     }
   }
 
@@ -133,6 +161,13 @@ export function useMessageGestures({ onSwipeReply, onLongPress }: Options) {
     // No browser menu on a long press; right-click opens our options.
     e.preventDefault();
     if (lastPointerRef.current === "mouse") onLongPress();
+  }
+
+  function onDoubleClick(e: React.MouseEvent) {
+    // Touch double taps are handled above (phones may also send a dblclick).
+    if (!onDoubleTap || lastPointerRef.current !== "mouse" || isControl(e.target)) return;
+    window.getSelection()?.removeAllRanges(); // a double-click also selects a word
+    onDoubleTap();
   }
 
   return {
@@ -144,6 +179,7 @@ export function useMessageGestures({ onSwipeReply, onLongPress }: Options) {
       onPointerUp: () => endGesture(true),
       onPointerCancel: () => endGesture(false),
       onContextMenu,
+      onDoubleClick,
     },
   };
 }

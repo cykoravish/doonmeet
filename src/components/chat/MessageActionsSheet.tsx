@@ -37,7 +37,12 @@ export default function MessageActionsSheet({
   }, [onClose]);
 
   return (
-    <div className="absolute inset-0 z-30 flex items-end justify-center" role="dialog" aria-modal="true" aria-label="Message options">
+    <div
+      className="absolute inset-0 z-30 flex items-end justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Message options"
+    >
       <button
         type="button"
         aria-label="Close"
@@ -45,7 +50,10 @@ export default function MessageActionsSheet({
         className="composer-backdrop absolute inset-0 bg-black/40"
       />
       <div className="composer-sheet relative w-full max-w-md rounded-t-[24px] border border-border bg-surface px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-lg sm:mb-4 sm:rounded-[24px]">
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border sm:hidden" aria-hidden="true" />
+        <div
+          className="mx-auto mb-3 h-1 w-10 rounded-full bg-border sm:hidden"
+          aria-hidden="true"
+        />
 
         <p className="mb-3 line-clamp-2 px-1 text-sm text-muted">{preview.replace(/\s+/g, " ")}</p>
 

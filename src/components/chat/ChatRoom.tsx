@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { onConnected, useSocket } from "@/lib/socket-client";
-import { ArrowDown, ChevronUp, Loader2, MessagesSquare, Reply, Send, ShieldCheck, X } from "lucide-react";
+import { ChevronUp, Loader2, MessagesSquare, Reply, Send, ShieldCheck, X } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import MessageActionsSheet from "./MessageActionsSheet";
 import JoinChatModal from "./JoinChatModal";
-import { appendUnique, buildChatRows, prependUnique } from "./chatUtils";
+import { appendUnique, buildChatRows, groupRowsByDay, prependUnique } from "./chatUtils";
+import { DayDivider, JumpToLatestButton } from "./ChatListParts";
 import { useChatScroll } from "./useChatScroll";
 import { useToast } from "@/providers/toast-provider";
 import { replyPreviewText } from "@/lib/dmShared";
@@ -80,14 +81,16 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
   const socket = useSocket(currentUser?._id);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { scrollRef, onScroll, scrollToBottom, beginPrepend, unseenCount } = useChatScroll({
-    messages,
-    ready: !loading,
-    currentUserId: currentUser?._id,
-  });
+  const { scrollRef, onScroll, scrollToBottom, beginPrepend, unseenCount, awayFromBottom } =
+    useChatScroll({
+      messages,
+      ready: !loading,
+      currentUserId: currentUser?._id,
+    });
 
   // Dividers / grouping / time strings computed once per message list change.
   const rows = useMemo(() => buildChatRows(messages), [messages]);
+  const days = useMemo(() => groupRowsByDay(rows), [rows]);
 
   // Fetch initial messages
   useEffect(() => {
@@ -140,7 +143,9 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
         prev
           .filter((m) => m._id !== gone)
           .map((m) =>
-            m.replyTo?.messageId === gone ? { ...m, replyTo: { ...m.replyTo, preview: "", removed: true } } : m
+            m.replyTo?.messageId === gone
+              ? { ...m, replyTo: { ...m.replyTo, preview: "", removed: true } }
+              : m
           )
       );
       setReplyingTo((r) => (r?._id === gone ? null : r));
@@ -213,7 +218,10 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
         return;
       }
       const offset = el.getBoundingClientRect().top - box.getBoundingClientRect().top;
-      box.scrollTo({ top: box.scrollTop + offset - box.clientHeight / 2 + el.offsetHeight / 2, behavior: "smooth" });
+      box.scrollTo({
+        top: box.scrollTop + offset - box.clientHeight / 2 + el.offsetHeight / 2,
+        behavior: "smooth",
+      });
       setHighlightedId(messageId);
       if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
       highlightTimerRef.current = setTimeout(() => setHighlightedId(null), HIGHLIGHT_MS);
@@ -221,9 +229,12 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
     [scrollRef, showToast]
   );
 
-  useEffect(() => () => {
-    if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+    },
+    []
+  );
 
   async function copyMessage(message: Message) {
     setActionsForId(null);
@@ -244,96 +255,95 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
 
   return (
     <div className="relative flex h-full flex-col">
-      <div
-        ref={scrollRef}
-        onScroll={onScroll}
-        className="flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-3 pt-3 pb-2 sm:px-6"
-      >
-        {/* House rules + a hint that names are tappable (a feature people
+      {/* The relative box anchors the round "jump to latest" button just above
+          the composer, however tall the composer (reply bar, notices) gets. */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div
+          ref={scrollRef}
+          onScroll={onScroll}
+          className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-3 pt-3 pb-2 sm:px-6"
+        >
+          {/* House rules + a hint that names are tappable (a feature people
             otherwise never discover). Scrolls away with the history. */}
-        <div className="mx-auto mb-3 flex max-w-md items-start gap-2.5 rounded-[14px] bg-primary-soft px-3.5 py-2.5 text-sm text-text">
-          <ShieldCheck size={18} className="mt-px shrink-0 text-primary-fg" aria-hidden="true" />
-          <p>
-            Be kind — everyone in Dehradun can read this chat. Tap someone&apos;s name to message
-            them, or swipe a message to reply.
-          </p>
+          <div className="mx-auto mb-3 flex max-w-md items-start gap-2.5 rounded-[14px] bg-primary-soft px-3.5 py-2.5 text-sm text-text">
+            <ShieldCheck size={18} className="mt-px shrink-0 text-primary-fg" aria-hidden="true" />
+            <p>
+              Be kind — everyone in Dehradun can read this chat. Tap someone&apos;s name to message
+              them, or swipe a message to reply.
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="flex h-40 items-center justify-center">
+              <Loader2
+                size={22}
+                className="animate-spin text-muted"
+                aria-label="Loading messages"
+              />
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-[18px] bg-primary-soft text-primary-fg">
+                <MessagesSquare size={26} aria-hidden="true" />
+              </span>
+              <p className="font-bold">No messages yet</p>
+              <p className="mt-1 text-[15px] text-muted">Say hi to Dehradun — be the first!</p>
+            </div>
+          ) : (
+            <>
+              {hasMore && (
+                <div className="flex justify-center pb-3">
+                  <button
+                    type="button"
+                    onClick={loadOlder}
+                    disabled={loadingMore}
+                    className="flex h-10 items-center gap-1.5 rounded-full bg-surface-2 px-4 text-sm font-semibold text-muted transition-colors hover:text-text disabled:opacity-50"
+                  >
+                    {loadingMore ? (
+                      <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                    ) : (
+                      <ChevronUp size={16} aria-hidden="true" />
+                    )}
+                    Load earlier messages
+                  </button>
+                </div>
+              )}
+
+              {/* One block per day so each date pill can stick while you scroll that day. */}
+              {days.map((day) => (
+                <section key={day.label}>
+                  <DayDivider label={day.label} />
+                  {day.rows.map((row) => (
+                    <ChatMessage
+                      key={row.msg._id}
+                      messageId={row.msg._id}
+                      content={row.msg.content}
+                      senderId={row.msg.sender._id}
+                      senderName={row.msg.sender.name}
+                      senderAvatar={row.msg.sender.avatar}
+                      isOwn={row.msg.sender._id === currentUser?._id}
+                      time={row.time}
+                      firstInGroup={row.firstInGroup}
+                      lastInGroup={row.lastInGroup}
+                      replyTo={row.msg.replyTo}
+                      currentUserId={currentUser?._id}
+                      highlighted={highlightedId === row.msg._id}
+                      onMessageUser={onStartDm}
+                      onReply={startReply}
+                      onOpenActions={openActions}
+                      onJumpTo={jumpToMessage}
+                    />
+                  ))}
+                </section>
+              ))}
+            </>
+          )}
         </div>
 
-        {loading ? (
-          <div className="flex h-40 items-center justify-center">
-            <Loader2 size={22} className="animate-spin text-muted" aria-label="Loading messages" />
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-[18px] bg-primary-soft text-primary-fg">
-              <MessagesSquare size={26} aria-hidden="true" />
-            </span>
-            <p className="font-bold">No messages yet</p>
-            <p className="mt-1 text-[15px] text-muted">Say hi to Dehradun — be the first!</p>
-          </div>
-        ) : (
-          <>
-            {hasMore && (
-              <div className="flex justify-center pb-3">
-                <button
-                  type="button"
-                  onClick={loadOlder}
-                  disabled={loadingMore}
-                  className="flex h-10 items-center gap-1.5 rounded-full bg-surface-2 px-4 text-sm font-semibold text-muted transition-colors hover:text-text disabled:opacity-50"
-                >
-                  {loadingMore ? (
-                    <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                  ) : (
-                    <ChevronUp size={16} aria-hidden="true" />
-                  )}
-                  Load earlier messages
-                </button>
-              </div>
-            )}
-
-            {rows.map((row) => (
-              <div key={row.msg._id}>
-                {row.showDivider && (
-                  <div className="flex justify-center py-2">
-                    <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-muted">
-                      {row.dayLabel}
-                    </span>
-                  </div>
-                )}
-                <ChatMessage
-                  messageId={row.msg._id}
-                  content={row.msg.content}
-                  senderId={row.msg.sender._id}
-                  senderName={row.msg.sender.name}
-                  senderAvatar={row.msg.sender.avatar}
-                  isOwn={row.msg.sender._id === currentUser?._id}
-                  time={row.time}
-                  firstInGroup={row.firstInGroup}
-                  lastInGroup={row.lastInGroup}
-                  replyTo={row.msg.replyTo}
-                  currentUserId={currentUser?._id}
-                  highlighted={highlightedId === row.msg._id}
-                  onMessageUser={onStartDm}
-                  onReply={startReply}
-                  onOpenActions={openActions}
-                  onJumpTo={jumpToMessage}
-                />
-              </div>
-            ))}
-          </>
+        {(awayFromBottom || unseenCount > 0) && (
+          <JumpToLatestButton count={unseenCount} onClick={() => scrollToBottom()} />
         )}
       </div>
-
-      {unseenCount > 0 && (
-        <button
-          type="button"
-          onClick={() => scrollToBottom()}
-          className="absolute bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-1/2 z-10 flex h-10 -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-on-primary shadow-md md:bottom-20"
-        >
-          <ArrowDown size={16} aria-hidden="true" />
-          {unseenCount} new {unseenCount === 1 ? "message" : "messages"}
-        </button>
-      )}
 
       {/* Composer */}
       <div className="border-t border-border bg-surface px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:px-6 md:pb-3">
@@ -343,7 +353,10 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
           </p>
         )}
         {mutedUntil && (
-          <p role="alert" className="mb-2 rounded-[12px] bg-danger/10 px-3 py-2 text-center text-sm font-medium text-danger">
+          <p
+            role="alert"
+            className="mb-2 rounded-[12px] bg-danger/10 px-3 py-2 text-center text-sm font-medium text-danger"
+          >
             You&apos;ve been muted from the public chat until{" "}
             {new Date(mutedUntil).toLocaleString("en-IN", {
               weekday: "short",
@@ -354,16 +367,24 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
           </p>
         )}
         {slowDown && !mutedUntil && (
-          <p role="status" className="mb-2 rounded-[12px] bg-surface-2 px-3 py-2 text-center text-sm font-medium text-text">
-            You&apos;re sending messages too fast — your last one wasn&apos;t sent. Wait a few seconds.
+          <p
+            role="status"
+            className="mb-2 rounded-[12px] bg-surface-2 px-3 py-2 text-center text-sm font-medium text-text"
+          >
+            You&apos;re sending messages too fast — your last one wasn&apos;t sent. Wait a few
+            seconds.
           </p>
         )}
         {replyingTo && (
           <div className="mb-2 flex items-center gap-2 rounded-[14px] border-l-[3px] border-primary bg-surface-2 py-1.5 pr-1 pl-3">
             <Reply size={16} className="shrink-0 text-primary-fg" aria-hidden="true" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-bold text-primary-fg">Replying to {replyingToName}</p>
-              <p className="truncate text-[13px] text-muted">{replyPreviewText(replyingTo.content)}</p>
+              <p className="truncate text-[13px] font-bold text-primary-fg">
+                Replying to {replyingToName}
+              </p>
+              <p className="truncate text-[13px] text-muted">
+                {replyPreviewText(replyingTo.content)}
+              </p>
             </div>
             <button
               type="button"
