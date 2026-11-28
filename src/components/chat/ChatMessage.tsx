@@ -59,6 +59,7 @@ function ChatMessage({
             onMessage={onMessageUser}
             userName={senderName}
             messageId={messageId}
+            avatar={senderAvatar}
             label={`Options for ${senderName}`}
             className="shrink-0 rounded-full"
           >
@@ -75,6 +76,7 @@ function ChatMessage({
             onMessage={onMessageUser}
             userName={senderName}
             messageId={messageId}
+            avatar={senderAvatar}
             label={`Options for ${senderName}`}
             className={`mb-0.5 ml-1 max-w-full truncate text-[13px] font-bold ${nameColorFor(senderId)}`}
           >

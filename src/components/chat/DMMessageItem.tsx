@@ -4,6 +4,7 @@ import { memo, useRef } from "react";
 import Link from "next/link";
 import { Reply, SmilePlus } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
+import PhotoViewButton from "@/components/ui/PhotoViewButton";
 import type { DMMessage } from "./dmTypes";
 
 // Touch gestures, WhatsApp-style: swipe a message right to reply, press and
@@ -222,7 +223,9 @@ function DMMessageItem({
             <>
               <div className="w-60 max-w-full overflow-hidden rounded-[14px] bg-surface text-text">
                 <div className="flex items-center gap-3 p-3">
-                  <Avatar name={profile.name} src={profile.avatar} size={44} />
+                  <PhotoViewButton src={profile.avatar} name={profile.name} className="shrink-0">
+                    <Avatar name={profile.name} src={profile.avatar} size={44} />
+                  </PhotoViewButton>
                   <div className="min-w-0">
                     <p className="truncate font-bold">{profile.name}</p>
                     <p className="text-[13px] text-muted">DoonMeet member</p>

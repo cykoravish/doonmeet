@@ -21,6 +21,7 @@ import DMMessageActions from "./DMMessageActions";
 import ShareProfileSheet from "./ShareProfileSheet";
 import Avatar from "@/components/ui/Avatar";
 import IconButton from "@/components/ui/IconButton";
+import PhotoViewButton from "@/components/ui/PhotoViewButton";
 import { appendUnique, buildChatRows, prependUnique } from "./chatUtils";
 import { useChatScroll } from "./useChatScroll";
 import SafetySheet from "@/components/safety/SafetySheet";
@@ -506,11 +507,19 @@ export default function DMChatWindow({
             <ArrowLeft size={22} />
           </IconButton>
         )}
+        {/* Photo → full screen; name → profile. Without a photo the avatar is part of the profile link. */}
+        {otherParticipant.avatar && (
+          <PhotoViewButton src={otherParticipant.avatar} name={otherParticipant.name} className="shrink-0">
+            <Avatar name={otherParticipant.name} src={otherParticipant.avatar} size={40} online={!!activity?.online} />
+          </PhotoViewButton>
+        )}
         <Link
           href={`/users/${otherParticipant._id}`}
           className="flex min-w-0 flex-1 items-center gap-2.5 rounded-[14px] py-1 pr-2"
         >
-          <Avatar name={otherParticipant.name} src={otherParticipant.avatar} size={40} online={!!activity?.online} />
+          {!otherParticipant.avatar && (
+            <Avatar name={otherParticipant.name} src={null} size={40} online={!!activity?.online} />
+          )}
           <span className="min-w-0 leading-tight">
             <span className="block truncate font-bold text-text">{otherParticipant.name}</span>
             <span
@@ -608,7 +617,9 @@ export default function DMChatWindow({
           </div>
         ) : messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <Avatar name={otherParticipant.name} src={otherParticipant.avatar} size={72} />
+            <PhotoViewButton src={otherParticipant.avatar} name={otherParticipant.name}>
+              <Avatar name={otherParticipant.name} src={otherParticipant.avatar} size={72} />
+            </PhotoViewButton>
             <p className="mt-3 text-lg font-bold">Say hi to {firstName}!</p>
             <p className="mt-1 text-[15px] text-muted">This is the start of your conversation.</p>
           </div>

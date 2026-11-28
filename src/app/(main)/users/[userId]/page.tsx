@@ -31,6 +31,7 @@ import {
 import { CATEGORY_ICONS } from "@/lib/communityCategories";
 import SupporterBadge from "@/components/support/SupporterBadge";
 import ProfileBanner from "@/components/profile/ProfileBanner";
+import PhotoViewButton from "@/components/ui/PhotoViewButton";
 import { buttonClasses } from "@/components/ui/Button";
 import ProfileSafetyMenu from "@/components/safety/ProfileSafetyMenu";
 import PostCard from "@/components/posts/PostCard";
@@ -156,15 +157,17 @@ export default async function PublicProfilePage({ params }: UserProfilePageProps
         <div className="-mt-12 flex items-end justify-between gap-3 sm:-mt-14">
           <div className="relative z-10 shrink-0">
             {user.avatar ? (
-              <Image
-                src={user.avatar}
-                alt={user.name}
-                width={128}
-                height={128}
-                sizes="(min-width: 640px) 128px, 104px"
-                className="h-26 w-26 rounded-full object-cover sm:h-32 sm:w-32"
-                style={avatarRingStyle}
-              />
+              <PhotoViewButton src={user.avatar} name={user.name} className="block">
+                <Image
+                  src={user.avatar}
+                  alt={user.name}
+                  width={128}
+                  height={128}
+                  sizes="(min-width: 640px) 128px, 104px"
+                  className="h-26 w-26 rounded-full object-cover sm:h-32 sm:w-32"
+                  style={avatarRingStyle}
+                />
+              </PhotoViewButton>
             ) : (
               <div
                 className="flex h-26 w-26 items-center justify-center rounded-full bg-primary-soft font-display text-4xl font-extrabold text-primary-fg sm:h-32 sm:w-32"

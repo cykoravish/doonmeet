@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import ImageViewer, { pushViewerHistory } from "./ImageViewer";
+import ImageViewer, { pushViewerHistory } from "@/components/ui/ImageViewer";
 import { photoLayout } from "./photoLayout";
 
 interface PostImageProps {

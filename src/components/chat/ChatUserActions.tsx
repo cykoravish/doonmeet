@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Ban, Flag, MessageCircle, UserRound } from "lucide-react";
+import { Ban, Flag, ImageIcon, MessageCircle, UserRound } from "lucide-react";
 import SafetySheet from "@/components/safety/SafetySheet";
+import ImageViewer, { pushViewerHistory } from "@/components/ui/ImageViewer";
+import { fullSizeAvatarUrl } from "@/lib/avatarUrl";
 
 interface ChatUserActionsProps {
   userId: string;
@@ -18,11 +20,13 @@ interface ChatUserActionsProps {
   userName?: string;
   /** The public-chat message this menu was opened from (attached to a report). */
   messageId?: string;
+  /** Their profile photo — adds "View photo" (full screen) when set. */
+  avatar?: string | null;
   children: ReactNode;
 }
 
 // Wraps a sender's avatar/name in the public chat with a small menu
-// (Message / View profile).
+// (Message / View profile / View photo / Report / Block).
 export default function ChatUserActions({
   userId,
   isOwn,
@@ -32,10 +36,12 @@ export default function ChatUserActions({
   onMessage,
   userName,
   messageId,
+  avatar,
   children,
 }: ChatUserActionsProps) {
   const [open, setOpen] = useState(false);
   const [sheet, setSheet] = useState<"report" | "block" | null>(null);
+  const [viewingPhoto, setViewingPhoto] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -122,6 +128,21 @@ export default function ChatUserActions({
             <UserRound size={18} className="text-primary-fg" aria-hidden="true" />
             View profile
           </button>
+          {avatar && (
+            <button
+              role="menuitem"
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                pushViewerHistory();
+                setViewingPhoto(true);
+              }}
+              className="flex min-h-11 w-full items-center gap-2.5 px-3.5 text-left text-[15px] font-medium text-text hover:bg-surface-2"
+            >
+              <ImageIcon size={18} className="text-primary-fg" aria-hidden="true" />
+              View photo
+            </button>
+          )}
           {!isOwn && userName && (
             <>
               <div className="my-1 h-px bg-border" role="separator" />
@@ -152,6 +173,15 @@ export default function ChatUserActions({
             </>
           )}
         </div>
+      )}
+
+      {viewingPhoto && avatar && (
+        <ImageViewer
+          src={fullSizeAvatarUrl(avatar)}
+          alt={userName ?? "Profile photo"}
+          caption={userName}
+          onClose={() => setViewingPhoto(false)}
+        />
       )}
 
       {sheet && userName && (
