@@ -1,18 +1,15 @@
 "use client";
 
-import { memo, useRef } from "react";
+import { memo } from "react";
 import Link from "next/link";
 import { Reply, SmilePlus } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
 import PhotoViewButton from "@/components/ui/PhotoViewButton";
+import { useMessageGestures } from "./useMessageGestures";
 import type { DMMessage } from "./dmTypes";
 
-// Touch gestures, WhatsApp-style: swipe a message right to reply, press and
-// hold for reactions / more. Mouse users get small buttons on hover instead.
-const LONG_PRESS_MS = 450;
-const SWIPE_REPLY_PX = 56;
-const SWIPE_MAX_PX = 72;
-const MOVE_SLOP_PX = 10;
+// Swipe right to reply, press and hold for reactions / more (useMessageGestures).
+// Mouse users get small buttons on hover instead.
 
 interface DMMessageItemProps {
   message: DMMessage;
@@ -29,15 +26,6 @@ interface DMMessageItemProps {
   onOpenActions: (message: DMMessage) => void;
   onToggleReaction: (messageId: string, emoji: string) => void;
   onJumpTo: (messageId: string) => void;
-}
-
-interface Gesture {
-  x: number;
-  y: number;
-  px: number;
-  swiping: boolean;
-  done: boolean;
-  timer: ReturnType<typeof setTimeout>;
 }
 
 function groupReactions(reactions: DMMessage["reactions"], currentUserId: string) {
@@ -66,80 +54,14 @@ function DMMessageItem({
   onToggleReaction,
   onJumpTo,
 }: DMMessageItemProps) {
-  const columnRef = useRef<HTMLDivElement>(null);
-  const hintRef = useRef<HTMLSpanElement>(null);
-  const gestureRef = useRef<Gesture | null>(null);
-  const lastPointerRef = useRef<string>("mouse");
+  const { columnRef, hintRef, rowHandlers } = useMessageGestures({
+    onSwipeReply: () => onReply(message),
+    onLongPress: () => onOpenActions(message),
+  });
 
   const reactions = groupReactions(message.reactions, currentUserId);
   const profile = message.type === "profile" ? message.sharedProfile : null;
   const replyTo = message.replyTo;
-
-  // Moves the bubble with the finger — straight on the DOM, no re-render.
-  function shift(px: number, animate = false) {
-    const col = columnRef.current;
-    const hint = hintRef.current;
-    if (col) {
-      col.style.transition = animate ? "transform 0.18s ease-out" : "none";
-      col.style.transform = px ? `translateX(${px}px)` : "";
-    }
-    if (hint) hint.style.opacity = String(Math.min(px / SWIPE_REPLY_PX, 1));
-  }
-
-  function onPointerDown(e: React.PointerEvent) {
-    lastPointerRef.current = e.pointerType;
-    if (e.pointerType === "mouse") return;
-    const g: Gesture = {
-      x: e.clientX,
-      y: e.clientY,
-      px: 0,
-      swiping: false,
-      done: false,
-      timer: setTimeout(() => {
-        g.done = true;
-        navigator.vibrate?.(10);
-        onOpenActions(message);
-      }, LONG_PRESS_MS),
-    };
-    gestureRef.current = g;
-  }
-
-  function onPointerMove(e: React.PointerEvent) {
-    const g = gestureRef.current;
-    if (!g || g.done) return;
-    const dx = e.clientX - g.x;
-    const dy = e.clientY - g.y;
-    if (!g.swiping) {
-      if (Math.abs(dx) < MOVE_SLOP_PX && Math.abs(dy) < MOVE_SLOP_PX) return;
-      clearTimeout(g.timer);
-      // Only a rightward, mostly-horizontal drag is a reply swipe.
-      if (dx > 0 && dx > Math.abs(dy)) {
-        g.swiping = true;
-      } else {
-        g.done = true; // scrolling (or a left drag) — leave it to the browser
-        return;
-      }
-    }
-    g.px = Math.min(Math.max(dx, 0), SWIPE_MAX_PX);
-    shift(g.px);
-  }
-
-  function endGesture(commit: boolean) {
-    const g = gestureRef.current;
-    gestureRef.current = null;
-    if (!g) return;
-    clearTimeout(g.timer);
-    if (g.swiping) {
-      if (commit && g.px >= SWIPE_REPLY_PX) onReply(message);
-      shift(0, true);
-    }
-  }
-
-  function onContextMenu(e: React.MouseEvent) {
-    // No browser menu on a long press; right-click opens our actions.
-    e.preventDefault();
-    if (lastPointerRef.current === "mouse") onOpenActions(message);
-  }
 
   const hasReactions = reactions.length > 0;
 
@@ -150,11 +72,7 @@ function DMMessageItem({
         lastInGroup || hasReactions ? "mb-2.5" : "mb-0.5"
       }`}
       style={{ touchAction: "pan-y" }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={() => endGesture(true)}
-      onPointerCancel={() => endGesture(false)}
-      onContextMenu={onContextMenu}
+      {...rowHandlers}
     >
       {/* Swipe hint — fades in under the finger as the bubble moves right */}
       <span

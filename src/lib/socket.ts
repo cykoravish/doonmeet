@@ -21,6 +21,7 @@ import {
 } from "@/lib/rateLimitStore";
 import { getPresenceFor, prepareDmFields, setDmReaction, toDmPayload } from "@/lib/dm";
 import { isDmReaction } from "@/lib/dmShared";
+import { prepareRoomReply } from "@/lib/roomChat";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
 
@@ -154,7 +155,8 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     // -------------------------------------------------------
     // PUBLIC ROOM — send message
     // -------------------------------------------------------
-    socket.on("room:message", async (data: { content: string }) => {
+    // { content, replyToId? } — replyToId quotes another public-chat message.
+    socket.on("room:message", async (data: { content: string; replyToId?: string }) => {
       try {
         if (!data?.content || typeof data.content !== "string") return;
 
@@ -179,15 +181,21 @@ export function initSocket(httpServer: HttpServer): SocketServer {
           return;
         }
 
+        // A quote of another public-chat message (null if not a reply, or
+        // the original was removed meanwhile — then it's sent without one).
+        const reply = await prepareRoomReply(data.replyToId);
+
         const message = await RoomMessage.create({
           sender: socket.userId,
           content,
+          replyTo: reply?.stored ?? null,
         });
 
         io.to("room:global").emit("room:message", {
           _id: message._id,
           content: message.content,
           createdAt: message.createdAt,
+          replyTo: reply?.payload ?? null,
           sender: {
             _id: socket.userId,
             name: socket.name,

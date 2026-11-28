@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 import DMMessageItem from "./DMMessageItem";
-import DMMessageActions from "./DMMessageActions";
+import MessageActionsSheet from "./MessageActionsSheet";
 import ShareProfileSheet from "./ShareProfileSheet";
 import Avatar from "@/components/ui/Avatar";
 import IconButton from "@/components/ui/IconButton";
@@ -769,15 +769,17 @@ export default function DMChatWindow({
       )}
 
       {actionsFor && (
-        <DMMessageActions
-          message={actionsFor}
-          myReaction={myReactionOnActions}
-          onReact={(emoji) => {
-            setActionsForId(null);
-            toggleReaction(actionsFor._id, emoji);
+        <MessageActionsSheet
+          preview={actionsFor.content}
+          reactions={{
+            mine: myReactionOnActions,
+            onReact: (emoji) => {
+              setActionsForId(null);
+              toggleReaction(actionsFor._id, emoji);
+            },
           }}
           onReply={() => startReply(actionsFor)}
-          onCopy={() => copyMessage(actionsFor)}
+          onCopy={actionsFor.type === "profile" ? undefined : () => copyMessage(actionsFor)}
           onClose={closeActions}
         />
       )}

@@ -1,17 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { onConnected, useSocket } from "@/lib/socket-client";
-import { ArrowDown, ChevronUp, Loader2, MessagesSquare, Send, ShieldCheck } from "lucide-react";
+import { ArrowDown, ChevronUp, Loader2, MessagesSquare, Reply, Send, ShieldCheck, X } from "lucide-react";
 import ChatMessage from "./ChatMessage";
+import MessageActionsSheet from "./MessageActionsSheet";
 import JoinChatModal from "./JoinChatModal";
 import { appendUnique, buildChatRows, prependUnique } from "./chatUtils";
 import { useChatScroll } from "./useChatScroll";
+import { useToast } from "@/providers/toast-provider";
+import { replyPreviewText } from "@/lib/dmShared";
+import type { RoomReplyTo } from "@/lib/roomShared";
 
 interface Message {
   _id: string;
   content: string;
   createdAt: string;
+  replyTo?: RoomReplyTo | null;
   sender: {
     _id: string;
     name: string;
@@ -25,6 +30,8 @@ interface CurrentUser {
   avatar: string | null;
 }
 
+const HIGHLIGHT_MS = 1600;
+
 interface ChatRoomProps {
   currentUser: CurrentUser | null;
   // Open a DM with this user (switches to the Messages tab).
@@ -32,7 +39,17 @@ interface ChatRoomProps {
 }
 
 export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
+  const { showToast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
+  // Reply bar above the composer / long-press sheet / jump-to highlight.
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [actionsForId, setActionsForId] = useState<string | null>(null);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const messagesRef = useRef(messages);
+  useEffect(() => {
+    messagesRef.current = messages;
+  });
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -115,9 +132,19 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
     function handleSlowDown() {
       setSlowDown(true);
     }
-    // A moderator removed a message — take it off this screen too.
+    // A moderator removed a message — take it off this screen too, and
+    // blank any quotes of it so its text isn't still readable in replies.
     function handleDeleted(data: { messageId: string }) {
-      setMessages((prev) => prev.filter((m) => m._id !== data.messageId));
+      const gone = data.messageId;
+      setMessages((prev) =>
+        prev
+          .filter((m) => m._id !== gone)
+          .map((m) =>
+            m.replyTo?.messageId === gone ? { ...m, replyTo: { ...m.replyTo, preview: "", removed: true } } : m
+          )
+      );
+      setReplyingTo((r) => (r?._id === gone ? null : r));
+      setActionsForId((id) => (id === gone ? null : id));
     }
 
     socket.on("room:message", handleMessage);
@@ -150,10 +177,70 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
 
     if (!socket) return;
 
-    socket.emit("room:message", { content: content.trim() });
+    socket.emit("room:message", { content: content.trim(), replyToId: replyingTo?._id });
     setContent("");
+    setReplyingTo(null);
     inputRef.current?.focus();
   }
+
+  // ---- Message actions (stable callbacks so memoised bubbles don't re-render) ----
+
+  const startReply = useCallback(
+    (messageId: string) => {
+      setActionsForId(null);
+      // Replying needs an account — same sheet as trying to send.
+      if (!currentUser) {
+        setShowJoinModal(true);
+        return;
+      }
+      const msg = messagesRef.current.find((m) => m._id === messageId);
+      if (!msg) return;
+      setReplyingTo(msg);
+      inputRef.current?.focus();
+    },
+    [currentUser]
+  );
+
+  const openActions = useCallback((messageId: string) => setActionsForId(messageId), []);
+  const closeActions = useCallback(() => setActionsForId(null), []);
+
+  const jumpToMessage = useCallback(
+    (messageId: string) => {
+      const box = scrollRef.current;
+      const el = document.getElementById(`room-msg-${messageId}`);
+      if (!box || !el) {
+        showToast("That message is further up — tap “Load earlier messages”.", "info");
+        return;
+      }
+      const offset = el.getBoundingClientRect().top - box.getBoundingClientRect().top;
+      box.scrollTo({ top: box.scrollTop + offset - box.clientHeight / 2 + el.offsetHeight / 2, behavior: "smooth" });
+      setHighlightedId(messageId);
+      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+      highlightTimerRef.current = setTimeout(() => setHighlightedId(null), HIGHLIGHT_MS);
+    },
+    [scrollRef, showToast]
+  );
+
+  useEffect(() => () => {
+    if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+  }, []);
+
+  async function copyMessage(message: Message) {
+    setActionsForId(null);
+    try {
+      await navigator.clipboard.writeText(message.content);
+      showToast("Copied", "success");
+    } catch {
+      showToast("Couldn't copy on this device.", "error");
+    }
+  }
+
+  const actionsFor = actionsForId ? (messages.find((m) => m._id === actionsForId) ?? null) : null;
+  const replyingToName = replyingTo
+    ? replyingTo.sender._id === currentUser?._id
+      ? "yourself"
+      : replyingTo.sender.name
+    : "";
 
   return (
     <div className="relative flex h-full flex-col">
@@ -168,7 +255,7 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
           <ShieldCheck size={18} className="mt-px shrink-0 text-primary-fg" aria-hidden="true" />
           <p>
             Be kind — everyone in Dehradun can read this chat. Tap someone&apos;s name to message
-            them or see their profile.
+            them, or swipe a message to reply.
           </p>
         </div>
 
@@ -223,7 +310,13 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
                   time={row.time}
                   firstInGroup={row.firstInGroup}
                   lastInGroup={row.lastInGroup}
+                  replyTo={row.msg.replyTo}
+                  currentUserId={currentUser?._id}
+                  highlighted={highlightedId === row.msg._id}
                   onMessageUser={onStartDm}
+                  onReply={startReply}
+                  onOpenActions={openActions}
+                  onJumpTo={jumpToMessage}
                 />
               </div>
             ))}
@@ -265,6 +358,23 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
             You&apos;re sending messages too fast — your last one wasn&apos;t sent. Wait a few seconds.
           </p>
         )}
+        {replyingTo && (
+          <div className="mb-2 flex items-center gap-2 rounded-[14px] border-l-[3px] border-primary bg-surface-2 py-1.5 pr-1 pl-3">
+            <Reply size={16} className="shrink-0 text-primary-fg" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-bold text-primary-fg">Replying to {replyingToName}</p>
+              <p className="truncate text-[13px] text-muted">{replyPreviewText(replyingTo.content)}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setReplyingTo(null)}
+              aria-label="Cancel reply"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted hover:bg-border hover:text-text"
+            >
+              <X size={18} aria-hidden="true" />
+            </button>
+          </div>
+        )}
         <form onSubmit={handleSend} className="flex items-center gap-2">
           <label htmlFor="room-message-input" className="sr-only">
             Message the public chat
@@ -274,7 +384,10 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
             ref={inputRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Message Doon…"
+            onKeyDown={(e) => {
+              if (e.key === "Escape" && replyingTo) setReplyingTo(null);
+            }}
+            placeholder={replyingTo ? "Write a reply…" : "Message Doon…"}
             maxLength={500}
             autoComplete="off"
             enterKeyHint="send"
@@ -290,6 +403,15 @@ export default function ChatRoom({ currentUser, onStartDm }: ChatRoomProps) {
           </button>
         </form>
       </div>
+
+      {actionsFor && (
+        <MessageActionsSheet
+          preview={actionsFor.content}
+          onReply={() => startReply(actionsFor._id)}
+          onCopy={() => copyMessage(actionsFor)}
+          onClose={closeActions}
+        />
+      )}
 
       {showJoinModal && (
         <JoinChatModal pendingMessage={content} onClose={() => setShowJoinModal(false)} />
