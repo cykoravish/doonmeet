@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { onConnected, useSocket } from "@/lib/socket-client";
 import {
-  ArrowDown,
   ArrowLeft,
   Ban,
   ChevronUp,
@@ -17,12 +16,14 @@ import {
   X,
 } from "lucide-react";
 import DMMessageItem from "./DMMessageItem";
-import DMMessageActions from "./DMMessageActions";
+import MessageActionsSheet from "./MessageActionsSheet";
 import ShareProfileSheet from "./ShareProfileSheet";
 import Avatar from "@/components/ui/Avatar";
 import IconButton from "@/components/ui/IconButton";
-import { appendUnique, buildChatRows, prependUnique } from "./chatUtils";
+import PhotoViewButton from "@/components/ui/PhotoViewButton";
+import { appendUnique, buildChatRows, groupRowsByDay, prependUnique } from "./chatUtils";
 import { useChatScroll } from "./useChatScroll";
+import { DayDivider, JumpToLatestButton, TypingBubble } from "./ChatListParts";
 import SafetySheet from "@/components/safety/SafetySheet";
 import { fetchBlockStatus, setBlocked, type BlockStatus } from "@/lib/safety-client";
 import { activityLabel } from "@/lib/activity";
@@ -63,6 +64,8 @@ function lastReadIdFromHistory(messages: DMMessage[], otherId: string): string |
 
 const COMPOSER_MAX_PX = 128;
 const HIGHLIGHT_MS = 1600;
+/** One-tap openers on a brand-new conversation — the hardest message to write. */
+const QUICK_STARTS = ["👋 Hi!", "Namaste 🙏", "Kaise ho?"];
 
 // Phones: Enter adds a new line and the send button sends (like WhatsApp).
 // Keyboard + mouse: Enter sends, Shift+Enter adds a new line.
@@ -147,7 +150,7 @@ export default function DMChatWindow({
   const latestIdRef = useRef<string | null>(null);
   const firstName = otherParticipant.name.split(" ")[0];
 
-  const { scrollRef, onScroll, scrollToBottom, beginPrepend, unseenCount } = useChatScroll({
+  const { scrollRef, onScroll, scrollToBottom, beginPrepend, unseenCount, awayFromBottom } = useChatScroll({
     messages,
     ready: !loading,
     currentUserId: currentUser._id,
@@ -466,22 +469,33 @@ export default function DMChatWindow({
 
   const isBlocked = !!blockStatus && (blockStatus.blockedByMe || blockStatus.blockedMe);
 
-  // "Seen" / "Sent" under your latest message, WhatsApp-style.
-  const receipt = useMemo(() => {
-    let lastOwnIndex = -1;
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].sender._id === currentUser._id) {
-        lastOwnIndex = i;
-        break;
-      }
+  // ✓✓ on every message of mine up to the newest one they've read, ✓ after it.
+  const seenIndex = useMemo(
+    () => (seenThroughId ? messages.findIndex((m) => m._id === seenThroughId) : -1),
+    [messages, seenThroughId]
+  );
+
+  const days = useMemo(() => groupRowsByDay(rows), [rows]);
+
+  // Double tap → ❤️. Only ever adds it: double-tapping again keeps the heart.
+  const heartMessage = useCallback(
+    (messageId: string) => {
+      const msg = messagesRef.current.find((m) => m._id === messageId);
+      const mine = msg?.reactions?.find((r) => r.userId === currentUser._id)?.emoji;
+      if (mine !== "❤️") toggleReaction(messageId, "❤️");
+    },
+    [currentUser._id, toggleReaction]
+  );
+
+  // The typing bubble joins the bottom of the list — keep it in view if
+  // you're reading the latest messages (never yank you down from history).
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!otherTyping || !el) return;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 180) {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
     }
-    if (lastOwnIndex === -1) return null;
-    const seenIndex = seenThroughId ? messages.findIndex((m) => m._id === seenThroughId) : -1;
-    return {
-      afterId: messages[lastOwnIndex]._id,
-      label: seenIndex >= lastOwnIndex ? "Seen" : "Sent",
-    };
-  }, [messages, seenThroughId, currentUser._id]);
+  }, [otherTyping, scrollRef]);
 
   // Header subtitle: typing… → Online → "Active today" → "View profile".
   // Nothing about activity once either of us has blocked the other.
@@ -506,11 +520,19 @@ export default function DMChatWindow({
             <ArrowLeft size={22} />
           </IconButton>
         )}
+        {/* Photo → full screen; name → profile. Without a photo the avatar is part of the profile link. */}
+        {otherParticipant.avatar && (
+          <PhotoViewButton src={otherParticipant.avatar} name={otherParticipant.name} className="shrink-0">
+            <Avatar name={otherParticipant.name} src={otherParticipant.avatar} size={40} online={!!activity?.online} />
+          </PhotoViewButton>
+        )}
         <Link
           href={`/users/${otherParticipant._id}`}
           className="flex min-w-0 flex-1 items-center gap-2.5 rounded-[14px] py-1 pr-2"
         >
-          <Avatar name={otherParticipant.name} src={otherParticipant.avatar} size={40} online={!!activity?.online} />
+          {!otherParticipant.avatar && (
+            <Avatar name={otherParticipant.name} src={null} size={40} online={!!activity?.online} />
+          )}
           <span className="min-w-0 leading-tight">
             <span className="block truncate font-bold text-text">{otherParticipant.name}</span>
             <span
@@ -596,85 +618,98 @@ export default function DMChatWindow({
         />
       )}
 
-      {/* Messages */}
-      <div
-        ref={scrollRef}
-        onScroll={onScroll}
-        className="flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-3 pt-3 pb-2 sm:px-6"
-      >
-        {loading ? (
-          <div className="flex h-full items-center justify-center">
-            <Loader2 size={22} className="animate-spin text-muted" aria-label="Loading messages" />
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-center">
-            <Avatar name={otherParticipant.name} src={otherParticipant.avatar} size={72} />
-            <p className="mt-3 text-lg font-bold">Say hi to {firstName}!</p>
-            <p className="mt-1 text-[15px] text-muted">This is the start of your conversation.</p>
-          </div>
-        ) : (
-          <>
-            {hasMore && (
-              <div className="flex justify-center pb-3">
-                <button
-                  type="button"
-                  onClick={loadOlder}
-                  disabled={loadingMore}
-                  className="flex h-10 items-center gap-1.5 rounded-full bg-surface-2 px-4 text-sm font-semibold text-muted transition-colors hover:text-text disabled:opacity-50"
-                >
-                  {loadingMore ? (
-                    <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                  ) : (
-                    <ChevronUp size={16} aria-hidden="true" />
-                  )}
-                  Load earlier messages
-                </button>
-              </div>
-            )}
+      {/* Messages — the relative box anchors the round "jump to latest" button
+          just above the composer, however tall the composer gets. */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div
+          ref={scrollRef}
+          onScroll={onScroll}
+          className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-3 pt-3 pb-2 sm:px-6"
+        >
+          {loading ? (
+            <div className="flex h-full items-center justify-center">
+              <Loader2 size={22} className="animate-spin text-muted" aria-label="Loading messages" />
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center px-2 text-center">
+              <PhotoViewButton src={otherParticipant.avatar} name={otherParticipant.name}>
+                <Avatar name={otherParticipant.name} src={otherParticipant.avatar} size={72} />
+              </PhotoViewButton>
+              <p className="mt-3 text-lg font-bold">Say hi to {firstName}!</p>
+              <p className="mt-1 text-[15px] text-muted">This is the start of your conversation.</p>
+              {!isBlocked && (
+                <div className="mt-5 flex flex-wrap justify-center gap-2" role="group" aria-label="Quick hellos">
+                  {QUICK_STARTS.map((text) => (
+                    <button
+                      key={text}
+                      type="button"
+                      disabled={sending}
+                      onClick={() => sendMessage({ content: text })}
+                      className="btn-springy h-11 rounded-full border border-border bg-surface px-4 text-[15px] font-semibold text-text hover:bg-surface-2 disabled:opacity-50"
+                    >
+                      {text}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {hasMore && (
+                <div className="flex justify-center pb-3">
+                  <button
+                    type="button"
+                    onClick={loadOlder}
+                    disabled={loadingMore}
+                    className="flex h-10 items-center gap-1.5 rounded-full bg-surface-2 px-4 text-sm font-semibold text-muted transition-colors hover:text-text disabled:opacity-50"
+                  >
+                    {loadingMore ? (
+                      <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                    ) : (
+                      <ChevronUp size={16} aria-hidden="true" />
+                    )}
+                    Load earlier messages
+                  </button>
+                </div>
+              )}
 
-            {rows.map((row) => (
-              <div key={row.msg._id}>
-                {row.showDivider && (
-                  <div className="flex justify-center py-2">
-                    <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-muted">
-                      {row.dayLabel}
-                    </span>
-                  </div>
-                )}
-                <DMMessageItem
-                  message={row.msg}
-                  isOwn={row.msg.sender._id === currentUser._id}
-                  time={row.time}
-                  lastInGroup={row.lastInGroup}
-                  currentUserId={currentUser._id}
-                  otherFirstName={firstName}
-                  highlighted={highlightedId === row.msg._id}
-                  onReply={startReply}
-                  onOpenActions={openActions}
-                  onToggleReaction={toggleReaction}
-                  onJumpTo={jumpToMessage}
-                />
-                {receipt?.afterId === row.msg._id && (
-                  <p className="-mt-1.5 mb-2 pr-1 text-right text-xs font-medium text-muted">
-                    {receipt.label}
-                  </p>
-                )}
-              </div>
-            ))}
-          </>
+              {/* One block per day so each date pill can stick while you scroll that day. */}
+              {days.map((day) => (
+                <section key={day.label}>
+                  <DayDivider label={day.label} />
+                  {day.rows.map((row) => {
+                    const isOwn = row.msg.sender._id === currentUser._id;
+                    return (
+                      <DMMessageItem
+                        key={row.msg._id}
+                        message={row.msg}
+                        isOwn={isOwn}
+                        time={row.time}
+                        lastInGroup={row.lastInGroup}
+                        currentUserId={currentUser._id}
+                        otherFirstName={firstName}
+                        highlighted={highlightedId === row.msg._id}
+                        onReply={startReply}
+                        onOpenActions={openActions}
+                        onToggleReaction={toggleReaction}
+                        onJumpTo={jumpToMessage}
+                        receipt={isOwn ? (row.index <= seenIndex ? "seen" : "sent") : undefined}
+                        onHeart={isBlocked ? undefined : heartMessage}
+                      />
+                    );
+                  })}
+                </section>
+              ))}
+
+              {otherTyping && !isBlocked && <TypingBubble />}
+            </>
+          )}
+        </div>
+
+        {(awayFromBottom || unseenCount > 0) && (
+          <JumpToLatestButton count={unseenCount} onClick={() => scrollToBottom()} />
         )}
       </div>
-
-      {unseenCount > 0 && (
-        <button
-          type="button"
-          onClick={() => scrollToBottom()}
-          className="absolute bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-1/2 z-10 flex h-10 -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-on-primary shadow-md md:bottom-20"
-        >
-          <ArrowDown size={16} aria-hidden="true" />
-          {unseenCount} new {unseenCount === 1 ? "message" : "messages"}
-        </button>
-      )}
 
       {/* Composer — replaced by a notice when either side has blocked the other */}
       {isBlocked ? (
@@ -758,15 +793,17 @@ export default function DMChatWindow({
       )}
 
       {actionsFor && (
-        <DMMessageActions
-          message={actionsFor}
-          myReaction={myReactionOnActions}
-          onReact={(emoji) => {
-            setActionsForId(null);
-            toggleReaction(actionsFor._id, emoji);
+        <MessageActionsSheet
+          preview={actionsFor.content}
+          reactions={{
+            mine: myReactionOnActions,
+            onReact: (emoji) => {
+              setActionsForId(null);
+              toggleReaction(actionsFor._id, emoji);
+            },
           }}
           onReply={() => startReply(actionsFor)}
-          onCopy={() => copyMessage(actionsFor)}
+          onCopy={actionsFor.type === "profile" ? undefined : () => copyMessage(actionsFor)}
           onClose={closeActions}
         />
       )}

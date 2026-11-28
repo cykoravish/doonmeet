@@ -17,6 +17,8 @@ export function pushViewerHistory() {
 interface ImageViewerProps {
   src: string;
   alt: string;
+  /** Optional line shown top-left (e.g. the person's name for a profile photo). */
+  caption?: string;
   /** Called after Back / ✕ / Esc / backdrop tap — unmount the viewer. */
   onClose: () => void;
 }
@@ -25,7 +27,7 @@ interface ImageViewerProps {
 // so the history entry added by pushViewerHistory() is always consumed and
 // the popstate listener below is the single place that closes it.
 // Pinch-to-zoom is the browser's own.
-export default function ImageViewer({ src, alt, onClose }: ImageViewerProps) {
+export default function ImageViewer({ src, alt, caption, onClose }: ImageViewerProps) {
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const onCloseRef = useRef(onClose);
   useEffect(() => {
@@ -67,6 +69,11 @@ export default function ImageViewer({ src, alt, onClose }: ImageViewerProps) {
           onClick={(e) => e.stopPropagation()}
         />
       </div>
+      {caption && (
+        <p className="pointer-events-none absolute top-[max(0.75rem,env(safe-area-inset-top))] right-16 left-4 h-11 truncate text-base leading-11 font-bold text-white">
+          {caption}
+        </p>
+      )}
       <button
         ref={closeBtnRef}
         type="button"

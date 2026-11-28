@@ -5,6 +5,8 @@ import Image from "next/image";
 import { Camera, Loader2 } from "lucide-react";
 import { useToast } from "@/providers/toast-provider";
 import { compressImage } from "@/lib/imageCompression";
+import { fullSizeAvatarUrl } from "@/lib/avatarUrl";
+import ImageViewer, { pushViewerHistory } from "@/components/ui/ImageViewer";
 
 interface ProfileAvatarProps {
   avatar: string | null;
@@ -27,6 +29,7 @@ export default function ProfileAvatar({
 }: ProfileAvatarProps) {
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [viewing, setViewing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
 
@@ -85,13 +88,24 @@ export default function ProfileAvatar({
         </div>
       )}
 
-      {editable && (
-        <>
+      {/* With a photo: tap it to see it full screen. Without one: tap to add one. */}
+      {displaySrc && !loading ? (
+        <button
+          type="button"
+          onClick={() => {
+            pushViewerHistory();
+            setViewing(true);
+          }}
+          aria-label={editable ? "View your profile photo" : `View ${name}'s photo`}
+          className="absolute inset-0 cursor-zoom-in rounded-full"
+        />
+      ) : (
+        editable && (
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={loading}
-            aria-label={displaySrc ? "Change profile photo" : "Add a profile photo"}
+            aria-label="Add a profile photo"
             className="absolute inset-0 flex items-center justify-center rounded-full"
           >
             {loading && (
@@ -100,16 +114,23 @@ export default function ProfileAvatar({
               </span>
             )}
           </button>
+        )
+      )}
 
-          {/* Always-visible camera badge — touch devices have no hover, so
-              this is how people discover the photo is tappable. */}
+      {editable && (
+        <>
+          {/* Always-visible camera button — touch devices have no hover, so
+              this is how people discover they can change the photo. The
+              before: layer stretches its tap area to ~48px. */}
           {!loading && (
-            <span
-              className="pointer-events-none absolute right-0 bottom-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-primary text-on-primary"
-              aria-hidden="true"
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              aria-label={displaySrc ? "Change profile photo" : "Add a profile photo"}
+              className="absolute right-0 bottom-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-primary text-on-primary before:absolute before:-inset-2 before:content-['']"
             >
-              <Camera size={15} />
-            </span>
+              <Camera size={15} aria-hidden="true" />
+            </button>
           )}
 
           <input
@@ -120,6 +141,15 @@ export default function ProfileAvatar({
             onChange={handleUpload}
           />
         </>
+      )}
+
+      {viewing && displaySrc && (
+        <ImageViewer
+          src={fullSizeAvatarUrl(displaySrc)}
+          alt={name}
+          caption={name}
+          onClose={() => setViewing(false)}
+        />
       )}
     </div>
   );

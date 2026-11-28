@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { getChatMutedUntil } from "@/lib/safety";
 import { RoomMessage } from "@/models/RoomMessage";
+import { prepareRoomReply, resolveRoomReplies } from "@/lib/roomChat";
 import { withAuth, AuthenticatedRequest } from "@/middleware/auth";
 import { withGuestAllowed } from "@/middleware/auth";
 import { validateBody, validateQuery } from "@/middleware/validate";
@@ -48,10 +49,13 @@ export const GET = withGuestAllowed(async (req: AuthenticatedRequest) => {
     // Next cursor = oldest message id in this batch (for loading more)
     const nextCursor = ordered.length === limit ? String(ordered[0]._id) : null;
 
+    // Reply quotes: current names, and no text for quotes of removed messages.
+    const withReplies = await resolveRoomReplies(ordered);
+
     return NextResponse.json(
       {
         success: true,
-        messages: ordered,
+        messages: withReplies,
         nextCursor, // null means no more messages
         hasMore: !!nextCursor,
       },
@@ -73,7 +77,7 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
 
   const result = await validateBody(req, sendRoomMessageSchema);
   if (result instanceof NextResponse) return result;
-  const { content } = result.data as { content: string };
+  const { content, replyToId } = result.data as { content: string; replyToId?: string };
 
   try {
     await connectDB();
@@ -92,10 +96,14 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
+    // Same reply rules as the socket path (src/lib/roomChat.ts).
+    const reply = await prepareRoomReply(replyToId);
+
     // Create message
     const message = await RoomMessage.create({
       sender: req.user._id,
       content,
+      replyTo: reply?.stored ?? null,
     });
 
     // Populate sender for response
@@ -104,7 +112,7 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
     return NextResponse.json(
       {
         success: true,
-        message: message,
+        message: { ...message.toObject(), replyTo: reply?.payload ?? null },
       },
       { status: 201 }
     );

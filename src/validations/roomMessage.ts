@@ -5,6 +5,8 @@ export const sendRoomMessageSchema = z.object({
     .string()
     .min(1, "Message cannot be empty")
     .max(500, "Message cannot exceed 500 characters"),
+  /** Quote another public-chat message. */
+  replyToId: objectId.optional(),
 });
 
 export const getRoomMessagesSchema = paginationSchema;

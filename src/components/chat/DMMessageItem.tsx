@@ -1,17 +1,15 @@
 "use client";
 
-import { memo, useRef } from "react";
+import { memo, useState } from "react";
 import Link from "next/link";
-import { Reply, SmilePlus } from "lucide-react";
+import { Check, CheckCheck, Reply, SmilePlus } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
+import PhotoViewButton from "@/components/ui/PhotoViewButton";
+import { useMessageGestures } from "./useMessageGestures";
 import type { DMMessage } from "./dmTypes";
 
-// Touch gestures, WhatsApp-style: swipe a message right to reply, press and
-// hold for reactions / more. Mouse users get small buttons on hover instead.
-const LONG_PRESS_MS = 450;
-const SWIPE_REPLY_PX = 56;
-const SWIPE_MAX_PX = 72;
-const MOVE_SLOP_PX = 10;
+// Swipe right to reply, press and hold for reactions / more (useMessageGestures).
+// Mouse users get small buttons on hover instead.
 
 interface DMMessageItemProps {
   message: DMMessage;
@@ -28,15 +26,24 @@ interface DMMessageItemProps {
   onOpenActions: (message: DMMessage) => void;
   onToggleReaction: (messageId: string, emoji: string) => void;
   onJumpTo: (messageId: string) => void;
+  /** My messages only: ✓ sent / ✓✓ seen by the other person. */
+  receipt?: "sent" | "seen";
+  /** Double tap → ❤️. Omitted when reacting isn't possible (e.g. blocked). */
+  onHeart?: (messageId: string) => void;
 }
 
-interface Gesture {
-  x: number;
-  y: number;
-  px: number;
-  swiping: boolean;
-  done: boolean;
-  timer: ReturnType<typeof setTimeout>;
+/** ✓ / ✓✓ next to the time on my messages (WhatsApp-style). */
+function ReceiptTicks({ status }: { status: "sent" | "seen" }) {
+  return (
+    <>
+      {status === "seen" ? (
+        <CheckCheck size={15} strokeWidth={2.4} className="shrink-0 text-seen" aria-hidden="true" />
+      ) : (
+        <Check size={15} strokeWidth={2.4} className="shrink-0" aria-hidden="true" />
+      )}
+      <span className="sr-only">{status === "seen" ? "Seen" : "Sent"}</span>
+    </>
+  );
 }
 
 function groupReactions(reactions: DMMessage["reactions"], currentUserId: string) {
@@ -64,81 +71,25 @@ function DMMessageItem({
   onOpenActions,
   onToggleReaction,
   onJumpTo,
+  receipt,
+  onHeart,
 }: DMMessageItemProps) {
-  const columnRef = useRef<HTMLDivElement>(null);
-  const hintRef = useRef<HTMLSpanElement>(null);
-  const gestureRef = useRef<Gesture | null>(null);
-  const lastPointerRef = useRef<string>("mouse");
+  // Bumped on each double tap so the ❤️ pop restarts; 0 = not showing.
+  const [heartPop, setHeartPop] = useState(0);
+  const { columnRef, hintRef, rowHandlers } = useMessageGestures({
+    onSwipeReply: () => onReply(message),
+    onLongPress: () => onOpenActions(message),
+    onDoubleTap: onHeart
+      ? () => {
+          setHeartPop((n) => n + 1);
+          onHeart(message._id);
+        }
+      : undefined,
+  });
 
   const reactions = groupReactions(message.reactions, currentUserId);
   const profile = message.type === "profile" ? message.sharedProfile : null;
   const replyTo = message.replyTo;
-
-  // Moves the bubble with the finger — straight on the DOM, no re-render.
-  function shift(px: number, animate = false) {
-    const col = columnRef.current;
-    const hint = hintRef.current;
-    if (col) {
-      col.style.transition = animate ? "transform 0.18s ease-out" : "none";
-      col.style.transform = px ? `translateX(${px}px)` : "";
-    }
-    if (hint) hint.style.opacity = String(Math.min(px / SWIPE_REPLY_PX, 1));
-  }
-
-  function onPointerDown(e: React.PointerEvent) {
-    lastPointerRef.current = e.pointerType;
-    if (e.pointerType === "mouse") return;
-    const g: Gesture = {
-      x: e.clientX,
-      y: e.clientY,
-      px: 0,
-      swiping: false,
-      done: false,
-      timer: setTimeout(() => {
-        g.done = true;
-        navigator.vibrate?.(10);
-        onOpenActions(message);
-      }, LONG_PRESS_MS),
-    };
-    gestureRef.current = g;
-  }
-
-  function onPointerMove(e: React.PointerEvent) {
-    const g = gestureRef.current;
-    if (!g || g.done) return;
-    const dx = e.clientX - g.x;
-    const dy = e.clientY - g.y;
-    if (!g.swiping) {
-      if (Math.abs(dx) < MOVE_SLOP_PX && Math.abs(dy) < MOVE_SLOP_PX) return;
-      clearTimeout(g.timer);
-      // Only a rightward, mostly-horizontal drag is a reply swipe.
-      if (dx > 0 && dx > Math.abs(dy)) {
-        g.swiping = true;
-      } else {
-        g.done = true; // scrolling (or a left drag) — leave it to the browser
-        return;
-      }
-    }
-    g.px = Math.min(Math.max(dx, 0), SWIPE_MAX_PX);
-    shift(g.px);
-  }
-
-  function endGesture(commit: boolean) {
-    const g = gestureRef.current;
-    gestureRef.current = null;
-    if (!g) return;
-    clearTimeout(g.timer);
-    if (g.swiping) {
-      if (commit && g.px >= SWIPE_REPLY_PX) onReply(message);
-      shift(0, true);
-    }
-  }
-
-  function onContextMenu(e: React.MouseEvent) {
-    // No browser menu on a long press; right-click opens our actions.
-    e.preventDefault();
-    if (lastPointerRef.current === "mouse") onOpenActions(message);
-  }
 
   const hasReactions = reactions.length > 0;
 
@@ -149,11 +100,7 @@ function DMMessageItem({
         lastInGroup || hasReactions ? "mb-2.5" : "mb-0.5"
       }`}
       style={{ touchAction: "pan-y" }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={() => endGesture(true)}
-      onPointerCancel={() => endGesture(false)}
-      onContextMenu={onContextMenu}
+      {...rowHandlers}
     >
       {/* Swipe hint — fades in under the finger as the bubble moves right */}
       <span
@@ -190,7 +137,20 @@ function DMMessageItem({
         </button>
       </div>
 
-      <div ref={columnRef} className={`flex max-w-[80%] min-w-0 flex-col ${isOwn ? "items-end" : "items-start"}`}>
+      <div
+        ref={columnRef}
+        className={`relative flex max-w-[80%] min-w-0 flex-col ${isOwn ? "items-end" : "items-start"}`}
+      >
+        {heartPop > 0 && (
+          <span
+            key={heartPop}
+            aria-hidden="true"
+            onAnimationEnd={() => setHeartPop(0)}
+            className="heart-pop pointer-events-none absolute inset-0 z-2 flex items-center justify-center text-5xl [text-shadow:0_2px_10px_rgb(0_0_0/0.25)]"
+          >
+            ❤️
+          </span>
+        )}
         <div
           className={`max-w-full rounded-[18px] text-[15px] leading-snug wrap-anywhere whitespace-pre-wrap transition-shadow [@media(hover:none)]:select-none ${
             profile ? "p-1.5" : "px-3.5 py-2"
@@ -222,7 +182,9 @@ function DMMessageItem({
             <>
               <div className="w-60 max-w-full overflow-hidden rounded-[14px] bg-surface text-text">
                 <div className="flex items-center gap-3 p-3">
-                  <Avatar name={profile.name} src={profile.avatar} size={44} />
+                  <PhotoViewButton src={profile.avatar} name={profile.name} className="shrink-0">
+                    <Avatar name={profile.name} src={profile.avatar} size={44} />
+                  </PhotoViewButton>
                   <div className="min-w-0">
                     <p className="truncate font-bold">{profile.name}</p>
                     <p className="text-[13px] text-muted">DoonMeet member</p>
@@ -236,22 +198,24 @@ function DMMessageItem({
                 </Link>
               </div>
               <span
-                className={`block px-1.5 pt-1 text-right text-[11px] leading-none ${
+                className={`flex items-center justify-end gap-0.5 px-1.5 pt-1 text-[11px] leading-none ${
                   isOwn ? "text-on-primary/75" : "text-muted"
                 }`}
               >
                 {time}
+                {isOwn && receipt && <ReceiptTicks status={receipt} />}
               </span>
             </>
           ) : (
             <>
               {message.content}
               <span
-                className={`ml-2 inline-block translate-y-0.5 align-bottom text-[11px] leading-none ${
+                className={`ml-2 inline-flex translate-y-0.5 items-center gap-0.5 align-bottom text-[11px] leading-none ${
                   isOwn ? "text-on-primary/75" : "text-muted"
                 }`}
               >
                 {time}
+                {isOwn && receipt && <ReceiptTicks status={receipt} />}
               </span>
             </>
           )}
